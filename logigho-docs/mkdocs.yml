@@ -1,0 +1,92 @@
+site_name: LogiGho Docs
+site_description: Documentación técnica del sistema LogiGho
+site_author: LogiGho Team
+docs_dir: docs
+repo_url: https://github.com/TU_USUARIO/logigho-docs
+repo_name: logigho-docs
+
+theme:
+  name: material
+  language: es
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Modo oscuro
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Modo claro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search:
+      lang: es
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Inicio: index.md
+
+  - Arquitectura:
+    - Vision general: arquitectura/vision-general.md
+    - Diagrama del sistema: arquitectura/diagrama-sistema.md
+    - Decisiones tecnicas: arquitectura/decisiones.md
+    - Flujo API Gateway: arquitectura/api-gateway.md
+
+  - Backend:
+    - Overview: backend/overview.md
+    - Lambdas .NET (Clean Architecture):
+      - Estructura general: backend/lambdas-dotnet/estructura.md
+      - Capa Aplicacion: backend/lambdas-dotnet/aplicacion/overview.md
+      - Capa Dominio: backend/lambdas-dotnet/dominio/overview.md
+      - Capa Infraestructura: backend/lambdas-dotnet/infraestructura/overview.md
+    - Lambdas Python:
+      - Overview: backend/lambdas-python/overview.md
+
+  - Frontend:
+    - Overview: frontend/overview.md
+    - Estructura de modulos: frontend/estructura-modulos.md
+    - Components: frontend/components/overview.md
+    - Core: frontend/core/overview.md
+    - Views: frontend/views/overview.md
+    - Estilos y SCSS: frontend/estilos.md
+    - Rutas y navegacion: frontend/rutas.md
+
+  - API:
+    - Contratos y endpoints: api/contratos.md
+    - Autenticacion: api/autenticacion.md
+    - Manejo de errores: api/errores.md
+
+  - Guias:
+    - Setup local: guias/setup-local.md
+    - Variables de entorno: guias/variables-entorno.md
+    - Flujo de trabajo: guias/flujo-de-trabajo.md
+    - Como documentar: guias/como-documentar.md
+
+  - Changelog: changelog/index.md

@@ -72,7 +72,9 @@ nav:
   - Frontend:
     - Overview: frontend/overview.md
     - Estructura de modulos: frontend/estructura-modulos.md
-    - Components: frontend/components/overview.md
+    - Components:
+      - Overview: frontend/components/overview.md
+      - Landing Page: frontend/components/landing-page.md
     - Core: frontend/core/overview.md
     - Views: frontend/views/overview.md
     - Estilos y SCSS: frontend/estilos.md
@@ -88,5 +90,16 @@ nav:
     - Variables de entorno: guias/variables-entorno.md
     - Flujo de trabajo: guias/flujo-de-trabajo.md
     - Como documentar: guias/como-documentar.md
+    - Estandar de documentacion: guias/estandar-documentacion.md
+
+  - Plantillas:
+    - Componente Angular: plantillas/PLANTILLA-COMPONENTE.md
+    - Vista Angular: plantillas/PLANTILLA-VISTA-ANGULAR.md
+    - Servicio Angular: plantillas/PLANTILLA-SERVICIO.md
+    - Lambda .NET: plantillas/PLANTILLA-LAMBDA-DOTNET.md
+    - Modulo de Dominio .NET: plantillas/PLANTILLA-MODULO-DOMINIO.md
+    - Lambda Python: plantillas/PLANTILLA-LAMBDA-PYTHON.md
+    - API Endpoint: plantillas/PLANTILLA-API-ENDPOINT.md
+    - Decision Tecnica (ADR): plantillas/PLANTILLA-ADR.md
 
   - Changelog: changelog/index.md

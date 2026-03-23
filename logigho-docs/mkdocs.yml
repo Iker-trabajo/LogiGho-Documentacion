@@ -72,14 +72,19 @@ nav:
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
-      - Components:
-          - Overview: frontend/components/overview.md
-          - Landing Page: frontend/components/landing-page.md
-      - Core: frontend/core/overview.md
-      - Views:
-          - Overview: frontend/views/overview.md
-          - Administracion:
-              - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
+      - Componentes:
+          - components:
+              - Landing Page: frontend/components/landing-page.md
+              - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
+      # - Core: frontend/core/overview.md
+      - Vistas:
+          - Views:
+              - Controller:
+                  - Facturas transportadoras:
+                      - Componente: frontend/views/controller/facturas-trans/facturas-trans.md
+                      - Arquitectura: frontend/views/controller/facturas-trans/facturas-trans-ADR.md
+              - Administracion:
+                  - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 

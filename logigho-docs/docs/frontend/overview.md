@@ -1,6 +1,6 @@
 # Frontend — SitioLogiGho
 
-Aplicación Angular que consume el API Gateway de LogiGho.
+Aplicación Angular Framework que consume el API Gateway de LogiGho.
 
 ## Estructura del proyecto
 

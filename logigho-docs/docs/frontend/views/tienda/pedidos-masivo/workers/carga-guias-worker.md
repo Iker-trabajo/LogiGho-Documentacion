@@ -1,181 +1,211 @@
 ---
-autor: 
-fecha_creacion: YYYY-MM-DD
-ultima_actualizacion: YYYY-MM-DD
-estado: desarrollo | produccion | deprecado
-nivel: 1 | 2 | 3
+autor: Iker
+fecha_creacion: 2026-03-31
+ultima_actualizacion: 2026-03-31
+estado: desarrollo
+nivel: 2
 ---
 
-# Vista: NombreVista
+# Worker: Parseo de Excel — Carga Masiva de Guías
 
-**Autor:** Nombre Apellido  
-**Selector:** `app-nombre-vista`  
-**Ubicación:** `SitioLogiGho/src/app/views/nombre-vista`
+**Archivo:** `carga-guias.worker.ts`
+**Ubicación:** `SitioLogiGho/src/app/views/tienda/pedidos-masivo/workers`
+**Consumidor:** `CargaGuiasComponent`
 
 ---
 
 ## ¿Qué hace?
 
-Descripción breve en 2-3 líneas. Qué muestra esta vista, para qué sirve, qué problema resuelve al usuario.
+Ejecuta en un hilo secundario del navegador (Web Worker) el parseo, validación y agrupación del archivo Excel de carga masiva. Al correr fuera del hilo principal, el usuario puede seguir interactuando con la UI mientras el archivo se procesa, sin que la página se congele.
 
 ---
 
-## Ruta
+## ¿Por qué un Web Worker?
 
-| Propiedad | Valor |
-|---|---|
-| **Ruta** | `/app/nombre-vista` |
-| **Título de página** | Nombre que aparece en el navegador |
-| **Guard** | `AuthGuard` | `RolGuard` | Ninguno |
-| **Rol requerido** | `admin` | `vendedor` | Todos |
-| **Parámetros de URL** | `:id`, `:slug` — o ninguno |
+El procesamiento de archivos Excel grandes en el hilo principal de JavaScript bloquea el event loop: la UI se congela, los clicks no responden y el navegador puede mostrar el mensaje "La página no responde". Un Web Worker corre en un hilo separado del sistema operativo, paralelo al hilo principal, con su propia memoria y sin acceso al DOM.
 
-### Definición en `app.routes.ts`
-
-```typescript
-{
-  path: 'nombre-vista',
-  component: NombreVistaComponent,
-  canActivate: [AuthGuard],
-  title: 'Título de la página'
-}
-```
-
----
-
-## Parámetros de URL
-
-> Solo si la ruta recibe parámetros. Ej: `/app/tarjetas/:id`
-
-| Parámetro | Tipo | Descripción |
+| Situación | Sin Worker | Con Worker |
 |---|---|---|
-| `id` | `string` | ID del recurso a mostrar |
+| Parseo de 5000 filas con SheetJS | UI bloqueada varios segundos | UI completamente fluida |
+| Deduplicación de registros | Congela animaciones y clicks | Invisible para el usuario |
+| Archivo malformado | Puede bloquear la UI si hay un loop | El error se captura en el worker y se reporta limpiamente |
+| Múltiples columnas (hasta 100) | Mayor riesgo de freeze | Sin impacto en UI |
+
+**Transferencia de memoria sin copia:** El `ArrayBuffer` del archivo se transfiere al worker con `transfer` (no se copia). Esto significa que el hilo principal cede la propiedad del buffer al worker: más rápido y sin duplicar el uso de memoria RAM. Una vez transferido, el componente no puede acceder al buffer hasta que el worker termine.
 
 ---
 
 ## Estructura de archivos
 
 ```
-nombre-vista/
-├── nombre-vista.component.ts
-├── nombre-vista.component.html
-├── nombre-vista.component.scss
-└── components/               (subcomponentes locales si tiene)
-    └── sub-componente/
+workers/
+└── carga-guias.worker.ts    Único worker del módulo pedidos-masivo
+```
+
+> Este worker es compartido potencialmente por componentes del módulo, aunque actualmente solo lo invoca `CargaGuiasComponent`.
+
+---
+
+## Contrato de comunicación
+
+El worker se comunica con el componente vía `postMessage`. No tiene estado: cada mensaje es independiente.
+
+### Mensaje de entrada (componente → worker)
+
+```typescript
+{
+  buffer: ArrayBuffer,       // Contenido binario del archivo .xlsx (transferido, no copiado)
+  fieldsToExclude: string[]  // Columnas a ignorar en la clave de deduplicación (FIELDS_TO_EXCLUDE del componente)
+}
+```
+
+### Mensaje de salida — éxito (worker → componente)
+
+```typescript
+{
+  ok: true,
+  pedidosPorTienda: [string, any[]][],  // Array de entradas del Map<tiendaId, pedidos[]>
+  totalPedidos: number                  // Total de pedidos únicos procesados
+}
+```
+
+> El `Map` no es serializable por `postMessage`, por eso se envía como `[...grupos.entries()]` (array de pares `[clave, valor]`). El componente lo reconstruye como `Map`.
+
+### Mensaje de salida — error (worker → componente)
+
+```typescript
+{
+  ok: false,
+  error: string   // Descripción legible del error
+}
 ```
 
 ---
 
-## Secciones de la vista
+## Flujo de procesamiento
 
-| # | Sección | Descripción |
-|---|---|---|
-| 1 | **Encabezado** | Título, breadcrumbs, acciones principales |
-| 2 | **Contenido principal** | Tabla, formulario, detalle, etc. |
-| 3 | **Acciones** | Botones de guardar, cancelar, eliminar |
+```
+Recibe mensaje { buffer, fieldsToExclude }
+  │
+  ├─ 1. XLSX.read(buffer, { type: 'array' })
+  │       → Parsea el workbook completo
+  │       → Toma solo la primera hoja (SheetNames[0])
+  │       → sheet_to_json con { header: 1 } → array 2D: any[][]
+  │
+  ├─ 2. Validaciones estructurales (fallo temprano, sin procesar filas)
+  │       ├─ Archivo vacío: rawData.length < 2
+  │       ├─ Supera MAX_ROWS (5000 filas)
+  │       ├─ Sin encabezados válidos
+  │       ├─ Supera MAX_COLUMNS (100 columnas)
+  │       ├─ Faltan columnas requeridas: 'ID TIENDA', 'TELEFONO'
+  │       └─ Columnas duplicadas
+  │
+  ├─ 3. Conversión a JSON + deduplicación
+  │       → Itera filas desde índice 1 (salta encabezados)
+  │       → Omite filas completamente vacías
+  │       → Por cada celda string: trim() + elimina comas al final (replace(/,+$/, ''))
+  │       → Construye clave de deduplicación:
+  │             headers (sin fieldsToExclude) → valores de la fila → join('|')
+  │       → Si la clave ya existe en seenKeys → fila descartada (duplicado)
+  │       → Si es nueva → se agrega a jsonData y se registra en seenKeys
+  │
+  ├─ 4. Agrupación por tienda
+  │       → Itera jsonData
+  │       → Clave = pedido['ID TIENDA'].toString()
+  │       → Si no tiene ID TIENDA → pedido descartado silenciosamente
+  │       → grupos: Map<tiendaId, pedidos[]>
+  │
+  └─ 5. postMessage({ ok: true, pedidosPorTienda: [...grupos.entries()], totalPedidos })
+```
 
 ---
 
-## Propiedades del componente
+## Validaciones del worker
 
-| Propiedad | Tipo | Default | Descripción |
+| # | Validación | Condición de fallo | Mensaje de error |
 |---|---|---|---|
-| `dato` | `NombreTipo` | `null` | Dato principal que muestra la vista |
-| `cargando` | `boolean` | `false` | Controla el estado de loading |
-| `error` | `string` | `''` | Mensaje de error si falla la carga |
+| 1 | Archivo vacío | `rawData.length < 2` | `'El archivo esta vacio o solo tiene los encabezados'` |
+| 2 | Límite de filas | `totalFilas > 5000` | `'El archivo supera 5000 filas, el archivo contiene N'` |
+| 3 | Sin encabezados | `encabezadosValidos.length === 0` | `'El archivo no contiene encabezados validos'` |
+| 4 | Límite de columnas | `encabezadosValidos.length > 100` | `'El archivo tiene mas columnas de las permitidas'` |
+| 5 | Columnas requeridas | Falta `ID TIENDA` o `TELEFONO` | `'Faltan columnas requeridas: COLUMNA1, COLUMNA2'` |
+| 6 | Columnas duplicadas | Mismo nombre de cabecera más de una vez | `'Columnas duplicadas COLUMNA1, COLUMNA2'` |
+
+Todas las validaciones se evalúan antes de procesar las filas. Si alguna falla, el worker llama a `postMessage({ ok: false, error })` y retorna inmediatamente, sin continuar.
 
 ---
 
-## Flujo de inicialización
+## Constantes internas
+
+| Constante | Valor | Descripción |
+|---|---|---|
+| `MAX_ROWS` | `5000` | Límite máximo de filas de datos (excluyendo encabezados) |
+| `MAX_COLUMNS` | `100` | Límite máximo de columnas en el archivo |
+| `REQUIRED_COLUMNS` | `['ID TIENDA', 'TELEFONO']` | Columnas cuya presencia es obligatoria. Comparación en mayúsculas con trim |
+
+---
+
+## Lógica de deduplicación
+
+La clave de deduplicación se construye concatenando con `|` los valores de **todas las columnas excepto las de `fieldsToExclude`** (los campos de estado/financiero que el componente inyecta al worker).
 
 ```
-ngOnInit()
-  -> Obtiene parámetros de URL (si aplica)
-  -> cargarDatos()
-     -> NombreService.obtener(id)
-        -> API GET /ruta
-  -> Renderiza la vista
+key = headers
+  .filter(h => !fieldsToExclude.includes(h))
+  .map(h => obj[h])
+  .join('|')
 ```
 
----
-
-## Métodos
-
-### `cargarDatos()`
-**Descripción:** Carga los datos necesarios para renderizar la vista.
-
-**Proceso:**
-1. Activa estado de carga (`cargando = true`)
-2. Llama al servicio correspondiente
-3. Asigna los datos a las propiedades del componente
-4. Desactiva estado de carga
-
-**Manejo de error:** Si falla, asigna mensaje a `error` y muestra feedback al usuario.
+**Implicación:** Dos filas son consideradas duplicadas si todos sus campos de negocio son idénticos, independientemente de los campos de estado o fecha. Un pedido copiado en el Excel con distintos valores de estado seguirá siendo detectado como duplicado.
 
 ---
 
-## Servicios utilizados
+## Dependencias
 
-| Servicio | Métodos usados | Propósito |
-|---|---|---|
-| `NombreService` | `obtener()`, `guardar()` | CRUD del recurso |
-| `Router` | `navigate()` | Redirecciones |
-
----
-
-## Endpoints que consume
-
-| Método | Ruta | Cuándo |
-|---|---|---|
-| `GET` | `/api/v1/recurso` | Al cargar la vista |
-| `POST` | `/api/v1/recurso` | Al guardar el formulario |
-
----
-
-## Estados de la vista
-
-| Estado | Descripción | Qué muestra |
-|---|---|---|
-| Cargando | Esperando respuesta del API | Spinner / skeleton |
-| Con datos | Datos cargados correctamente | Contenido normal |
-| Error | Falló la carga | Mensaje de error + botón reintentar |
-| Vacío | No hay datos | Mensaje de estado vacío |
-
----
-
-## Navegación desde esta vista
-
-| Acción del usuario | Navega a |
+| Librería | Uso |
 |---|---|
-| Click en "Ver detalle" | `/app/recurso/:id` |
-| Click en "Volver" | `/app/lista` |
+| `xlsx` (SheetJS) | Parseo del archivo `.xlsx` — `XLSX.read()` y `XLSX.utils.sheet_to_json()` |
+
+> SheetJS no se importa en el hilo principal para este flujo: vive exclusivamente en el worker. Esto evita que su peso de bundle impacte el tiempo de carga inicial de la aplicación.
 
 ---
 
-## Subcomponentes
+## Manejo de errores
 
-| Componente | Selector | Descripción |
-|---|---|---|
-| `NombreComponent` | `app-nombre` | Para qué sirve |
+El worker envuelve todo el procesamiento en un bloque `try/catch`. Cualquier excepción no contemplada (archivo corrupto, error interno de SheetJS, etc.) resulta en:
 
----
+```typescript
+postMessage({ ok: false, error: error?.message || 'Error al procesar el archivo' })
+```
 
-## Estilos
-
-> Solo documentar si tiene estilos específicos importantes o variables SCSS propias.
+El componente `CargaGuiasComponent` verifica `response.ok` y muestra el mensaje en un Swal al usuario.
 
 ---
 
-## Changelog de la vista
+## Comportamientos silenciosos (sin error, sin aviso)
+
+| Comportamiento | Descripción |
+|---|---|
+| Filas vacías omitidas | Una fila donde todas las celdas son `null`, `undefined` o `''` se descarta sin avisar |
+| Filas duplicadas omitidas | Un pedido idéntico (según la clave de deduplicación) se descarta sin avisar |
+| Pedidos sin `ID TIENDA` omitidos | Si un pedido no tiene valor en la columna `ID TIENDA`, se descarta al agrupar sin aviso |
+| Comas al final de strings eliminadas | Los valores de texto con comas al final (`valor,`) son limpiados con `replace(/,+$/, '')` |
+
+---
+
+## Changelog
 
 | Fecha | Autor | Cambio |
 |---|---|---|
-| YYYY-MM-DD | Nombre | Descripción |
+| 2026-03-31 | Iker | Mejora en rendimiento: parseo del Excel movido a Web Worker para no bloquear UI |
 
 ---
 
 ## Observaciones
 
-> Deuda técnica, comportamientos especiales, cosas no obvias.
-
-- Observación 1
+- **No tiene estado:** El worker procesa un mensaje y responde. No guarda nada entre llamadas.
+- **Un solo worker por instancia:** `CargaGuiasComponent` instancia el worker con `new Worker(...)` y lo termina con `worker.terminate()` al finalizar. No hay pool de workers.
+- **Map no serializable:** `postMessage` usa el algoritmo structured clone, que no soporta `Map`. Por eso el worker serializa el mapa como `[...grupos.entries()]` y el componente lo reconstruye.
+- **Columnas requeridas case-insensitive:** La validación de `REQUIRED_COLUMNS` normaliza los encabezados a mayúsculas con `.toUpperCase()` antes de comparar, por lo que `id tienda` o `Id Tienda` son aceptados.
+- **Primera hoja solamente:** El worker solo procesa `wb.SheetNames[0]`. Si el archivo tiene múltiples hojas, las adicionales se ignoran sin aviso.
+- **`fieldsToExclude` viene del componente:** El worker no tiene la lista hardcodeada; la recibe como parámetro. Esto permite que el componente controle qué columnas se consideran para deduplicación sin modificar el worker.

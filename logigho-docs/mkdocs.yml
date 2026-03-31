@@ -85,6 +85,13 @@ nav:
                       - Arquitectura: frontend/views/controller/facturas-trans/facturas-trans-ADR.md
               - Administracion:
                   - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
+              - Tienda:
+                  - Pedidos Masivo:
+                      - Arquitectura: frontend/views/tienda/pedidos-masivo/pedidos-masivo-ADR.md
+                      - Carga-guias: frontend/views/tienda/pedidos-masivo/carga-guias/carga-guias.md
+                      - Genera-guias: frontend/views/tienda/pedidos-masivo/genera-guias/genera-guias.md
+                      - Exporta-guias: frontend/views/tienda/pedidos-masivo/exporta-guias/exporta-guias.md
+                      - Worker: frontend/views/tienda/pedidos-masivo/workers/carga-guias-worker.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 

@@ -86,6 +86,8 @@ nav:
               - Administracion:
                   - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
               - Tienda:
+                  - Portafolio:
+                      - Componente: frontend/views/tienda/portafolio/portafolio.md
                   - Pedidos Masivo:
                       - Arquitectura: frontend/views/tienda/pedidos-masivo/pedidos-masivo-ADR.md
                       - Carga-guias: frontend/views/tienda/pedidos-masivo/carga-guias/carga-guias.md

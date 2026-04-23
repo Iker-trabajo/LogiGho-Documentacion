@@ -8,7 +8,7 @@ nivel: 2
 
 # Vista: Portafolio
 
-**Autor:** Por definir  
+**Autor:** Adalberto González
 **Selector:** `app-portafolio`  
 **Ubicación:** `SitioLogiGho/src/app/views/tienda/portafolio`
 

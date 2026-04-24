@@ -74,9 +74,11 @@ nav:
       - Estructura de modulos: frontend/estructura-modulos.md
       - Componentes:
           - components:
-              - Landing Page: frontend/components/landing-page.md
-              - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
+             #- Landing Page: frontend/components/landing-page.md
       # - Core: frontend/core/overview.md
+              - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
+              - Creacion Productos: frontend/components/creacion-productos.md
+              - Actualizacion Productos: frontend/components/actualizacion-productos.md
       - Vistas:
           - Views:
               - Controller:
@@ -88,6 +90,8 @@ nav:
               - Tienda:
                   - Portafolio:
                       - Componente: frontend/views/tienda/Portafolio/portafolio.md
+                  - Pauta:
+                      - Componente: frontend/views/tienda/pauta/pauta.md
                   - Pedidos Masivo:
                       - Arquitectura: frontend/views/tienda/pedidos-masivo/pedidos-masivo-ADR.md
                       - Carga-guias: frontend/views/tienda/pedidos-masivo/carga-guias/carga-guias.md

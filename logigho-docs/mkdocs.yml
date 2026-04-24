@@ -90,6 +90,8 @@ nav:
               - Tienda:
                   - Portafolio:
                       - Componente: frontend/views/tienda/portafolio/portafolio.md
+                  - Pauta:
+                      - Componente: frontend/views/tienda/pauta/pauta.md
                   - Pedidos Masivo:
                       - Arquitectura: frontend/views/tienda/pedidos-masivo/pedidos-masivo-ADR.md
                       - Carga-guias: frontend/views/tienda/pedidos-masivo/carga-guias/carga-guias.md

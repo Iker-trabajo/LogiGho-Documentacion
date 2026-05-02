@@ -85,6 +85,9 @@ nav:
                   - Facturas transportadoras:
                       - Componente: frontend/views/controller/facturas-trans/facturas-trans.md
                       - Arquitectura: frontend/views/controller/facturas-trans/facturas-trans-ADR.md
+                  - Conciliacion de Pagos:
+                      - Componente: frontend/views/controller/conciliacion-pagos/conciliacion-pagos.md
+                      - Arquitectura: frontend/views/controller/conciliacion-pagos/conciliacion-pagos-ADR.md
               - Administracion:
                   - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
               - Tienda:

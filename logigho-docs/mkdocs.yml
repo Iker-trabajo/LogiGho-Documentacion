@@ -74,9 +74,10 @@ nav:
       - Estructura de modulos: frontend/estructura-modulos.md
       - Componentes:
           - components:
-             #- Landing Page: frontend/components/landing-page.md
-      # - Core: frontend/core/overview.md
+                #- Landing Page: frontend/components/landing-page.md
+                # - Core: frontend/core/overview.md
               - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
+              - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md
               - Creacion Productos: frontend/components/creacion-productos.md
               - Actualizacion Productos: frontend/components/actualizacion-productos.md
       - Vistas:
@@ -85,6 +86,9 @@ nav:
                   - Facturas transportadoras:
                       - Componente: frontend/views/controller/facturas-trans/facturas-trans.md
                       - Arquitectura: frontend/views/controller/facturas-trans/facturas-trans-ADR.md
+                  - Conciliacion de Pagos:
+                      - Componente: frontend/views/controller/conciliacion-pagos/conciliacion-pagos.md
+                      - Arquitectura: frontend/views/controller/conciliacion-pagos/conciliacion-pagos-ADR.md
               - Administracion:
                   - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
               - Tienda:

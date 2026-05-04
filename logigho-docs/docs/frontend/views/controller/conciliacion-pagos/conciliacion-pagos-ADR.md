@@ -90,7 +90,7 @@ Implementar D2E con Strategy. Legacy coexiste hasta migración evaluada por el e
 ## Estado futuro
 
 Se revisará si:
-- Se migrarannlas transportadoras legacy a Strategy (decisión separada)
+- Se migraran las transportadoras legacy a Strategy (decisión separada)
 - Se alcanza 8+ transportadoras con Strategy (evaluar abstraer en clase base)
 - Surge transportadora con flujo diferente (evaluar interfaces separadas)
 

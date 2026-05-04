@@ -281,6 +281,12 @@ Copiar el bloque de Servientrega en el HTML y reemplazar `servientregaStrategy` 
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-03-23 | Iker | Implementación de patrón Strategy para Servientrega. Creación de `TransportadoraStrategy`, `TransportadoraFactory` y `ServientregaStrategy`. Creación de `app-importacion-facturas-generico`. |
+| 2026-05-02 | Adalberto | Integración de `D2EStrategy` en el módulo de facturación. Creación de `d2e.strategy.ts` con `columnMapping`, `sanitize()` y `transformarValor()` para normalización de fechas seriales de Excel a formato `dd-mm-yyyy`. Registro en `TransportadoraFactory`. |
+| 2026-05-02 | Adalberto | Agregado `transformarValor?(campo, valor)` como método opcional en la interfaz `TransportadoraStrategy`. Permite a cada strategy manejar transformaciones de tipo por campo al importar Excel sin modificar el componente genérico. |
+| 2026-05-02 | Adalberto | Validación estricta de columnas en `importacion-facturas-generico`: si el archivo Excel tiene columnas faltantes o no reconocidas respecto a `columnMapping`, se muestra `'Documento no válido'` y se aborta la inserción sin tocar MongoDB. |
+| 2026-05-02 | Adalberto | Filtro de fila totales en `importacion-facturas-generico`: se descartan filas donde cualquier celda sea exactamente `'total'` (case-insensitive) antes de insertar. |
+| 2026-05-02 | Adalberto | Corrección en `exportToExcel`: se excluye el campo `_id` del dataset antes de generar el worksheet para que no aparezca en los archivos Excel exportados. |
+| 2026-05-02 | Adalberto | Corrección de búsqueda con clic repetido en D2E: el input usaba `[ngModel]` unidireccional, por lo que `searchValueD2E` nunca se actualizaba y el botón Buscar pasaba siempre `''`, reseteando el filtro. Corregido a `[(ngModel)]`. |
 
 ---
 

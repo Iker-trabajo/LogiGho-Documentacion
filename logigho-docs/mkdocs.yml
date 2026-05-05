@@ -103,7 +103,8 @@ nav:
                       - Exporta-guias: frontend/views/tienda/pedidos-masivo/exporta-guias/exporta-guias.md
                       - Worker: frontend/views/tienda/pedidos-masivo/workers/carga-guias-worker.md
               - Logistica:
-                  - Componente: frontend/views/logistica/info-guias/informacion-guia.md
+                  - Info Guias:
+                      - Componente: frontend/views/logistica/info-guias/informacion-guia.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 

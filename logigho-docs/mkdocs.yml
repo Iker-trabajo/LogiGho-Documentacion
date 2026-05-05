@@ -118,8 +118,7 @@ nav:
       - Estandar de documentacion: guias/estandar-documentacion.md
 
   - Plantillas:
-      - Componente Angular: plantillas/PLANTILLA-COMPONENTE.md
-      - Vista Angular: plantillas/PLANTILLA-VISTA-ANGULAR.md
+      - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md
       - Servicio Angular: plantillas/PLANTILLA-SERVICIO.md
       - Lambda .NET: plantillas/PLANTILLA-LAMBDA-DOTNET.md
       - Modulo de Dominio .NET: plantillas/PLANTILLA-MODULO-DOMINIO.md

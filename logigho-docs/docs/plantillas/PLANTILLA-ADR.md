@@ -1,10 +1,10 @@
 ---
-autor: 
-fecha_creacion: YYYY-MM-DD
-estado: propuesta | aceptada | rechazada | deprecada | reemplazada
----
 
-# ADR-000 — Título de la decisión
+## Autor:   
+Fecha creacion: YYYY-MM-DD  
+Estado: propuesta | aceptada | rechazada | deprecada | reemplazada
+
+# ADR — Título de la decisión
 
 **Autor:** Nombre Apellido  
 **Fecha:** YYYY-MM-DD  
@@ -14,97 +14,65 @@ estado: propuesta | aceptada | rechazada | deprecada | reemplazada
 
 ## Contexto
 
-> ¿Por qué se tuvo que tomar esta decisión?
-> Describe el problema, la situación o la necesidad que motivó esta decisión.
-> Sé específico. Menciona restricciones técnicas, de negocio o de equipo que existían.
+¿Por qué se tuvo que tomar esta decisión? Describe el problema o la necesidad. Menciona restricciones técnicas, de negocio o de equipo que existían.
 
 ---
 
 ## Opciones consideradas
 
-### Opción A — Nombre de la opción
-Descripción breve de qué era esta opción.
+### Opción A — Nombre
 
-**Pros:**
-- Pro 1
-- Pro 2
-
-**Contras:**
-- Contra 1
-- Contra 2
-
----
-
-### Opción B — Nombre de la opción
 Descripción breve.
 
-**Pros:**
-- Pro 1
+**Pros:** ...  
+**Contras:** ...
 
-**Contras:**
-- Contra 1
+### Opción B — Nombre
 
----
-
-### Opción C — Nombre de la opción (si aplica)
 Descripción breve.
 
-**Pros:**
-- Pro 1
+**Pros:** ...  
+**Contras:** ...
 
-**Contras:**
-- Contra 1
+> Agregar Opción C solo si hubo una tercera alternativa seria.
 
 ---
 
 ## Decisión
 
-> ¿Qué se decidió? ¿Por qué se eligió esa opción sobre las demás?
-> Sé directo. "Se eligió la Opción A porque..."
-
 **Se eligió:** Opción X
 
-**Razón principal:** Explicación concreta de por qué esta opción ganó.
+**Razón:** Por qué esta opción ganó sobre las demás, en concreto.
 
 ---
 
 ## Consecuencias
 
-### Positivas
-- Qué mejora con esta decisión
-- Qué se gana
-
-### Negativas / Compromisos
-- Qué se sacrifica o complica con esta decisión
-- Qué deuda técnica genera
-
-### Neutrales
-- Qué cambia sin ser necesariamente bueno o malo
+**Positivas:** qué mejora o se gana.  
+**Negativas:** qué se sacrifica, complica o genera deuda técnica.
 
 ---
 
-## Implementación
+## Impacto en el código
 
-> ¿Cómo se implementó esta decisión? ¿En qué repos o módulos impacta?
 
-| Módulo / Repo | Impacto |
-|---|---|
+| Módulo / Repo    | Cambio                 |
+| ---------------- | ---------------------- |
 | `LambdasLogiGho` | Descripción del cambio |
-| `SitioLogiGho` | Descripción del cambio |
+| `SitioLogiGho`   | Descripción del cambio |
+
 
 ---
 
-## Estado futuro
+## Historial de cambios
 
-> ¿Bajo qué condiciones se revisaría o cambiaría esta decisión?
-
-Esta decisión se revisará si:
-- Condición 1
-- Condición 2
+| Fecha | Autor | Cambio |
+|---|---|---|
+| YYYY-MM-DD | Nombre | Descripción del cambio |
 
 ---
 
 ## Referencias
 
-- [Enlace a issue, PR, o discusión relacionada]
-- [Documentación externa relevante]
+- [Enlace a issue, PR o discusión relacionada]
+

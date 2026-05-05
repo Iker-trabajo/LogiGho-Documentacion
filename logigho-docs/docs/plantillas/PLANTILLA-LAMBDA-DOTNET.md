@@ -1,146 +1,105 @@
 ---
-autor: 
-fecha_creacion: YYYY-MM-DD
-ultima_actualizacion: YYYY-MM-DD
-estado: desarrollo | produccion | deprecado
-nivel: 1 | 2 | 3
----
 
-# Nombre del Servicio / Lambda
+## Autor:   
+Fecha creacion: YYYY-MM-DD  
+Estado: desarrollo | produccion | deprecado
 
-**Autor:** Nombre Apellido  
-**Solución:** `LambdasLogiGho`  
-**Namespace:** `LambdasLogiGho.NombreServicio`
+# Lambda: NombreLambda
+
+**Namespace:** `LambdasLogiGho.Aplicacion.NombreServicio`  
+**Trigger:** API Gateway | EventBridge | SQS  
+**AOT:** Sí | No
 
 ---
 
 ## ¿Qué hace?
 
-Descripción breve en 2-3 líneas.
+2-3 líneas. Qué operación de negocio resuelve.
 
 ---
 
-## Estructura Clean Architecture
+## Endpoint
 
-```
-NombreServicio/
-├── Aplicacion/
-│   ├── Commands/
-│   │   └── NombreCommand.cs
-│   ├── Queries/
-│   │   └── NombreQuery.cs
-│   └── DTOs/
-│       └── NombreDto.cs
-├── Dominio/
-│   ├── Entidades/
-│   │   └── NombreEntidad.cs
-│   └── Interfaces/
-│       └── INombreRepositorio.cs
-└── Infraestructura/
-    └── Repositorios/
-        └── NombreRepositorio.cs
+
+| Método | Ruta              | Auth         |
+| ------ | ----------------- | ------------ |
+| `POST` | `/api/v1/recurso` | Bearer token |
+
+
+---
+
+## Request
+
+```json
+{
+  "campo": "string"
+}
 ```
 
----
 
-## Capa Dominio
+| Campo   | Tipo     | Requerido | Descripción |
+| ------- | -------- | --------- | ----------- |
+| `campo` | `string` | Sí        | Descripción |
 
-### Entidades
-
-#### `NombreEntidad`
-Descripción de la entidad y sus responsabilidades.
-
-| Propiedad | Tipo | Descripción |
-|---|---|---|
-| `Id` | `Guid` | Identificador único |
-| `Propiedad` | `string` | Descripción |
-
-### Reglas de negocio
-- Regla 1
-- Regla 2
 
 ---
 
-## Capa Aplicacion
+## Response
 
-### Commands
+### Exitoso
 
-#### `NombreCommand`
-**Descripción:** Qué hace este command.
+```json
+{
+  "campo": "valor"
+}
+```
 
-**Parámetros de entrada:**
-| Campo | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| `Campo` | `string` | Sí | Descripción |
+### Errores
 
-**Proceso:**
-1. Paso 1
-2. Paso 2
 
-**Retorna:** `NombreDto`
+| Código | Cuándo          |
+| ------ | --------------- |
+| `400`  | Datos inválidos |
+| `401`  | Token inválido  |
+| `500`  | Error interno   |
 
-### Queries
-
-#### `NombreQuery`
-**Descripción:** Qué consulta este query.
-
-**Parámetros:**
-| Campo | Tipo | Descripción |
-|---|---|---|
-| `Id` | `Guid` | ID a consultar |
-
-**Retorna:** `NombreDto`
 
 ---
 
-## Capa Infraestructura
+## Flujo interno
 
-### `NombreRepositorio`
-Implementación de `INombreRepositorio`.
-
-| Método | Descripción |
-|---|---|
-| `ObtenerPorId(Guid id)` | Busca por ID en BD |
-| `Guardar(NombreEntidad)` | Persiste la entidad |
-
----
-
-## Endpoints expuestos
-
-| Método | Ruta | Command/Query | Descripción |
-|---|---|---|---|
-| `POST` | `/api/v1/recurso` | `NombreCommand` | Crea un recurso |
-| `GET` | `/api/v1/recurso/{id}` | `NombreQuery` | Obtiene por ID |
+```
+Handler (Aplicacion)
+  -> NombreCommand / NombreQuery
+     -> INombreRepositorio
+        -> MongoDB: nombre_coleccion
+```
 
 ---
 
 ## Dependencias externas
 
-| Librería / Servicio | Versión | Uso |
-|---|---|---|
-| Entity Framework | — | ORM |
-| — | — | — |
+> Completar solo si consume servicios además de MongoDB (S3, SQS, otro Lambda, API externa). Eliminar si no aplica.
+
+
+| Servicio | Uso         |
+| -------- | ----------- |
+| `S3`     | Descripción |
+
 
 ---
 
-## Base de datos
-
-| Tabla | Descripción |
-|---|---|
-| `nombre_tabla` | Almacena los registros de este módulo |
-
----
-
-## Changelog del servicio
+## Historial de cambios
 
 | Fecha | Autor | Cambio |
 |---|---|---|
-| YYYY-MM-DD | Nombre | Descripción |
+| YYYY-MM-DD | Nombre | Descripción del cambio |
 
 ---
 
 ## Observaciones
 
-> Deuda técnica, pendientes, decisiones que no son obvias.
+> Deuda técnica, comportamientos especiales, decisiones no obvias del código.
 
-- Observación 1
+- Observación
+

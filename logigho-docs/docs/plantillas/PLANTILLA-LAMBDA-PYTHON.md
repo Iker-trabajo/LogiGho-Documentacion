@@ -1,56 +1,35 @@
 ---
-autor: 
-fecha_creacion: YYYY-MM-DD
-ultima_actualizacion: YYYY-MM-DD
-estado: desarrollo | produccion | deprecado
-nivel: 1 | 2 | 3
----
 
-# Nombre de la Lambda
+## Autor:   
+Fecha creacion: YYYY-MM-DD  
+Estado: desarrollo | produccion | deprecado
 
-**Autor:** Nombre Apellido  
+# Lambda: NombreLambda
+
 **Runtime:** Python 3.x  
-**Trigger:** API Gateway | S3 | SQS | EventBridge | Otro  
-**Ubicación en AWS:** `nombre-funcion-lambda`
+**Trigger:** API Gateway | S3 | SQS | EventBridge  
+**Función en AWS:** `nombre-funcion-lambda`
 
 ---
 
 ## ¿Qué hace?
 
-Descripción breve en 2-3 líneas.
+2-3 líneas.
 
 ---
 
-## Estructura de archivos
+## Evento de entrada
 
-```
-nombre-lambda/
-├── handler.py          ← punto de entrada
-├── requirements.txt    ← dependencias
-└── utils/
-    └── helpers.py
-```
-
----
-
-## Handler principal
-
-### `handler(event, context)`
-
-**Descripción:** Punto de entrada de la Lambda.
-
-**Evento de entrada:**
 ```json
 {
   "campo": "valor"
 }
 ```
 
-**Proceso:**
-1. Paso 1
-2. Paso 2
+---
 
-**Respuesta exitosa:**
+## Respuesta
+
 ```json
 {
   "statusCode": 200,
@@ -58,51 +37,47 @@ nombre-lambda/
 }
 ```
 
-**Respuestas de error:**
 
-| Código | Descripción |
-|---|---|
-| 400 | Datos inválidos |
-| 500 | Error interno |
+| Código | Cuándo          |
+| ------ | --------------- |
+| `200`  | Éxito           |
+| `400`  | Datos inválidos |
+| `500`  | Error interno   |
 
----
-
-## Variables de entorno requeridas
-
-| Variable | Descripción | Ejemplo |
-|---|---|---|
-| `NOMBRE_VAR` | Para qué se usa | `valor-ejemplo` |
 
 ---
 
-## Dependencias
+## Variables de entorno
 
-```
-# requirements.txt
-libreria==version
-```
 
----
+| Variable     | Descripción     |
+| ------------ | --------------- |
+| `NOMBRE_VAR` | Para qué se usa |
 
-## Trigger y configuración
-
-| Configuración | Valor |
-|---|---|
-| Timeout | — segundos |
-| Memoria | — MB |
-| Trigger | — |
-| VPC | Sí / No |
 
 ---
 
-## Changelog de la Lambda
+## Configuración
+
+
+| Parámetro | Valor   |
+| --------- | ------- |
+| Timeout   | — s     |
+| Memoria   | — MB    |
+| VPC       | Sí / No |
+
+
+---
+
+## Historial de cambios
 
 | Fecha | Autor | Cambio |
 |---|---|---|
-| YYYY-MM-DD | Nombre | Descripción |
+| YYYY-MM-DD | Nombre | Descripción del cambio |
 
 ---
 
 ## Observaciones
 
-- Observación 1
+- Observación
+

@@ -14,8 +14,6 @@ LambdasLogiGho/
 
 ## Servicios documentados
 
-> Esta tabla se irá completando a medida que se documente cada servicio.
-
 | Servicio | Capa | Estado |
 |---|---|---|
-| — | — | Pendiente |
+| [ApiLambdaActualizacionConciliaciones](lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones.md) | .NET Lambda | desarrollo |

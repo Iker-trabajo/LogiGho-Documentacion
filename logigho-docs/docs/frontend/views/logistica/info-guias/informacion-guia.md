@@ -259,6 +259,8 @@ El módulo queda visible en el menú lateral cuando existe un documento activo e
 | 2026-05-04 | Adalberto González | Creación del componente: consulta de guías con estados inicial, cargando, encontrado y noEncontrado |
 | 2026-05-04 | Adalberto González | Integración de lector físico de código de barras vía evento keypress Enter |
 | 2026-05-04 | Adalberto González | Implementación de skeleton loading y `ChangeDetectorRef` para render inmediato |
+| 2026-05-05 | Adalberto González | Implementación de Timer en el imput de el modulo |
+| 2026-05-06 | Adalberto González | Implementación de funcion preFech para pre cargar datos en el front y tener resultados instantaneos |
 
 ---
 

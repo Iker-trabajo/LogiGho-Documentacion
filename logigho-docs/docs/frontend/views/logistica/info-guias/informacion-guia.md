@@ -1,7 +1,7 @@
 ---
 autor: Adalberto González
 fecha_creacion: 2026-05-04
-ultima_actualizacion: 2026-05-04
+ultima_actualizacion: 2026-05-07
 estado: Desarrollo
 nivel: 2
 ---
@@ -54,7 +54,8 @@ informacion-guia/
 | 2 | **Buscador** | Input para número de guía con prefijo `#`, botón "Buscar" (solo desktop) y hint de ayuda. En móvil se reemplaza por botón "Activar cámara" |
 | 3 | **Estado inicial** | Pantalla vacía con ícono e instrucción al usuario antes de la primera búsqueda |
 | 4 | **Estado cargando** | Skeleton animado con shimmer que representa la estructura del resultado mientras se espera la respuesta del backend |
-| 5 | **Estado encontrado** | Tarjeta de resultado con: barra superior (número de guía + badge de estado + descripción), grid de dos columnas (Destinatario / Envío) y recuadro de Contenido y Observaciones |
+| 5 | **Estado encontrado** | Tarjeta de resultado con: barra superior (número de guía + badge de estado + descripción), grid de dos columnas (Destinatario / Envío) con `align-items: start` para no estirar la columna derecha, y recuadro de Contenido y Observaciones |
+| 5a | **Tabla de productos** | Dentro del recuadro de observaciones: tabla de hasta 12 productos con columna Producto, Cantidad, Precio unitario y Total. Incluye skeleton mientras carga, fila de total general y estado vacío si el pedido no tiene productos. Con scroll horizontal en mobile |
 | 6 | **Estado no encontrado** | Tarjeta de error con ícono y mensaje cuando la guía no existe en PedidosInter |
 
 ---
@@ -68,6 +69,9 @@ informacion-guia/
 | `txtGuia` | `string` | `''` | Texto del input, enlazado con `[(ngModel)]`. Se limpia automáticamente al terminar la consulta |
 | `estado` | `EstadoConsulta` | `'inicial'` | Controla qué bloque renderiza el template. Ver tipo más abajo |
 | `pedido` | `any \| null` | `null` | Documento de PedidosInter retornado por el backend. `null` mientras no hay resultado activo |
+| `searchTimeout` | `ReturnType<typeof setTimeout> \| null` | `null` | Handle del timer de debounce. Se nulifica explícitamente tras `clearTimeout()` para evitar referencias colgantes |
+| `productos` | `any[]` | `[]` | Lista de productos del pedido obtenida de la colección `Productos` en paralelo |
+| `cargandoProductos` | `boolean` | `false` | Controla el skeleton de la tabla de productos mientras se resuelven las consultas paralelas |
 
 ### Tipo EstadoConsulta
 
@@ -134,12 +138,15 @@ ngOnInit()
 onKeyPress(Enter) | (click) Buscar | onScanSuccess(result)
   → consultarGuia()
       → strip leading zeros + trim
+      → check caché / prefetch             — si el dato ya está en caché se resuelve sin mostrar skeleton
       → estado = 'cargando', pedido = null
-      → cdr.detectChanges()          — fuerza render inmediato del skeleton
       → GET metodoGenerico?coleccion=PedidosInter&Numeropreenvio={value}
       → decompressGzip(data.Resultado)
       → si vacío  → estado = 'noEncontrado', playErrorSound()
       → si existe → pedido = resultado[0], estado = 'encontrado', playBeepSound()
+                 → extraerPares(pedido)     — extrae hasta 12 pares IdStock/CantidadStock
+                 → Promise.all(consultas a Productos por idproducto)
+                 → calcula total = precioproveedor × cantidad por cada producto
       → catch(e)  → console.error, estado = 'noEncontrado'
       → txtGuia = ''
       → setTimeout 0ms — refoco del input para siguiente escaneo
@@ -160,11 +167,11 @@ Método principal. Consulta PedidosInter por `Numeropreenvio` y actualiza el est
 **Proceso:**
 1. Normaliza `txtGuia`: elimina ceros a la izquierda con `/^0+/` y espacios.
 2. Si el valor está vacío, retorna sin hacer nada.
-3. Cambia el estado a `'cargando'` y fuerza detección de cambios para que el skeleton aparezca inmediatamente.
-4. Consulta el backend con `consultarGenerico`.
+3. Comprueba caché/prefetch **antes** de cambiar el estado — si el dato ya está disponible, omite el skeleton por completo.
+4. Cambia el estado a `'cargando'` y consulta el backend con `consultarGenerico`.
 5. Descomprime con `decompressGzip`.
 6. Si el array resultado está vacío → `'noEncontrado'` + sonido de error.
-7. Si hay resultado → asigna `resultado[0]` a `pedido` → `'encontrado'` + beep.
+7. Si hay resultado → asigna `resultado[0]` a `pedido` → `'encontrado'` + beep → llama a `extraerPares()` para cargar la tabla de productos.
 8. En caso de excepción → loguea en consola → `'noEncontrado'`.
 9. Limpia el input y restaura el foco.
 
@@ -189,13 +196,23 @@ Convierte el valor del campo `Estado` de MongoDB al nombre de clase CSS del badg
 
 ---
 
+### `getAudioContext(): AudioContext`
+Devuelve una instancia compartida de `AudioContext`. Si ya existe la reutiliza; si no, la crea y la almacena. Evita el memory leak que se producía cuando cada llamada a `playBeepSound` / `playErrorSound` creaba un contexto nuevo sin cerrar el anterior.
+
+---
+
 ### `playBeepSound(): void`
-Reproduce un tono corto de 440 Hz (tipo "confirmación") usando la Web Audio API. Duración: ~100 ms.
+Reproduce un tono corto de 440 Hz (tipo "confirmación") usando la Web Audio API a través de `getAudioContext()`. Duración: ~100 ms.
 
 ---
 
 ### `playErrorSound(): void`
-Reproduce un tono de 180 Hz tipo sawtooth (tipo "error") usando la Web Audio API. Duración: ~600 ms.
+Reproduce un tono de 180 Hz tipo sawtooth (tipo "error") usando la Web Audio API a través de `getAudioContext()`. Duración: ~600 ms.
+
+---
+
+### `extraerPares(pedido: any): void`
+Lee hasta 12 campos `IdStock` / `CantidadStock` del documento de PedidosInter y construye la lista de pares `{ idStock, cantidad }`. Con esos pares lanza consultas en paralelo (`Promise.all`) a la colección `Productos` filtrando por `idproducto`. Calcula `total = precioproveedor × cantidad` por cada línea (el campo en MongoDB se llama `precioproveedor`, todo en minúsculas) y acumula el total general. Actualiza `productos` y baja `cargandoProductos` al finalizar.
 
 ---
 
@@ -209,9 +226,8 @@ Esta vista no utiliza subcomponentes.
 
 | Servicio | Métodos usados | Propósito |
 |---|---|---|
-| `ConsumoGenericoService` | `consultarGenerico()` | Consulta la colección PedidosInter por Numeropreenvio |
+| `ConsumoGenericoService` | `consultarGenerico()` | Consulta PedidosInter por Numeropreenvio y la colección Productos por idproducto |
 | `DecompressionService` | `decompressGzip()` | Descomprime la respuesta base64 del backend |
-| `ChangeDetectorRef` | `detectChanges()` | Fuerza la actualización del template al estado 'cargando' para que el skeleton aparezca instantáneamente |
 
 ---
 
@@ -220,6 +236,7 @@ Esta vista no utiliza subcomponentes.
 | Método | Ruta | Cuándo |
 |---|---|---|
 | `GET` | `metodoGenerico?coleccion=PedidosInter&Numeropreenvio={value}` | Cada vez que se escanea o ingresa un número de guía |
+| `GET` | `metodoGenerico?coleccion=Productos&idproducto={id}` | En paralelo (hasta 12 peticiones) tras encontrar un pedido, para cargar la tabla de productos |
 
 ---
 
@@ -259,8 +276,12 @@ El módulo queda visible en el menú lateral cuando existe un documento activo e
 | 2026-05-04 | Adalberto González | Creación del componente: consulta de guías con estados inicial, cargando, encontrado y noEncontrado |
 | 2026-05-04 | Adalberto González | Integración de lector físico de código de barras vía evento keypress Enter |
 | 2026-05-04 | Adalberto González | Implementación de skeleton loading y `ChangeDetectorRef` para render inmediato |
-| 2026-05-05 | Adalberto González | Implementación de Timer en el imput de el modulo |
-| 2026-05-06 | Adalberto González | Implementación de funcion preFech para pre cargar datos en el front y tener resultados instantaneos |
+| 2026-05-05 | Adalberto González | Implementación de timer con debounce en el input del módulo |
+| 2026-05-06 | Adalberto González | Implementación de función prefetch para precargar datos en el front y obtener resultados instantáneos |
+| 2026-05-07 | Iker Acevedo | **Bug fixes:** eliminado memory leak de `AudioContext` (instancia única vía `getAudioContext()`); corregido flash de skeleton en hits de caché moviendo el check antes de `estado = 'cargando'`; eliminada variable `prefetchCargando` sin uso; `searchTimeout` se nulifica tras `clearTimeout()`; eliminado `console.log` del prefetch expuesto en producción; eliminado `ChangeDetectorRef.detectChanges()` que bloqueaba el hilo (limpiados import y constructor) |
+| 2026-05-07 | Iker Acevedo | **Rendimiento:** debounce reducido de 1200 ms → 500 ms; `searchTimeout` tipado como `ReturnType<typeof setTimeout> \| null` |
+| 2026-05-07 | Iker Acevedo | **Nueva funcionalidad:** tabla de productos del pedido en el recuadro de observaciones — extrae hasta 12 pares `IdStock`/`CantidadStock` vía `extraerPares()`, consulta la colección `Productos` en paralelo con `Promise.all`, calcula `total = precioproveedor × cantidad`, muestra skeleton mientras carga, fila de total general y estado vacío; scroll horizontal en mobile |
+| 2026-05-07 | Iker Acevedo | **UI/UX:** `obs-text` limitado a `max-height: 100px` con scroll interno; grid del resultado cambiado a `align-items: start` para no estirar la columna derecha; añadidos `overflow: hidden` y `word-break: break-word` en `.obs-box` |
 
 ---
 
@@ -268,3 +289,5 @@ El módulo queda visible en el menú lateral cuando existe un documento activo e
 
 - **Ceros a la izquierda:** El campo `Numeropreenvio` en MongoDB es de tipo `$numberLong`. El componente elimina ceros a la izquierda con `/^0+/` antes de consultar, siguiendo el mismo patrón del módulo `DevolucionInventarioComponent`.
 - **Solo lectura:** Este módulo no realiza inserciones ni actualizaciones. Si en el futuro se requieren acciones (registrar novedad, cambiar estado), se deberá agregar un endpoint PUT y el formulario correspondiente.
+- **Campo `precioproveedor`:** En MongoDB el campo se almacena en minúsculas (`precioproveedor`), no en PascalCase. `extraerPares()` lee exactamente ese nombre para el cálculo de totales.
+- **AudioContext compartido:** `getAudioContext()` sigue el patrón singleton por instancia de componente. Si el componente se destruye y se vuelve a crear, el contexto anterior queda elegible para GC ya que la referencia privada se pierde.

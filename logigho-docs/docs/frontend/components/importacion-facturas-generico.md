@@ -253,6 +253,8 @@ closeModal() { this.isModalOpen = false; }
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-03-23 | Iker | Creación del componente genérico como parte de la implementación del patrón Strategy para transportadoras |
+| 2026-05-02 | Adalberto | Validación estricta de columnas en `importacion-facturas-generico`: si el archivo Excel tiene columnas faltantes o no reconocidas respecto a `columnMapping`, se muestra `'Documento no válido'` y se aborta la inserción sin tocar MongoDB. |
+| 2026-05-02 | Adalberto | Filtro de fila totales en `importacion-facturas-generico`: se descartan filas donde cualquier celda sea exactamente `'total'` (case-insensitive) antes de insertar. |
 
 ---
 

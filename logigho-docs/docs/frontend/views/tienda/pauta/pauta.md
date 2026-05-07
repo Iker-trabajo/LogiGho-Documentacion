@@ -1,7 +1,7 @@
 ---
 autor: Adalberto González
 fecha_creacion: 2026-04-24
-ultima_actualizacion: 2026-04-24
+ultima_actualizacion: 2026-05-06
 estado: Desarrollo
 nivel: 2
 ---
@@ -279,6 +279,7 @@ Controlan `isImpPautaModalOpen` para abrir y cerrar el modal `app-importacion-pa
 |---|---|---|
 | 2026-04-24 | Adalberto González | Personalizacion de estilos en el scss de el componente |
 | 2026-04-24 | Adalberto González | Peronalizacion de la tabla que muestra los datos, ahora podemos filtrar y paginar |
+| 2026-05-06 | Adalberto González | Se agrego al modulo filtro por rango de fechas y se corrigieron parte de los scss que manejaba el modulo |
 
 ---
 

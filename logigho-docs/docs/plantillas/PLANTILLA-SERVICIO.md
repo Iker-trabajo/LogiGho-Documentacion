@@ -1,73 +1,62 @@
 ---
-autor: 
-fecha_creacion: YYYY-MM-DD
-ultima_actualizacion: YYYY-MM-DD
-estado: desarrollo | produccion | deprecado
-nivel: 1 | 2 | 3
----
 
-# Nombre del Servicio
+## Autor:   
+Fecha creacion: YYYY-MM-DD  
+Estado: desarrollo | produccion | deprecado
 
-**Autor:** Nombre Apellido  
-**Tipo:** `@Injectable({ providedIn: 'root' })`  
-**Ubicación:** `SitioLogiGho/src/app/core/services/nombre.service.ts`
+# Servicio: NombreService
+
+**Ubicación:** `src/app/core/services/nombre.service.ts`  
+**Scope:** `providedIn: 'root'` | Módulo específico
 
 ---
 
 ## ¿Qué hace?
 
-Descripción breve en 2-3 líneas.
+2-3 líneas. Qué abstrae, qué endpoints envuelve, para qué módulos del frontend es útil.
 
 ---
 
 ## Métodos
 
-### `nombreMetodo(param: tipo): Observable<tipo> | Promise<tipo> | tipo`
+### `nombreMetodo(param: tipo): Observable<tipo>`
 
-**Descripción:** Qué hace.
+Qué hace en 1-2 líneas.
 
-**Parámetros:**
-| Parámetro | Tipo | Descripción |
-|---|---|---|
-| `param` | `string` | Descripción |
 
-**Retorna:** Descripción del retorno
+| Parámetro | Tipo     | Descripción |
+| --------- | -------- | ----------- |
+| `param`   | `string` | Descripción |
 
-**Ejemplo de uso:**
-```typescript
-this.nombreService.nombreMetodo(param).subscribe(resultado => {
-  // hacer algo
-});
-```
 
----
+**Retorna:** Descripción del retorno.
 
-## Dependencias
-
-| Servicio / Módulo | Uso |
-|---|---|
-| `HttpClient` | Llamadas HTTP al API |
-| — | — |
+> Repetir por cada método. Omitir los que son obvios por nombre (`getId()`, `setNombre()`).
 
 ---
 
 ## Endpoints que consume
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/api/v1/recurso` | Obtiene lista |
-| `POST` | `/api/v1/recurso` | Crea recurso |
+
+| Método | Ruta              | Descripción   |
+| ------ | ----------------- | ------------- |
+| `GET`  | `/api/v1/recurso` | Obtiene lista |
+| `POST` | `/api/v1/recurso` | Crea recurso  |
+
 
 ---
 
-## Changelog
+## Historial de cambios
 
 | Fecha | Autor | Cambio |
 |---|---|---|
-| YYYY-MM-DD | Nombre | Descripción |
+| YYYY-MM-DD | Nombre | Descripción del cambio |
 
 ---
 
 ## Observaciones
 
-- Observación 1
+> Solo si hay algo no obvio: caché, manejo especial de errores, dependencias cruzadas.
+
+- Observación
+

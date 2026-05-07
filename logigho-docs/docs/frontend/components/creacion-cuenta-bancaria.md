@@ -2,9 +2,9 @@
 
 ## Autor: Adalberto González
 
-Fecha creacion: 2026-05-07
-Estado: desarrollo
-Tipo: componente
+Fecha creacion: 2026-05-07  
+Estado: desarrollo  
+Tipo: componente  
 
 # Componente: CreacionCuentaBancariaComponent
 

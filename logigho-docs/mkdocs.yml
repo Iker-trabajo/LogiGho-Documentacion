@@ -105,6 +105,9 @@ nav:
                       - Genera-guias: frontend/views/tienda/pedidos-masivo/genera-guias/genera-guias.md
                       - Exporta-guias: frontend/views/tienda/pedidos-masivo/exporta-guias/exporta-guias.md
                       - Worker: frontend/views/tienda/pedidos-masivo/workers/carga-guias-worker.md
+              - Logistica:
+                  - Info Guias:
+                      - Componente: frontend/views/logistica/info-guias/informacion-guia.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 

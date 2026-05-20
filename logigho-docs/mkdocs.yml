@@ -83,6 +83,7 @@ nav:
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md
               - Creacion Productos: frontend/components/creacion-productos.md
               - Actualizacion Productos: frontend/components/actualizacion-productos.md
+              - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
       - Vistas:
           - Views:
               - Controller:
@@ -96,7 +97,8 @@ nav:
                   - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
               - Tienda:
                   - Portafolio:
-                      - Componente: frontend/views/tienda/Portafolio/portafolio.md
+                      - Componente: frontend/views/tienda/portafolio/portafolio.md
+                      - Arquitectura: frontend/views/tienda/portafolio/portafolio-ADR.md
                   - Pauta:
                       - Componente: frontend/views/tienda/pauta/pauta.md
                   - Pedidos Masivo:
@@ -121,7 +123,6 @@ nav:
       - Variables de entorno: guias/variables-entorno.md
       - Flujo de trabajo: guias/flujo-de-trabajo.md
       - Como documentar: guias/como-documentar.md
-      - Estandar de documentacion: guias/estandar-documentacion.md
 
   - Plantillas:
       - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md

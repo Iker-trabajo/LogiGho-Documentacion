@@ -16,7 +16,7 @@ Tipo: componente
 
 ## ¿Qué hace?
 
-Modal reutilizable para importar archivos Excel de devoluciones. Recibe la estrategia de la transportadora activa y se adapta completamente a ella: valida columnas, mapea headers, transforma valores y envía los datos al backend en lotes de 5 000 registros. Por cada lote dispara primero la lambda `gestionDevoluciones` para que el backend ejecute procesado adicional, y luego realiza el insert en la colección vía método genérico.
+Modal reutilizable para importar archivos Excel de devoluciones. Recibe la estrategia de la transportadora activa y se adapta completamente a ella: valida columnas, mapea headers, transforma valores y envía los datos al backend en lotes de 5 000 registros. Por cada lote dispara primero la lambda `cargaDevoluciones` para que el backend ejecute procesado adicional, y luego realiza el insert en la colección vía método genérico.
 
 ---
 
@@ -75,7 +75,8 @@ subirArchivo()
 | Fecha      | Autor              | Cambio                                                                        |
 | ---------- | ------------------ | ----------------------------------------------------------------------------- |
 | 2026-05-16 | Adalberto Gonzalez | Creación del componente genérico de importación                               |
-| 2026-05-16 | Adalberto Gonzalez | Lambda `gestionDevoluciones` fija para todos los casos, previa al insert      |
+| 2026-05-16 | Adalberto Gonzalez | Lambda `cargaDevoluciones` fija para todos los casos, previa al insert      |
+| 2026-05-20 | Adalberto Gonzalez | Se aplico un delay de 1000ms antes de hacer el llamado a la Lambda `cargaDevoluciones` para tener tiempo de tener cargados los datos en la BD   |
 
 ---
 

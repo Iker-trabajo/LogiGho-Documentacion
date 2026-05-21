@@ -83,6 +83,7 @@ nav:
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md
               - Creacion Productos: frontend/components/creacion-productos.md
               - Actualizacion Productos: frontend/components/actualizacion-productos.md
+              - Importacion Devoluciones Generico: frontend/components/importacion-gestion-devoluciones-generico.md
               - Novedades: frontend/components/novedades.md
               - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
               - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
@@ -117,6 +118,8 @@ nav:
               - Logistica:
                   - Info Guias:
                       - Componente: frontend/views/logistica/info-guias/informacion-guia.md
+                  - Gestion Devoluciones:
+                      - Componente: frontend/views/logistica/gestion-devoluciones/gestion-decoluciones.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 

@@ -85,6 +85,7 @@ nav:
               - Actualizacion Productos: frontend/components/actualizacion-productos.md
               - Novedades: frontend/components/novedades.md
               - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
+              - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
       - Vistas:
           - Views:
               - Controller:
@@ -96,9 +97,13 @@ nav:
                       - Arquitectura: frontend/views/controller/conciliacion-pagos/conciliacion-pagos-ADR.md
               - Administracion:
                   - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
+              - Gestion de datos:
+                  - Export data: frontend/views/gestion-datos/export-data/export-data.md
+                  - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
               - Tienda:
                   - Portafolio:
-                      - Componente: frontend/views/tienda/Portafolio/portafolio.md
+                      - Componente: frontend/views/tienda/portafolio/portafolio.md
+                      - Arquitectura: frontend/views/tienda/portafolio/portafolio-ADR.md
                   - Pauta:
                       - Componente: frontend/views/tienda/pauta/pauta.md
                   - Wallet:
@@ -125,7 +130,6 @@ nav:
       - Variables de entorno: guias/variables-entorno.md
       - Flujo de trabajo: guias/flujo-de-trabajo.md
       - Como documentar: guias/como-documentar.md
-      - Estandar de documentacion: guias/estandar-documentacion.md
 
   - Plantillas:
       - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md

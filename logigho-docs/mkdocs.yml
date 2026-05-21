@@ -79,6 +79,7 @@ nav:
           - components:
                 #- Landing Page: frontend/components/landing-page.md
                 # - Core: frontend/core/overview.md
+              - Importacion Pauta: frontend/components/importacion-pauta.md
               - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md
               - Creacion Productos: frontend/components/creacion-productos.md

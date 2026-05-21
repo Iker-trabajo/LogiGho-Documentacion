@@ -83,6 +83,8 @@ nav:
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md
               - Creacion Productos: frontend/components/creacion-productos.md
               - Actualizacion Productos: frontend/components/actualizacion-productos.md
+              - Novedades: frontend/components/novedades.md
+              - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
               - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
       - Vistas:
           - Views:
@@ -104,6 +106,8 @@ nav:
                       - Arquitectura: frontend/views/tienda/portafolio/portafolio-ADR.md
                   - Pauta:
                       - Componente: frontend/views/tienda/pauta/pauta.md
+                  - Wallet:
+                      - Componente: frontend/views/tienda/wallet/wallet-view.md
                   - Pedidos Masivo:
                       - Arquitectura: frontend/views/tienda/pedidos-masivo/pedidos-masivo-ADR.md
                       - Carga-guias: frontend/views/tienda/pedidos-masivo/carga-guias/carga-guias.md

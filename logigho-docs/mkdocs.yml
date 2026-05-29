@@ -76,9 +76,11 @@ nav:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
       - Componentes:
+          - Core:
+            - Estandarizador de direcciones: frontend/core/estandarizador-direcciones.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
-                # - Core: frontend/core/overview.md
+              - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
               - Importacion Pauta: frontend/components/importacion-pauta.md
               - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md

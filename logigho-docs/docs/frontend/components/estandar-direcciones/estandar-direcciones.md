@@ -16,7 +16,7 @@ Tipo: componente
 
 ## ¿Qué hace?
 
-Es un modal flotante que ayuda a los usuarios a estandarizar y saber si una dirección esta bien escrita, segun la nomenclatura colombiana (urbana o rural). Ofrece dos modos: texto libre con parsing automático en tiempo real, y constructor guiado campo por campo. Al confirmar, emite la cadena estandarizada para que el componente padre la use o la copie al portapapeles.
+Es una ventana flotante que ayuda a los usuarios a convertir y saber si una dirección esta bien escrita, segun la nomenclatura colombiana (urbana o rural).
 
 ---
 

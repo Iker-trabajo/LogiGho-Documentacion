@@ -14,7 +14,7 @@ Estado: desarrollo
 
 ## ¿Qué hace?
 
-Parsea direcciones colombianas en formato libre y las descompone en sus partes estandarizadas según el manual DANE/IGAC / Inter Rapidísimo. Detecta automáticamente si la dirección es urbana o rural y aplica el pipeline de parsing correspondiente. No consume ningún endpoint; toda la lógica es local.
+Convierte direcciones colombianas escritas de cualquier forma en una estructura organizada y fácil de entender con su nomenclatura correcta.
 
 ---
 

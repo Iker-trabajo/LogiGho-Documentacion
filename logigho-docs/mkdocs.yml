@@ -69,16 +69,18 @@ nav:
           - Actualizacion Conciliaciones:
               - Lambda: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones.md
               - Arquitectura: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones-ADR.md
-      - Lambdas Python:
-          - Overview: backend/lambdas-python/overview.md
+          - ApiLambdaSincronizacionUnion:
+              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionUnion/ApiLambdaSincronizacionUnion.md
 
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
       - Componentes:
+          - Core:
+            - Estandarizador de direcciones: frontend/core/estandarizador-direcciones.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
-                # - Core: frontend/core/overview.md
+              - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
               - Importacion Pauta: frontend/components/importacion-pauta.md
               - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md
@@ -121,6 +123,8 @@ nav:
                       - Componente: frontend/views/logistica/info-guias/informacion-guia.md
                   - Gestion Devoluciones:
                       - Componente: frontend/views/logistica/gestion-devoluciones/gestion-decoluciones.md
+                  - Resumen Inventario:
+                      - Componente: frontend/views/logistica/resumen-inventario/resumen-inventario.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 

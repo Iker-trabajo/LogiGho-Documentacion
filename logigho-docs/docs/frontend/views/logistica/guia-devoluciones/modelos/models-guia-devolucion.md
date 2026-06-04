@@ -1,7 +1,7 @@
 ---
 
 ## Autor: Adalberto González
-Fecha creacion: 2026-06-03
+Fecha creacion: 2026-06-03  
 Estado: produccion
 
 # Dominio: Devoluciones

@@ -20,7 +20,7 @@ Por esta razón, se analizaron alternativas para reorganizar la solución de una
 
 ---
 
-## Arquitectura Por Capaz (Dentro de el modulo)
+## Arquitectura Por Capas (Dentro de el modulo)
 
 Extraer lógica a servicios Angular simples (`FilterService`, `ChartComputerService`) y funciones puras compartidas (`worker-utils`). El componente mantiene el array `datos[]` como fuente de verdad y sigue orquestando la carga. Sin signals reactivos, sin persistencia offline.
 
@@ -41,9 +41,9 @@ Extraer lógica a servicios Angular simples (`FilterService`, `ChartComputerServ
 
 ## Decisión
 
-**Se eligió:** Arquitectura Por Capaz (Dentro de el modulo)
+**Se eligió:** Arquitectura Por Capas (Dentro de el modulo)
 
-**Razón:** El módulo funciona correctamente. Con lo que hicimos reduce el componente por capaz, elimina duplicación entre workers y hace testeable la lógica de filtros y chart sin tocar el flujo de carga.
+**Razón:** El módulo funciona correctamente. Con lo que hicimos reduce el componente por capas, elimina duplicación entre workers y hace testeable la lógica de filtros y chart sin tocar el flujo de carga.
 
 ---
 
@@ -77,6 +77,6 @@ Componente refactorizado. Nuevos archivos: `models/`, `services/`, `workers/work
 
 | Fecha | Autor | Cambio |
 |---|---|---|
-| 2026-06-03 | Adalberto González | Se implemento la Arquitectura por capaz en todo el modulo. |
+| 2026-06-03 | Adalberto González | Se implemento la Arquitectura por capas en todo el modulo. |
 
 ---

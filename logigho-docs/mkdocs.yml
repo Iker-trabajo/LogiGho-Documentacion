@@ -77,6 +77,8 @@ nav:
       - Estructura de modulos: frontend/estructura-modulos.md
       - Componentes:
           - Core:
+            - Cognito: frontend/core/cognito/cognito.md
+            - Pagination Cache: frontend/core/pagination-cache/pagination-cache.md
             - Estandarizador de direcciones: frontend/core/estandarizador-direcciones.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
@@ -105,11 +107,13 @@ nav:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
               - Tienda:
+                  - Pedidos:
+                      - Componente: frontend/views/tienda/pedidos/pedidos.md
+                  - Pauta:
+                      - Componente: frontend/views/tienda/pauta/pauta.md
                   - Portafolio:
                       - Componente: frontend/views/tienda/portafolio/portafolio.md
                       - Arquitectura: frontend/views/tienda/portafolio/portafolio-ADR.md
-                  - Pauta:
-                      - Componente: frontend/views/tienda/pauta/pauta.md
                   - Wallet:
                       - Componente: frontend/views/tienda/wallet/wallet-view.md
                   - Pedidos Masivo:

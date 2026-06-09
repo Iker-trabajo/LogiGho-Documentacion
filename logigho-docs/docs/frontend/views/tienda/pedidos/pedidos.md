@@ -95,6 +95,7 @@ processData()
 | Fecha | Autor | Cambio |
 | --- | --- | --- |
 | 2026-06-05 | Adalberto González | Se ajusto la carga inicial optimizada con 2 peticiones en paralelo. Caché IndexedDB por sesión via `PaginationCacheService`. |
+| 2026-06-05 | Adalberto González | Se hizo una homologación de los estados de todas las transportadoras |
 
 ---
 

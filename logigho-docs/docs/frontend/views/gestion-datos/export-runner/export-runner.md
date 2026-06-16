@@ -77,7 +77,7 @@ ngOnInit()
 | Fecha | Autor | Cambio |
 | --- | --- | --- |
 | 2026-05-13 | Adalberto González | Creación del componente |
-| 2026-06-16 | Adalberto González | Filtro de exclusion de los registros con estados "Impuesto Gobierno" |
+| 2026-06-16 | Adalberto González | Filtro de exclusion de los registros con estados "Impuesto Gobierno" para cuando se exporta por Liquidaciones |
 
 ---
 

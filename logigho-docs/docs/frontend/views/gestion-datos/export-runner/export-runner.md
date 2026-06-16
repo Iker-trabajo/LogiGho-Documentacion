@@ -85,5 +85,3 @@ ngOnInit()
 
 - **`window.close()` solo funciona** porque la pestaña fue abierta con `window.open()` desde `export-data`.
 - **`FILTROS_EXCLUSION`** es el mecanismo para excluir filas por colección cuando el backend no soporta `$nin`. Se aplica después de descomprimir y antes del filtro de columnas. Para agregar exclusiones a otra colección, solo añadir una entrada al objeto.
-- **El lote** se toma de `localStorage['export_total_registros_<exportId>']`. Si no existe, el backend decide el tamaño de página.
-- **Preservación de tipos en Excel**: los valores `number` y `boolean` se escriben directamente en celda para que Excel los trate como números, no como texto.

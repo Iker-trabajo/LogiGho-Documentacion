@@ -90,6 +90,8 @@ nav:
               - Novedades: frontend/components/novedades.md
               - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
               - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
+              - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
+              - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
       - Vistas:
           - Views:

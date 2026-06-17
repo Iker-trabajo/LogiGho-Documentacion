@@ -16,7 +16,7 @@ Tipo: vista
 
 ## ¿Qué hace?
 
-Es un Panel central de gestión financiera de las tiendas. Muestra saldos, movimientos, liquidaciones, novedades, recargas, facturación y apalancamiento. Permite filtrar toda la información por tienda mediante un selector, y desde aquí se abren los modales de desembolso, novedades, facturación, tarjetas y apalancamiento.
+Panel central de gestión financiera de las tiendas. Muestra saldos, movimientos, liquidaciones, novedades, recargas, facturación y apalancamiento. Permite filtrar toda la información por tienda y abre modales de desembolso, novedades, facturación, tarjetas y apalancamiento.
 
 ---
 
@@ -30,31 +30,29 @@ Es un Panel central de gestión financiera de las tiendas. Muestra saldos, movim
 
 ## Propiedades clave
 
+> Solo las no obvias por su nombre.
+
 | Propiedad | Tipo | Descripción |
 | --- | --- | --- |
-| `selectedTienda` | `string` | Id de la tienda seleccionada en el filtro; `'Todos'` por defecto |
-| `tiendaOptions` | `any[]` | Lista de tiendas cargadas desde la BD, incluyendo `EstadoWallet` y `EstadoApalancamiento` |
-| `decompressResume` | `any[]` | Cache del último `ResumenSaldoActualLogigho` descomprimido; lo reusan `actualizarWalletPorTienda()` y filtros |
-| `totalSaldoDisponible` | `number` | Suma de saldos de las tiendas visibles; bloquea el modal de desembolso si es negativo |
-| `totalApalancamientoDisponible` | `number` | Cupo de apalancamiento disponible para la tienda seleccionada |
-| `isRoleAuthorized` | `boolean` | `true` si el usuario tiene rol CEO, Administrador o Controller; controla visibilidad de secciones |
-| `estadoWalletActivo` | `boolean` | Habilita/deshabilita botón de desembolso según configuración de la tienda |
-| `walletResumen` | `any[]` | Lista de tiendas con su saldo individual, usada para el widget de resumen visual |
+| `selectedTienda` | `string` | Id de la tienda activa en el filtro; `'Todos'` por defecto |
+| `decompressResume` | `any[]` | Cache del último `ResumenSaldoActualLogigho` descomprimido; compartido entre `fetchStoreResume` y `fetchTableDataApalancamiento` — si se llaman en paralelo pueden pisarse |
+| `totalSaldoDisponible` | `number` | Bloquea el modal de desembolso si es negativo |
+| `estadoWalletActivo` | `boolean` | Habilita/deshabilita el botón de desembolso según configuración de la tienda |
+| `columnTitlesRetiros` | `Record<string, string>` | Mapea nombres de campo de BD a etiquetas legibles para la tabla de retiros |
+| `isRoleAuthorized` | `boolean` | `true` si el rol es CEO, Administrador o Controller; controla visibilidad de secciones |
 
 ---
 
 ## Servicios y endpoints
 
-| Servicio | Método | Endpoint | Cuándo |
-| --- | --- | --- | --- |
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET Tienda` + filtro `NombreTienda` | `ngOnInit` — carga el selector de tiendas |
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET ResumenSaldoActualLogigho` + filtro `Tienda` | `ngOnInit` y al cambiar tienda — saldo total |
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET TransaccionesWalletLogigho` + filtro `Tienda` | `ngOnInit` y al cambiar tienda |
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET Apalancamiento` + filtro `Tienda` | `ngOnInit` y al cambiar tienda |
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET LiquidacionesLogigho` + filtro `NombreTienda` | `ngOnInit` y al cambiar tienda |
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET NovedadesLogigho` + filtro `NombreTienda` | `ngOnInit` y al cerrar modal de novedades |
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET Facturacion` + filtro `NombreTienda` | `ngOnInit` y al cerrar modal de facturación |
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET TarjetaTienda` + `IdTienda` | Al abrir modal de tarjeta |
+| Servicio | Endpoint | Cuándo |
+| --- | --- | --- |
+| `ConsumoGenericoService` | `GET TransaccionesWalletLogigho` + filtro `Tienda` | `ngOnInit` y al cambiar tienda |
+| `ConsumoGenericoService` | `GET ResumenSaldoActualLogigho` + filtro `Tienda` | `ngOnInit` y al cambiar tienda — saldo total |
+| `ConsumoGenericoService` | `GET LiquidacionesLogigho` + filtro `NombreTienda` | `ngOnInit` y al cambiar tienda |
+| `ConsumoGenericoService` | `GET NovedadesLogigho` + filtro `NombreTienda` | `ngOnInit` y al cerrar modal de novedades |
+| `ConsumoGenericoService` | `GET Facturacion` + filtro `NombreTienda` | `ngOnInit` y al cerrar modal de facturación |
+| `ConsumoGenericoService` | `GET Apalancamiento` + filtro `Tienda` | `ngOnInit` y al cambiar tienda |
 
 ---
 
@@ -62,21 +60,18 @@ Es un Panel central de gestión financiera de las tiendas. Muestra saldos, movim
 
 ```
 ngOnInit()
-  -> validarAccesoWallet()       // redirige si no tiene rol
-  -> cargarTasaCambio()
+  -> validarAccesoWallet()
   -> fetchTableDataLiquidacionesLogigho()
   -> fetchTableDataTransaccionesWalletLogigho()
   -> fetchTableDataNovedadesLogigho()
   -> fetchTableDataRecargas()
   -> fetchTableDataFacturacion()
-  -> fetchStoreResume()          // saldo total
+  -> fetchStoreResume()
   -> fetchTableDataApalancamiento()
-  -> onTiendaSelect('Todos')     // inicializa filtros y wallet resumen
 
 onTiendaSelect(value)
-  -> actualizarWalletPorTienda() // recalcula widget de saldos
-  -> recarga todas las tablas con el filtro de tienda seleccionada
-  -> applyFilters()              // filtra filas en memoria sin nueva petición
+  -> applyFilters()          // filtra en memoria sin nueva petición
+  -> recarga tablas con el filtro de tienda seleccionada
 
 closeModal() / closeModalNovedades() / closeModalFacturacion()
   -> refresca solo los datos afectados + saldo
@@ -88,13 +83,14 @@ closeModal() / closeModalNovedades() / closeModalFacturacion()
 
 | Fecha | Autor | Cambio |
 | --- | --- | --- |
-| 2026-05-07 | Adalberto González | Verificaión de el componete hijo [Novedades](/frontend/components/novedades-component/) `No hubo cambios en el componente Wallet`. |
+| 2026-05-07 | Adalberto González | Verificación del componente hijo Novedades. Sin cambios en Wallet. |
+| 2026-06-16 | Adalberto González | Actualización de la tabla de retiros: eliminación de columnas obsoletas, incorporación de ComisionBanco, visualización de comprobantes y personalización de títulos de columnas. |
 
 ---
 
 ## Observaciones
 
-- El filtro `arrayTiendas.includes("Todas")` en los métodos de fetch es el patrón correcto para usuarios con acceso global.
-- `applyFilters()` filtra en memoria desde `rowsMemory*`; no hace nueva petición. Solo se recarga desde la BD al cambiar tienda o cerrar un modal.
-- `openModal()` (desembolso) valida que `totalSaldoDisponible >= 0` antes de abrir — no modificar ese guard.
-- `decompressResume` es compartido entre `fetchStoreResume` y `fetchTableDataApalancamiento`; si ambos se llaman en paralelo pueden pisarse.
+- `applyFilters()` filtra en memoria desde `rowsMemory*` — no hace nueva petición. Solo se recarga desde la BD al cambiar tienda o cerrar un modal.
+- `openModal()` valida que `totalSaldoDisponible >= 0` antes de abrir el desembolso — no modificar ese guard.
+- `parseMonto()` en `fetchTableDataTransaccionesWalletLogigho` existe porque MongoDB devuelve los montos como string con formato `"$  16.455.000,00"`, no como número.
+- El filtro `arrayTiendas.includes("Todas")` es el patrón correcto para usuarios con acceso global.

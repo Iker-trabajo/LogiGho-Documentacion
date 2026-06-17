@@ -93,6 +93,8 @@ nav:
       - Vistas:
           - Views:
               - Controller:
+                  - Administración Controller: 
+                      - View: frontend/views/controller/admin-controller/controller-view.md
                   - Facturas transportadoras:
                       - Componente: frontend/views/controller/facturas-trans/facturas-trans.md
                       - Arquitectura: frontend/views/controller/facturas-trans/facturas-trans-ADR.md

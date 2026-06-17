@@ -95,6 +95,7 @@ nav:
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
       - Vistas:
           - Views:
+              - Muro Compartido: frontend/views/muro-compartido/muro-compartido.md
               - Base:
                   - Estandar Tablas: frontend/views/base/tables-component.md
               - Controller:
@@ -105,7 +106,8 @@ nav:
                       - Componente: frontend/views/controller/conciliacion-pagos/conciliacion-pagos.md
                       - Arquitectura: frontend/views/controller/conciliacion-pagos/conciliacion-pagos-ADR.md
               - Administracion:
-                  - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
+                  - Documentos Tienda: frontend/views/administracion/documentos-tiendas/documentos-tiendas.md
+                  - Metricas Muro: frontend/views/administracion/metricas-muro/metricas-muro.md
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md

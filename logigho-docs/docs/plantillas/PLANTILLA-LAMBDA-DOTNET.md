@@ -18,7 +18,7 @@ Estado: desarrollo | produccion | deprecado
 
 ---
 
-## Endpoint
+## Accionador
 
 
 | Método | Ruta              | Auth         |

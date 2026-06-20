@@ -5,7 +5,7 @@ Fecha creacion: 2026-06-02
 
 Estado: produccion
 
-## Lambda: ApiLambdaSincronizacionUnion
+## Lambda: ApiLambdaCargarGuias
 
 
 **Accionador:** API Gateway
@@ -16,13 +16,13 @@ Estado: produccion
 
 ## ¿Qué hace?
 
-Procesa lotes de pedidos por las transportadoras integradas (Interrapidísimo, Envia, XCargo, Servientrega, D2E). Por cada pedido crea el preenvío en la API de la transportadora, obtiene la guía en PDF, la modifica si en las variables de entorno esta activa a la auditoria, (Solo para Interrapidismo) y la guarda en S3. Finalmente actualiza el estado del pedido en MongoDB e inserta el registro en la colección de pedidos correspondiente.
+Es la lambda princiapl que procesa lotes de pedidos por las transportadoras integradas (Interrapidísimo, Envia, XCargo, Servientrega, D2E). Por cada pedido se acciona el caso de uso de acuerdo a la transportadora, crea el preenvío en la API de la transportadora, obtiene la guía en PDF y la guarda en el bucket S3 de cada transportadora. Finalmente actualiza el estado del pedido en MongoDB e inserta el registro en la colección de pedidos de `PedidosInter`.
 
 ---
 
 ## Accionador
 
-| Método | Ruta | Auth |
+| Método | Ruta | Autenticacion |
 | ------ | ---- | ---- |
 | `POST` | API Gateway — `ApiLambdaCargarGuias` | Bearer token (Cognito) |
 
@@ -42,7 +42,7 @@ Procesa lotes de pedidos por las transportadoras integradas (Interrapidísimo, E
 | ----- | ---- | --------- | ----------- |
 | `IdCarga` | `string` | Sí | ID del lote de carga en MongoDB (colección `CargaPedido`) |
 | `TipoEtiqueta` | `string` | Sí | Formato de la guía: `"Sticker"` o `"Mediana"` |
-| `CargarAlarmas` | `bool` | No | Si es `false` omite la validación de alarmas (duplicados, % devoluciones). Default: `true` |
+| `CargarAlarmas` | `bool` | No | Si es `false` omite la validación de alarmas (duplicados, % devoluciones). Por defecto esta activo |
 
 El token de autenticación va en el header:
 ```
@@ -106,7 +106,7 @@ Los pedidos se procesan en lotes de 3 en paralelo (`Task.WhenAll` con batch de 3
 
 ## Modificación de etiqueta Inter (PDFUtils)
 
-Cuando `TipoEtiqueta = "Sticker"` y `MODIFICACION_ETIQUETA = true`, el PDF recibido de Inter se modifica antes de guardarse en S3:
+Por reglas de administracion, se inicio un proceso de personalizado con las guias de interrapidisimo. Para esto se configuro de tal forma que cuando `TipoEtiqueta = "Sticker"` y `MODIFICACION_ETIQUETA = true`, el PDF recibido de Inter se modifica antes de guardarse en S3:
 
 1. **CubrirCaja** — dibuja un rectángulo blanco sobre un area dentro de la guia, el cuadrado es blanco con tamaño personalizable.
 

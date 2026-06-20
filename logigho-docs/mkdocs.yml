@@ -71,7 +71,8 @@ nav:
               - Arquitectura: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones-ADR.md
           - ApiLambdaSincronizacionUnion:
               - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionUnion/ApiLambdaSincronizacionUnion.md
-
+          - ApiLambdaCargarGuias:
+              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCargarGuias/ApiLambdaCargarGuias.md
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md

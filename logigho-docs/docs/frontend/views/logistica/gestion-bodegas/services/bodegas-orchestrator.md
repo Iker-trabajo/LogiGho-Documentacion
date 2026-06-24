@@ -1,6 +1,6 @@
 ## Servicio: BodegasOrchestratorService
 
-**Ubicación:** `src/app/views/logistica/gestion-bodegas/services/bodegas-orchestrator.service.ts`
+**Ubicación:** `src/app/views/logistica/gestion-bodegas/services/bodegas-orchestrator.service.ts`  
 **Scope:** `providedIn: 'root'`
 
 ---
@@ -73,4 +73,3 @@ Es el coordinador central del módulo. Ningún componente hace HTTP directamente
 
 - `calcularStockPorBodega()` solo suma asignaciones con `estado === 'Activa'`. Las inactivas no contribuyen al stock.
 - El umbral `UMBRAL_BAJO_STOCK_BODEGA = 5000` es una constante privada. Si se necesita configurable, moverla a un archivo de configuración del módulo.
-- `getTiendaParam()` sigue usándose para `cargarProductos()`. Solo el cálculo de stock de bodegas es global (sin filtro de tienda).

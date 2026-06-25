@@ -73,6 +73,8 @@ nav:
               - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionUnion/ApiLambdaSincronizacionUnion.md
           - ApiLambdaCargarGuias:
               - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCargarGuias/ApiLambdaCargarGuias.md
+          - ApiLambdaConsultarPedidos:
+              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md

@@ -1,13 +1,13 @@
 ---
 
 ## Autor: Adalberto González
-Fecha creacion: 2026-06-27
-Estado: desarrollo
+Fecha creacion: 2026-06-27  
+Estado: desarrollo  
 Tipo: componente
 
 # Componente: GuidedTourComponent
 
-**Selector:** `app-guided-tour`  
+**Selector:** `app-guided-tour`   
 **Ubicación:** `src/app/components/guided-tour/guided-tour.component.ts`  
 **Acceso:** Público (reutilizable en cualquier módulo autenticado)
 

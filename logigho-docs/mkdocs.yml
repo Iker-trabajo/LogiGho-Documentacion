@@ -90,6 +90,7 @@ nav:
               - Novedades: frontend/components/novedades.md
               - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
               - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
+              - Tour Guiado: frontend/components/guided-tour.md
       - Vistas:
           - Views:
               - Controller:

@@ -137,6 +137,8 @@ Usuario abre gestión de asignaciones
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-06-24 | Adalberto González | Creación del módulo completo con RBAC, KPIs, tabla paginada y gestión de asignaciones |
+| 2026-06-25 | Adalberto González | Agregado stock individual por producto en el drawer de asignaciones |
+| 2026-06-25 | Adalberto González | Guardado de `idTienda` y `nombreTienda` en asignaciones; navegación a resumen-inventario desde modal KPI |
 
 ---
 

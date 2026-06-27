@@ -34,6 +34,7 @@ Capa de acceso a datos del módulo. Es el único archivo que llama a `ConsumoGen
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-06-24 | Adalberto González | Creación con todas las operaciones CRUD del módulo |
+| 2026-06-25 | Adalberto González | Migradas todas las consultas de GZIP a Zstd (`mcomp=2`) |
 
 ---
 

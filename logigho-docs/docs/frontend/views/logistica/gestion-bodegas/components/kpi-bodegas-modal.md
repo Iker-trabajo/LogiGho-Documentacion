@@ -63,6 +63,7 @@ Usuario cierra
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-06-24 | Adalberto González | Creación del modal de detalle KPI exclusivo para bodegas |
+| 2026-06-25 | Adalberto González | Filas clickeables navegan a resumen-inventario; deshabilitadas si la bodega no tiene asignaciones activas |
 
 ---
 

@@ -66,6 +66,7 @@ Es el coordinador central del módulo. Ningún componente hace HTTP directamente
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-06-24 | Adalberto González | Creación con carga paralela, cálculo de stock por bodega y gestión de asignaciones |
+| 2026-06-25 | Adalberto González | Agregados métodos `getTiendasDeBodega`, `getProductosDeBodega` y `productoYaAsignado` para integración con resumen-inventario |
 
 ---
 

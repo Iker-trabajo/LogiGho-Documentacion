@@ -60,6 +60,7 @@ Usuario cierra
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-06-24 | Adalberto González | Creación con búsqueda de productos y selector de bodegas activas |
+| 2026-06-25 | Adalberto González | Selector muestra solo productos sin asignación activa; restricción de duplicados en orquestador |
 
 ---
 

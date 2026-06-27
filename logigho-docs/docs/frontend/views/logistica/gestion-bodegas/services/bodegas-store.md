@@ -7,7 +7,7 @@
 
 ### ¿Qué hace?
 
-Mantiene el estado reactivo del módulo usando signals de Angular. Gestiona la lista de bodegas, los filtros activos, la paginación y los KPIs derivados. Nunca hace HTTP ni contiene lógica de negocio.
+Gestiona la lista de bodegas, los filtros activos, la paginación y los KPIs derivados.
 
 ---
 

@@ -47,4 +47,3 @@ Padre pasa rows/rowsHistorico ya filtrados
 ### Observaciones
 
 - Este componente no tiene lógica propia; es un puente entre la vista padre y `ModernTableComponent`.
-- Los filtros de tienda y transportadora **no viven aquí**; el padre pasa los datos ya filtrados a través de `rows` y `rowsHistorico`.

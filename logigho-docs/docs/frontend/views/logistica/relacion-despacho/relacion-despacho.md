@@ -40,7 +40,6 @@ Puedes:
 - **Elegir cuáles guías** quieres incluir al generar el documento final.
 - **Crear un PDF** con la relación de despacho, agrupado por transportadora.
 - **Ver el historial** de despachos por fechas.
-- **Limpiar** los registros del día cuando sea necesario, pero solo algunos usuarios pueden hacerlo.
 
 ---
 

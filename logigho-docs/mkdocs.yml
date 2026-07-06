@@ -71,7 +71,8 @@ nav:
               - Arquitectura: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones-ADR.md
           - ApiLambdaSincronizacionUnion:
               - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionUnion/ApiLambdaSincronizacionUnion.md
-
+          - ApiLambdaCargarGuias:
+              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCargarGuias/ApiLambdaCargarGuias.md
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
@@ -91,8 +92,14 @@ nav:
               - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
               - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
               - Tour Guiado: frontend/components/guided-tour.md
+              - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
+              - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
+              - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
       - Vistas:
           - Views:
+              - Muro Compartido: frontend/views/muro-compartido/muro-compartido.md
+              - Base:
+                  - Estandar Tablas: frontend/views/base/tables-component.md
               - Controller:
                   - Facturas transportadoras:
                       - Componente: frontend/views/controller/facturas-trans/facturas-trans.md
@@ -101,7 +108,8 @@ nav:
                       - Componente: frontend/views/controller/conciliacion-pagos/conciliacion-pagos.md
                       - Arquitectura: frontend/views/controller/conciliacion-pagos/conciliacion-pagos-ADR.md
               - Administracion:
-                  - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
+                  - Documentos Tienda: frontend/views/administracion/documentos-tiendas/documentos-tiendas.md
+                  - Metricas Muro: frontend/views/administracion/metricas-muro/metricas-muro.md
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
@@ -126,6 +134,17 @@ nav:
                       - Componente: frontend/views/logistica/gestion-devoluciones/gestion-decoluciones.md
                   - Gestion Bodegas:
                       - Componente: frontend/views/logistica/gestion-bodegas/gestion-bodegas.md
+                  - Guias Devolucion:
+                      - Componente: frontend/views/logistica/guia-devoluciones/componente/guias-devoluciones.md
+                      - Arquitectura: frontend/views/logistica/guia-devoluciones/arquitectura/ADR-guias-devolucion.md
+                      - Workers:
+                          - Procesador: frontend/views/logistica/guia-devoluciones/workers/data-processor-worker.md
+                          - Historico: frontend/views/logistica/guia-devoluciones/workers/historico-worker.md
+                          - Descompresor: frontend/views/logistica/guia-devoluciones/workers/worker-utils.md
+                      - Servicios:
+                          - Servicio de filtrado de datos: frontend/views/logistica/guia-devoluciones/servicios/filter-service.md
+                          - Servicio de gestion de informacion: frontend/views/logistica/guia-devoluciones/servicios/chart-service.md
+                      - Modelo de datos: frontend/views/logistica/guia-devoluciones/modelos/models-guia-devolucion.md
                   - Resumen Inventario:
                       - Componente: frontend/views/logistica/resumen-inventario/resumen-inventario.md
       - Estilos y SCSS: frontend/estilos.md

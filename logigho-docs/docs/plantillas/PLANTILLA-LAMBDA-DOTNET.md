@@ -1,12 +1,12 @@
----
 
-## Autor:   
+## Autor: 
+ 
 Fecha creacion: YYYY-MM-DD  
 Estado: desarrollo | produccion | deprecado
 
-# Lambda: NombreLambda
+--- 
+## Lambda: NombreLambda
 
-**Namespace:** `LambdasLogiGho.Aplicacion.NombreServicio`  
 **Trigger:** API Gateway | EventBridge | SQS  
 **AOT:** Sí | No
 

@@ -91,6 +91,9 @@ nav:
               - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
               - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
               - Tour Guiado: frontend/components/guided-tour.md
+              - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
+              - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
+              - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
       - Vistas:
           - Views:
               - Controller:
@@ -128,6 +131,17 @@ nav:
                       - Componente: frontend/views/logistica/gestion-devoluciones/gestion-decoluciones.md
                   - Gestion Bodegas:
                       - Componente: frontend/views/logistica/gestion-bodegas/gestion-bodegas.md
+                  - Guias Devolucion:
+                      - Componente: frontend/views/logistica/guia-devoluciones/componente/guias-devoluciones.md
+                      - Arquitectura: frontend/views/logistica/guia-devoluciones/arquitectura/ADR-guias-devolucion.md
+                      - Workers:
+                          - Procesador: frontend/views/logistica/guia-devoluciones/workers/data-processor-worker.md
+                          - Historico: frontend/views/logistica/guia-devoluciones/workers/historico-worker.md
+                          - Descompresor: frontend/views/logistica/guia-devoluciones/workers/worker-utils.md
+                      - Servicios:
+                          - Servicio de filtrado de datos: frontend/views/logistica/guia-devoluciones/servicios/filter-service.md
+                          - Servicio de gestion de informacion: frontend/views/logistica/guia-devoluciones/servicios/chart-service.md
+                      - Modelo de datos: frontend/views/logistica/guia-devoluciones/modelos/models-guia-devolucion.md
                   - Resumen Inventario:
                       - Componente: frontend/views/logistica/resumen-inventario/resumen-inventario.md
       - Estilos y SCSS: frontend/estilos.md

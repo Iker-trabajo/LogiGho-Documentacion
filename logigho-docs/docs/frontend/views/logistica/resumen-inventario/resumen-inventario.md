@@ -194,6 +194,8 @@ Usuario edita stock mínimo en la tabla
 | 2026-05-26 | Creación del módulo con carga paralela de 4 colecciones |
 | 2026-05-26 | Agregado sistema de stock mínimo por producto con upsert |
 | 2026-05-26 | Refactor html2canvas removido, modal compactado para mayor densidad de datos |
+| 2026-06-25 | Agregado filtro de Bodega independiente en `FiltrosInventarioComponent`, construido desde `AsignacionBodegas` + `Bodegas` |
+| 2026-06-25 | Integración con `gestion-bodegas`: la vista recibe queryParams `?tiendas`, `?productos` y `?bodega` para pre-filtrar al navegar desde el módulo de bodegas |
 
 ---
 

@@ -91,6 +91,7 @@ nav:
               - Novedades: frontend/components/novedades.md
               - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
               - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
+              - Tour Guiado: frontend/components/guided-tour.md
               - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
               - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
@@ -131,6 +132,8 @@ nav:
                       - Componente: frontend/views/logistica/info-guias/informacion-guia.md
                   - Gestion Devoluciones:
                       - Componente: frontend/views/logistica/gestion-devoluciones/gestion-decoluciones.md
+                  - Gestion Bodegas:
+                      - Componente: frontend/views/logistica/gestion-bodegas/gestion-bodegas.md
                   - Guias Devolucion:
                       - Componente: frontend/views/logistica/guia-devoluciones/componente/guias-devoluciones.md
                       - Arquitectura: frontend/views/logistica/guia-devoluciones/arquitectura/ADR-guias-devolucion.md

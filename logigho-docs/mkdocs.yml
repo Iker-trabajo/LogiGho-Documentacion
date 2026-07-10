@@ -123,6 +123,8 @@ nav:
                       - Exporta-guias: frontend/views/tienda/pedidos-masivo/exporta-guias/exporta-guias.md
                       - Worker: frontend/views/tienda/pedidos-masivo/workers/carga-guias-worker.md
               - Logistica:
+                  - Dashboard Sin Despacho:
+                      - Componente: frontend/views/logistica/dashboard-sin-despacho/dashboard-sin-despacho.md
                   - Relacíon Despacho:
                       - Componente: frontend/views/logistica/relacion-despacho/relacion-despacho.md
                   - Info Guias:

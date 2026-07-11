@@ -75,6 +75,9 @@ nav:
               - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCargarGuias/ApiLambdaCargarGuias.md
           - ApiLambdaConsultarPedidos:
               - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
+          - ApiLambdaCrudGenericoAOT:
+              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrudGenericoAOT/ApiLambdaCrudGenericoAOT.md
+              
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md

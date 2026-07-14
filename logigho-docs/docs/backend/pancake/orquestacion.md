@@ -181,7 +181,7 @@ El 2º Map **combina** cada página con el contexto de la ventana, para que `Obt
 - **Target:** AWS Step Functions → `StartExecution` → `PipelineEstadisticasPancake`.
 - **Rol:** los 4 schedules comparten un rol con permiso `states:StartExecution`.
 
-> Para **agregar** o **cambiar** una franja, ver **[Operación → Agregar nuevas ejecuciones](operacion.md#agregar-nueva-ejecucion)**.
+> Para **agregar** o **cambiar** una franja, ver **[Operación → Agregar una nueva ejecución recurrente](operacion.md#agregar-nueva-ejecucion)**.
 
 ---
 

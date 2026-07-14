@@ -7,7 +7,7 @@ Estado: produccion
 
 ## ¿Qué es?
 
-Es una ejecucion automatizada que se ejecuta, 4 veces al día, recolecta las estadísticas de campañas publicitarias de **todas las páginas conectadas en Pancake**, las almacena en **MongoDB** y en la **RDS MySQL**.
+Es un proceso automatizado que corre 4 veces al día: recolecta las estadísticas de campañas publicitarias de **todas las páginas conectadas en Pancake** y las almacena en **MongoDB** y en la **RDS MySQL**.
 
 Todo el proceso está **orquestado con AWS Step Functions** y **agendado con EventBridge Scheduler** — no requiere intervención manual: corre solo a las 7:00 am, 9:00 am, 2:00 pm y 5:00 pm (hora Colombia).
 
@@ -56,7 +56,7 @@ Tener historificadas, por **franja del día** y por **campaña**, las métricas 
 
 | # | Lambda | Rol en el pipeline | Lee / Escribe |
 | - | ------ | ------------------ | ------------- |
-| 1 | **[ApiLambdaCalcularVentanaTiempo](lambdas/01-calcular-ventana-tiempo.md)** | Calcula la ventana de tiempo (`since`/`until`) según el tipo de corrida, parametros necesarios para el consumo en pancake. | (cálculo puro) |
+| 1 | **[ApiLambdaCalcularVentanaTiempo](lambdas/01-calcular-ventana-tiempo.md)** | Calcula la ventana de tiempo (`since`/`until`) según el tipo de corrida — los parámetros necesarios para consumir la API de Pancake. | (cálculo puro) |
 | 2 | **[ApiLambdaObtenerCuentasPrincipales](lambdas/02-obtener-cuentas-principales.md)** | Devuelve las cuentas madre activas con su token | Lee `PancakeCuentasPrincipales` |
 | 3 | **[ApiLambdaListarPaginasPancake](lambdas/03-listar-paginas-pancake.md)** | Trae y sincroniza las páginas de cada cuenta madre | Escribe `PancakePaginas` |
 | 4 | **[ApiLambdaObtenerPaginasActivas](lambdas/04-obtener-paginas-activas.md)** | Devuelve las páginas activas con token para el 2º Map | Lee `PancakePaginas` |
@@ -90,6 +90,7 @@ Tener historificadas, por **franja del día** y por **campaña**, las métricas 
 
 ## Convenciones clave
 
+- **Nombres:** "cuenta madre" y "cuenta principal" son el mismo concepto — la colección se llama `PancakeCuentasPrincipales`, pero en el código y en esta documentación se le suele decir "cuenta madre" por ser la que agrupa varias páginas.
 - **Casing:** los datos de MongoDB viajan en `camelCase`; el pipeline y AWS usan `snake_case` (`[JsonPropertyName]`). Cada DTO traduce entre ambos mundos para evitar errores de ortografía.
 - **Fechas:** la matemática de días se hace en hora **Colombia** (`America/Bogota`, UTC-5) y se **almacena en UTC** (formato Unix).
 - **Seguridad:** los tokens de Pancake viajan en la query string → **nunca se loguea la URL completa**, solo el `page_id`.

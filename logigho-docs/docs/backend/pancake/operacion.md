@@ -5,7 +5,7 @@ Estado: produccion
 
 # Operación — ejecutar, agendar y monitorear
 
-Guía práctica para operar la integración Pancake: iniciar una ejecucion, hacer monitoriero y revisar el funcionamineto de la automatizacion
+Guía práctica para operar la integración Pancake: cómo iniciar una ejecución manual, cómo agendar nuevas franjas y cómo monitorear que la automatización esté funcionando bien.
 
 ---
 
@@ -17,25 +17,23 @@ Sirve para forzar una recolección **ahora mismo**, fuera del horario agendado �
 
 En el cuadro **Input**, pega el JSON con la franja que quieras. Ejemplos:
 
-Para hacer una ejecucion, desde el inicio del dia hasta el momento de la ejecucion (intradia_actual).
+Ejecución desde el inicio del día hasta el momento actual (`intradia_actual`):
 
+```json
+{
+  "slot_id": "99",
+  "tipo_calculo": "intradia_actual"
+}
+```
 
+Ejecución del día anterior completo, desde las 00:00 hasta las 23:59 (`cierre_dia_anterior`):
 
-    ```
-    {
-      "slot_id": "99",
-      "tipo_calculo": "intradia_actual"
-    }
-    ```
-
-Ejecucion de bajado de datos del dia anterior, desde 00:00 hasta las 23:59.
-
-    ```
-    {
-      "slot_id": "1",
-      "tipo_calculo": "cierre_dia_anterior"
-    }
-    ```
+```json
+{
+  "slot_id": "1",
+  "tipo_calculo": "cierre_dia_anterior"
+}
+```
 
 !!! tip "Usa un `slot_id` distinto para corridas manuales"
     Un `slot_id` como `"99"` marca la corrida como **manual/validación** y la separa de las franjas automáticas (1–4). Como el `slot_id` es parte de la clave única, no pisa los datos de las corridas oficiales y es fácil de identificar (y limpiar) en la base:
@@ -44,7 +42,7 @@ Al dar **Start execution** verás el diagrama ponerse verde estado por estado.
 
 ---
 
-## Agregar una nueva ejecución recurrente:
+## Agregar una nueva ejecución recurrente { #agregar-nueva-ejecucion }
 
 Para agendar una nueva franja (ej. un cuarto intradía a las 11:00 am):
 
@@ -95,7 +93,7 @@ Para agendar una nueva franja (ej. un cuarto intradía a las 11:00 am):
 
 ---
 
-## Doble escritura a la RDS (dbarchivoslogigho)
+## Doble escritura a la RDS (dbarchivoslogigho) { #doble-escritura-rds }
 
 La lambda `ApiLambdaObtenerEstadisticas` escribe en Mongo **y** en la RDS. El repositorio SQL es **plug-and-play**: arranca **inerte** si no hay cadena configurada, y se activa solo cuando existe.
 
@@ -106,7 +104,7 @@ La lambda `ApiLambdaObtenerEstadisticas` escribe en Mongo **y** en la RDS. El re
    Server={endpoint};Port=3306;Database=dbarchivoslogigho;User ID={usuario};Password={clave};SslMode=Required
    ```
 2. Poner el hex cifrado en la variable de entorno **`CADENA_CONEXION_SQL`** de la lambda.
-3. TABLA_ESTADISTICAS_SQL si la tabla destino tiene otro nombre.
+3. *(Opcional)* Define **`TABLA_ESTADISTICAS_SQL`** solo si la tabla destino tiene otro nombre.
 4. Redesplegar por terminal:
    ```powershell
    dotnet lambda deploy-function
@@ -122,7 +120,7 @@ Si `CADENA_CONEXION_SQL` **no** existe, la lambda sigue funcionando escribiendo 
 
 ---
 
-## Doble disparo para ambas bases de datos 
+## Problemas comunes y solución
 
 | Síntoma | Causa probable | Solución |
 | ------- | -------------- | -------- |
@@ -146,4 +144,4 @@ Si `CADENA_CONEXION_SQL` **no** existe, la lambda sigue funcionando escribiendo 
 
 ## Observaciones
 
-- Por el momento no hay observaciones sin embargo estar monitoreando el funcionamiento del sistema
+- Por el momento no hay observaciones adicionales. Se recomienda seguir monitoreando el funcionamiento del sistema en las primeras semanas de producción.

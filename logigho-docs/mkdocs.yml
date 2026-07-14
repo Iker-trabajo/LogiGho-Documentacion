@@ -23,8 +23,6 @@ theme:
         name: Modo claro
   features:
     - navigation.tabs
-    - navigation.sections
-    - navigation.expand
     - navigation.top
     - search.highlight
     - search.suggest
@@ -62,22 +60,34 @@ nav:
   - Backend:
       - Overview: backend/overview.md
       - Lambdas .NET (Clean Architecture):
-          - Estructura general: backend/lambdas-dotnet/estructura.md
-          - Capa Aplicacion: backend/lambdas-dotnet/aplicacion/overview.md
-          - Capa Dominio: backend/lambdas-dotnet/dominio/overview.md
-          - Capa Infraestructura: backend/lambdas-dotnet/infraestructura/overview.md
-          - Actualizacion Conciliaciones:
-              - Lambda: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones.md
-              - Arquitectura: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones-ADR.md
-          - ApiLambdaSincronizacionUnion:
-              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionUnion/ApiLambdaSincronizacionUnion.md
-          - ApiLambdaCargarGuias:
-              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCargarGuias/ApiLambdaCargarGuias.md
-          - ApiLambdaConsultarPedidos:
-              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
-          - ApiLambdaCrudGenericoAOT:
-              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrudGenericoAOT/ApiLambdaCrudGenericoAOT.md
-              
+          - Filosofía del proyecto (Clean Architecture):
+              - Estructura general: backend/lambdas-dotnet/estructura.md
+              - Capa Aplicacion: backend/lambdas-dotnet/aplicacion/overview.md
+              - Capa Dominio: backend/lambdas-dotnet/dominio/overview.md
+              - Capa Infraestructura: backend/lambdas-dotnet/infraestructura/overview.md
+          - LogiGho:
+              - Actualizacion Conciliaciones:
+                  - Lambda: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones.md
+                  - Arquitectura: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones-ADR.md
+              - ApiLambdaSincronizacionUnion:
+                  - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionUnion/ApiLambdaSincronizacionUnion.md
+              - ApiLambdaCargarGuias:
+                  - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCargarGuias/ApiLambdaCargarGuias.md
+              - ApiLambdaConsultarPedidos:
+                  - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
+              - ApiLambdaCrudGenericoAOT:
+                  - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrudGenericoAOT/ApiLambdaCrudGenericoAOT.md
+          - Integración Pancake:
+              - Visión general: backend/pancake/overview.md
+              - Lambdas:
+                  - 1 · Calcular Ventana de Tiempo: backend/pancake/lambdas/01-calcular-ventana-tiempo.md
+                  - 2 · Obtener Cuentas Principales: backend/pancake/lambdas/02-obtener-cuentas-principales.md
+                  - 3 · Listar Páginas Pancake: backend/pancake/lambdas/03-listar-paginas-pancake.md
+                  - 4 · Obtener Páginas Activas: backend/pancake/lambdas/04-obtener-paginas-activas.md
+                  - 5 · Obtener Estadísticas: backend/pancake/lambdas/05-obtener-estadisticas.md
+              - Orquestación (Step Functions + EventBridge): backend/pancake/orquestacion.md
+              - Operación: backend/pancake/operacion.md
+
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md

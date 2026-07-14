@@ -12,13 +12,13 @@ Tipo: módulo (1 vista + 7 componentes hijos)
 ## Índice
 
 1. [Vista: ResumenInventarioComponent](#1-vista-resumeninventariocomponent)
-2. [Componente: KpiCardComponent](#2-componente-kpicardcomponent)
-3. [Componente: BajoStockModalComponent](#3-componente-bajostockmodalcomponent)
-4. [Componente: ProductosResumenTablaComponent](#4-componente-productosresumentablacomponent)
-5. [Componente: VistaProveedoresComponent](#5-componente-vistaproveedorescomponent)
-6. [Componente: FiltrosInventarioComponent](#6-componente-filtrosinventariocomponent)
-7. [Componente: KpiDetalleModalComponent](#7-componente-kpidetalleModalcomponent)
-8. [Componente: ResumenModalComponent](#8-componente-resumenmodalcomponent)
+2. [Componente: KpiCardComponent](components/kpi-card.md)
+3. [Componente: BajoStockModalComponent](components/bajo-stock.md)
+4. [Componente: ProductosResumenTablaComponent](components/productos-resumen-tabla.md)
+5. [Componente: VistaProveedoresComponent](components/vista-proveedores.md)
+6. [Componente: FiltrosInventarioComponent](components/filtros-inventario.md)
+7. [Componente: KpiDetalleModalComponent](components/kpi-detalle.md)
+8. [Componente: ResumenModalComponent](components/resumen-modal.md)
 
 ---
 

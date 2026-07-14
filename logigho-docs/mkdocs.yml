@@ -87,6 +87,22 @@ nav:
                   - 5 · Obtener Estadísticas: backend/pancake/lambdas/05-obtener-estadisticas.md
               - Orquestación (Step Functions + EventBridge): backend/pancake/orquestacion.md
               - Operación: backend/pancake/operacion.md
+          - Estructura general: backend/lambdas-dotnet/estructura.md
+          - Capa Aplicacion: backend/lambdas-dotnet/aplicacion/overview.md
+          - Capa Dominio: backend/lambdas-dotnet/dominio/overview.md
+          - Capa Infraestructura: backend/lambdas-dotnet/infraestructura/overview.md
+          - Actualizacion Conciliaciones:
+              - Lambda: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones.md
+              - Arquitectura: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones-ADR.md
+          - ApiLambdaSincronizacionUnion:
+              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionUnion/ApiLambdaSincronizacionUnion.md
+          - ApiLambdaCargarGuias:
+              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCargarGuias/ApiLambdaCargarGuias.md
+          - ApiLambdaConsultarPedidos:
+              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
+          - ApiLambdaCrudGenericoAOT:
+              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrudGenericoAOT/ApiLambdaCrudGenericoAOT.md
+              
 
   - Frontend:
       - Overview: frontend/overview.md
@@ -106,14 +122,12 @@ nav:
               - Novedades: frontend/components/novedades.md
               - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
               - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
+              - Tour Guiado: frontend/components/guided-tour.md
               - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
               - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
       - Vistas:
           - Views:
-              - Muro Compartido: frontend/views/muro-compartido/muro-compartido.md
-              - Base:
-                  - Estandar Tablas: frontend/views/base/tables-component.md
               - Controller:
                   - Facturas transportadoras:
                       - Componente: frontend/views/controller/facturas-trans/facturas-trans.md
@@ -122,8 +136,7 @@ nav:
                       - Componente: frontend/views/controller/conciliacion-pagos/conciliacion-pagos.md
                       - Arquitectura: frontend/views/controller/conciliacion-pagos/conciliacion-pagos-ADR.md
               - Administracion:
-                  - Documentos Tienda: frontend/views/administracion/documentos-tiendas/documentos-tiendas.md
-                  - Metricas Muro: frontend/views/administracion/metricas-muro/metricas-muro.md
+                  - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
@@ -142,10 +155,14 @@ nav:
                       - Exporta-guias: frontend/views/tienda/pedidos-masivo/exporta-guias/exporta-guias.md
                       - Worker: frontend/views/tienda/pedidos-masivo/workers/carga-guias-worker.md
               - Logistica:
+                  - Relacíon Despacho:
+                      - Componente: frontend/views/logistica/relacion-despacho/relacion-despacho.md
                   - Info Guias:
                       - Componente: frontend/views/logistica/info-guias/informacion-guia.md
                   - Gestion Devoluciones:
                       - Componente: frontend/views/logistica/gestion-devoluciones/gestion-decoluciones.md
+                  - Gestion Bodegas:
+                      - Componente: frontend/views/logistica/gestion-bodegas/gestion-bodegas.md
                   - Guias Devolucion:
                       - Componente: frontend/views/logistica/guia-devoluciones/componente/guias-devoluciones.md
                       - Arquitectura: frontend/views/logistica/guia-devoluciones/arquitectura/ADR-guias-devolucion.md

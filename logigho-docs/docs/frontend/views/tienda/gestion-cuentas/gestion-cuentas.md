@@ -143,6 +143,8 @@ Usuario hace clic en "Desactivar/Activar"
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-07-15 | Adalberto González | Creación del módulo: CRUD de cuentas de Pancake con permisos dependiendo de el rol de el usuario, KPIs, tabla paginada, tour guiado y modal de formulario extraído a componente propio |
+
+
 ---
 
 ### Observaciones

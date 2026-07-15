@@ -136,7 +136,7 @@ nav:
                       - Componente: frontend/views/controller/conciliacion-pagos/conciliacion-pagos.md
                       - Arquitectura: frontend/views/controller/conciliacion-pagos/conciliacion-pagos-ADR.md
               - Administracion:
-                  - Documentos Tienda: frontend/views/administracion/documentos-tienda.md
+                  - Documentos Tienda: frontend/views/administracion/documentos-tiendas/documentos-tienda.md
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
@@ -155,6 +155,8 @@ nav:
                       - Exporta-guias: frontend/views/tienda/pedidos-masivo/exporta-guias/exporta-guias.md
                       - Worker: frontend/views/tienda/pedidos-masivo/workers/carga-guias-worker.md
               - Logistica:
+                  - Dashboard Sin Despacho:
+                      - Componente: frontend/views/logistica/dashboard-sin-despacho/dashboard-sin-despacho.md
                   - Relacíon Despacho:
                       - Componente: frontend/views/logistica/relacion-despacho/relacion-despacho.md
                   - Info Guias:

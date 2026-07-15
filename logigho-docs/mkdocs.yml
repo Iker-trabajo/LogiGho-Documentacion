@@ -148,6 +148,8 @@ nav:
                       - Componente: frontend/views/tienda/pauta/pauta.md
                   - Wallet:
                       - Componente: frontend/views/tienda/wallet/wallet-view.md
+                  - Gestion Cuentas:
+                      - Componente: frontend/views/tienda/gestion-cuentas/gestion-cuentas.md
                   - Pedidos Masivo:
                       - Arquitectura: frontend/views/tienda/pedidos-masivo/pedidos-masivo-ADR.md
                       - Carga-guias: frontend/views/tienda/pedidos-masivo/carga-guias/carga-guias.md

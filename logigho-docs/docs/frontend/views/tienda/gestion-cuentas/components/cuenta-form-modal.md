@@ -10,7 +10,6 @@
 
 Modal con un formulario reactivo para crear o editar una cuenta. El usuario ingresa nombre, token de acceso (obtenido manualmente del panel de Meta) y estado. El título cambia dinámicamente entre "Nueva cuenta" y "Editar cuenta" según el contexto. Cierra con tecla Escape.
 
-> El campo `cuentaId` **no aparece en este formulario**: se autogenera en el store y se envía directamente al backend sin que el usuario lo vea ni lo pueda editar.
 
 ---
 

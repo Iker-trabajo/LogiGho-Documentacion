@@ -1,13 +1,10 @@
----
+## Servicio: ChartComputerService
 
-## Autor: Adalberto González
-Fecha creacion: 2026-06-03  
-Estado: produccion
-
-# Servicio: ChartComputerService
-
+**Autor:** Adalberto González  
+**Fecha:** 2026-06-03  
+**Estado:** producción  
 **Ubicación:** `src/app/views/logistica/guias-devoluciones/services/chart-computer.service.ts`  
-**Scope:** `providedIn: 'root'` Puede ser utilizado en el resto de el proyecto de el front
+**Scope:** `providedIn: 'root'` — puede ser utilizado en el resto del proyecto de frontend
 
 ---
 

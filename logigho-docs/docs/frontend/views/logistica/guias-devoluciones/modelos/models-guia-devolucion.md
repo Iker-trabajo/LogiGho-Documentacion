@@ -1,11 +1,8 @@
----
+## Modelos: Dominio Devoluciones
 
-## Autor: Adalberto González
-Fecha creacion: 2026-06-03  
-Estado: produccion
-
-# Dominio: Devoluciones
-
+**Autor:** Adalberto González  
+**Fecha:** 2026-06-03  
+**Estado:** producción  
 **Namespace:** `SitioLogiGho.views.logistica.guias-devoluciones.models`
 
 ---

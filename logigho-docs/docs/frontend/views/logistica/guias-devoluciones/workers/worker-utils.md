@@ -1,11 +1,8 @@
----
+## Worker-utils: funciones compartidas
 
-## Autor: Adalberto González
-Fecha creacion: 2026-06-03  
-Estado: produccion
-
-# Servicio: worker-utils (funciones compartidas)
-
+**Autor:** Adalberto González  
+**Fecha:** 2026-06-03  
+**Estado:** producción  
 **Ubicación:** `src/app/views/logistica/guias-devoluciones/workers/worker-utils.ts`  
 **Scope:** Módulo utilitario — no es un servicio Angular, se importa directamente en los workers
 

@@ -11,7 +11,15 @@
       "Bash(Remove-Item \"C:\\\\Users\\\\Iker\\\\Documents\\\\LogiGho\\\\Repo-LogiGho-Documentacion\\\\logigho-docs\\\\docs\\\\plantillas\\\\PLANTILLA-COMPONENTE.md\" -Force)",
       "Bash(Remove-Item \"C:\\\\Users\\\\Iker\\\\Documents\\\\LogiGho\\\\Repo-LogiGho-Documentacion\\\\logigho-docs\\\\docs\\\\plantillas\\\\PLANTILLA-VISTA-ANGULAR.md\" -Force)",
       "Bash(Remove-Item \"C:\\\\Users\\\\Iker\\\\Documents\\\\LogiGho\\\\Repo-LogiGho-Documentacion\\\\logigho-docs\\\\docs\\\\plantillas\\\\Revisar plantilla.md\" -Force)",
-      "Bash(Write-Output \"Eliminados\")"
+      "Bash(Write-Output \"Eliminados\")",
+      "Bash(python -m pip show mkdocs mkdocs-material)",
+      "Bash(git -C \"c:\\\\Users\\\\Iker\\\\Documents\\\\LogiGho\\\\Repo-LogiGho-Documentacion\\\\logigho-docs\" mv \"docs/backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestarCotizaciones.md\" \"docs/backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md\")",
+      "Bash(mv \"c:\\\\Users\\\\Iker\\\\Documents\\\\LogiGho\\\\Repo-LogiGho-Documentacion\\\\logigho-docs\\\\docs\\\\backend\\\\lambdas-dotnet\\\\lambdas\\\\ApiLambdaOrquestadorCotizaciones\\\\ApiLambdaOrquestarCotizaciones.md\" \"c:\\\\Users\\\\Iker\\\\Documents\\\\LogiGho\\\\Repo-LogiGho-Documentacion\\\\logigho-docs\\\\docs\\\\backend\\\\lambdas-dotnet\\\\lambdas\\\\ApiLambdaOrquestadorCotizaciones\\\\ApiLambdaOrquestadorCotizaciones.md\")",
+      "Bash(python -c \"import yaml; yaml.safe_load\\(open\\('mkdocs.yml', encoding='utf-8'\\)\\)\")",
+      "Bash(mkdocs build *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Iker\\Documents\\LogiGho\\Repo-LogiGho-Documentacion\\logigho-docs\\docs\\backend\\lambdas-dotnet\\lambdas\\ApiLambdaOrquestadorCotizaciones"
     ]
   }
 }

@@ -77,6 +77,11 @@ nav:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
               - ApiLambdaCrudGenericoAOT:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrudGenericoAOT/ApiLambdaCrudGenericoAOT.md
+              - ApiLambdaOrquestadorCotizaciones:
+                  - Orquestador: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md
+                  - Interrapidísimo: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarInterrapidisimo/ApiLambdaCotizarInterrapidisimo.md
+                  - Servientrega: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaGenerarCotizacion/ApiLambdaGenerarCotizacion.md
+                  - Envía: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
           - Integración Pancake:
               - Visión general: backend/pancake/overview.md
               - Lambdas:
@@ -87,22 +92,6 @@ nav:
                   - 5 · Obtener Estadísticas: backend/pancake/lambdas/05-obtener-estadisticas.md
               - Orquestación (Step Functions + EventBridge): backend/pancake/orquestacion.md
               - Operación: backend/pancake/operacion.md
-          - Estructura general: backend/lambdas-dotnet/estructura.md
-          - Capa Aplicacion: backend/lambdas-dotnet/aplicacion/overview.md
-          - Capa Dominio: backend/lambdas-dotnet/dominio/overview.md
-          - Capa Infraestructura: backend/lambdas-dotnet/infraestructura/overview.md
-          - Actualizacion Conciliaciones:
-              - Lambda: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones.md
-              - Arquitectura: backend/lambdas-dotnet/lambdas/actualizacion-conciliaciones/actualizacion-conciliaciones-ADR.md
-          - ApiLambdaSincronizacionUnion:
-              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionUnion/ApiLambdaSincronizacionUnion.md
-          - ApiLambdaCargarGuias:
-              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCargarGuias/ApiLambdaCargarGuias.md
-          - ApiLambdaConsultarPedidos:
-              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
-          - ApiLambdaCrudGenericoAOT:
-              - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrudGenericoAOT/ApiLambdaCrudGenericoAOT.md
-              
 
   - Frontend:
       - Overview: frontend/overview.md

@@ -162,6 +162,8 @@ nav:
                       - Componente: frontend/views/tienda/gestion-cuentas/gestion-cuentas.md
                   - Gestion Paginas:
                       - Componente: frontend/views/tienda/gestion-paginas/gestion-paginas.md
+                  - Pancake Paginas:
+                      - Componente: frontend/views/tienda/pancake-paginas/pancake-paginas.md
                   - Pedidos Masivo:
                       - Arquitectura: frontend/views/tienda/pedidos-masivo/pedidos-masivo-ADR.md
                       - Carga-guias: frontend/views/tienda/pedidos-masivo/carga-guias/carga-guias.md

@@ -183,7 +183,6 @@ Usuario guarda cambios en el selector de productos
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-07-16 | Adalberto González | Creación del módulo: listado de páginas de Pancake con KPIs, filtros dinámicos de selección múltiple, tour guiado y modal de detalle de usuarios |
-| 2026-07-24 | Adalberto González | Se elimina `GestionPaginasStore` (todo el estado pasa a vivir en el componente con signals); se reemplaza `UsuariosPaginaModalComponent` por `PaginaDetalleModalComponent` (dos modos: usuarios y listado por KPI); se agrega la posibilidad de asociar productos de la colección `Productos` a cada página mediante `ProductoSelectorModalComponent`, guardados en el campo `productosAsociados` de `PancakePaginas` |
 
 ---
 

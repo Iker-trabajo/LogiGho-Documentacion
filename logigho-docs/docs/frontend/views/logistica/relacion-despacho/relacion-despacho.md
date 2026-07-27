@@ -20,8 +20,8 @@ Tipo: módulo (1 vista + 1 componente hijo + 1 componente genérico compartido)
 
 ## 1. Vista: RelacionDespachoComponent
 
-**Selector:** `app-relacion-despacho`
-**Ubicación:** `src/app/views/logistica/relacion-despacho/relacion-despacho.component.ts`
+**Selector:** `app-relacion-despacho`  
+**Ubicación:** `src/app/views/logistica/relacion-despacho/relacion-despacho.component.ts`  
 **Acceso:** Logística → Relación de Despacho
 
 ---

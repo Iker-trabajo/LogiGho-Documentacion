@@ -92,7 +92,7 @@ nav:
                   - 5 · Obtener Estadísticas: backend/pancake/lambdas/05-obtener-estadisticas.md
               - Orquestación (Step Functions + EventBridge): backend/pancake/orquestacion.md
               - Operación: backend/pancake/operacion.md
-          - Endpoint on-demand (API): backend/pancake/endpoint-consultar-estadisticas.md
+          - Servicio Consultar Estadisticas Pagina: backend/pancake/ApiLambdaConsultarEstadisticasPagina.md
 
   - Frontend:
       - Overview: frontend/overview.md

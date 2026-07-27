@@ -350,9 +350,7 @@ El botón `rd-scan-btn` solo es visible en `@media (max-width: 768px)`. Abre `<a
 ---
 
 ### Observaciones
-
-- `getPedidosPrefetch()` no usa pipeline agregado: se quitó porque generaba lentitud en el API Gateway. En su lugar, trae `PedidosInter` proyectado a campos mínimos y cachea en memoria indexado por `guiaKey()`.
+.
 - El PDF se genera con `jsPDF` + `html2canvas` + `JsBarcode`, renderizando el HTML dentro de un `<iframe>` oculto fuera de la ventana visible para aislarlo de estilos globales; se trocea el canvas en páginas A4.
 - El PDF se genera **antes** de archivar en `HistorialDespachos`: si `generarPdfDespacho()` falla, ese chunk nunca se mueve del borrador.
 - Si `exportarLote()` archiva correctamente pero el `DELETE` del borrador falla parcialmente, las guías quedan en `idsPendientesDeLimpiar()` y el usuario puede reintentar la limpieza sin volver a generar el PDF ni duplicar el archivado.
-- El detalle de un lote del histórico reutiliza la estructura de tabla/columnas/checkboxes de "pendientes", pero con datos y paginación **locales al componente** (no viven en el store).

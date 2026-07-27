@@ -2,7 +2,7 @@
 
 ---
 
-## Autor: Claude Code
+## Autor: Adalberto González
 Fecha creación: 2026-07-27  
 Estado: desarrollo  
 Tipo: módulo (1 vista + 1 componente hijo + 1 componente genérico compartido)

@@ -12,8 +12,9 @@ Tipo: módulo (1 vista + 1 componente hijo + 1 componente genérico compartido)
 ## Índice
 
 1. [Vista: RelacionDespachoComponent](#1-vista-relaciondespachocomponent)
-2. [Componente: CargaMasivaComponent](components/carga-masiva.md)
-3. [Diagrama de flujo](relacion-despacho-flujo.md)
+2. [Helpers (store, repository, rules, pdf)](#helpers)
+3. [Componente: CargaMasivaComponent](components/carga-masiva.md)
+4. [Diagrama de flujo](relacion-despacho-flujo.md)
 
 ---
 
@@ -264,6 +265,52 @@ Pestaña "Histórico" → cambiarTab('historico') → store.cargarLotes()
         └─► exportarSubsetDeLote() [genera PDF, no archiva de nuevo]
         └─► regenerarPdf(idLote) [en la lista, sin abrir detalle: solo regenera]
 ```
+
+---
+
+### Helpers
+
+Todo vive en `helpers/`, aparte del componente y la carpeta `models/`.
+
+**`despacho.store.ts` — métodos públicos de `DespachoStore` no listados arriba:**
+
+| Método | Qué hace |
+|---|---|
+| `iniciar()` | Dispara `getInventario()`, `getPedidosPrefetch()` y `getMapaTiendas()`; solo el inventario bloquea el loading, el resto corre en paralelo sin bloquear el render |
+| `procesarGuia(guiaCruda)` | Flujo del pistolero: `obtenerPedido()` → `validarGuia()` → inserción optimista → `insertarRegistros()` |
+| `validarLote(guias)` | Flujo de la carga masiva: resuelve cache-first, batch de 300 (`buscarPedidosPorGuias`) para lo faltante, valida cada una con `validarGuia()` |
+| `confirmarLote(registros)` | `insertarRegistros()` + `refrescarInventario()` de los válidos ya calculados por `validarLote()` |
+| `eliminarDelBorrador(registro)` / `eliminarVariosDelBorrador(registros)` | `DELETE` individual o en chunks de 300 (`Guia=a,b,c` → `$in` en el backend) |
+| `exportarLote(registros, tienda)` | Archiva en `HistorialDespachos` (`IdLote`, `FechaGeneracion`, `DespachoGenerado:true`) y limpia el borrador; guarda `idsPendientesDeLimpiar` si la limpieza falla parcialmente |
+| `reintentarLimpieza()` | Reintenta el `DELETE` tolerante sobre `idsPendientesDeLimpiar()`, sin volver a archivar ni generar PDF |
+| `cargarLotes()` / `setFechaHistorico()` / `setTiendasHistorico()` / `setPaginaHistorico()` | Estado del histórico: carga, filtro de fecha (server-side), filtro de tienda (client-side), paginación |
+| `getGuiasDeLote(idLote)` | Delegado directo a `repository.getGuiasDeLote()`, usado por `regenerarPdf()` y por el detalle de lote |
+| `obtenerPedido(guia)` (privado) | Cache-first: si `guiaKey(guia)` está en `_pedidosCache` y el prefetch ya terminó, la retorna; si no, cae a `repository.buscarPedidoPorGuia()` y la agrega al cache |
+
+**`despacho.repository.ts` — capa HTTP, sin lógica de negocio:**
+
+| Método | Colección/operación |
+|---|---|
+| `getPedidosPrefetch()` | GET `PedidosInter` proyectado (`campos=...`), filtrado por tienda asignada. Sin pipeline agregado |
+| `buscarPedidoPorGuia(guia)` | GET `PedidosInter` por `Numeropreenvio` único |
+| `buscarPedidosPorGuias(guias)` | GET `PedidosInter` con `Numeropreenvio=a,b,c` (`$in` en backend) |
+| `getMapaTiendas()` | GET `Tienda` → agrupa por `Ecosistema` en memoria |
+| `getInventario()` / `insertarRegistros()` / `eliminarRegistroPorGuia()` / `eliminarRegistrosTolerante()` | CRUD sobre `InventarioAdmision` |
+| `archivarLote(guias)` | POST `HistorialDespachos` + `eliminarRegistrosTolerante()` de esas guías en el borrador |
+| `getResumenLotes(fecha)` | GET `HistorialDespachos` con `pipeline` (`$group` por `IdLote`, `$first` de `NombreTienda`/`FechaGeneracion`, `$sum` de guías/recaudo), stages en base64 |
+| `getGuiasDeLote(idLote)` | GET `HistorialDespachos` filtrado por `IdLote` |
+
+**`despacho-pdf.helper.ts` — generación del PDF, sin llamadas HTTP:**
+
+| Función | Qué hace |
+|---|---|
+| `generarPdfDespacho(registros)` | Punto de entrada. Orquesta carga de imágenes, barcodes, construcción de HTML, render a canvas y guardado del PDF |
+| `cargarLogos(registros)` (privado) | Resuelve en paralelo el logo de cada transportadora presente (`LOGOS_TRANSPORTADORA`, match por substring en mayúsculas) |
+| `generarBarcodes(guias)` (privado) | Un `CODE128` por guía vía `JsBarcode` sobre un canvas en memoria (nunca toca el DOM visible) |
+| `construirHtml(...)` (privado) | Arma el documento agrupado por transportadora, con paginación cada `POR_PAGINA = 14` filas y firmas solo en la última página de cada grupo |
+| `cargarImagenBase64(src)` (privado) | Convierte una imagen local a base64 vía canvas, para que `html2canvas` la renderice sin problemas de CORS |
+| `renderizarHtmlACanvas(html)` (privado) | Inyecta el HTML en un `<iframe>` oculto fuera de la ventana, espera fuentes (máx. 3 s) y captura con `html2canvas` |
+| `guardarPDF(canvas, tienda)` (privado) | Corta el canvas en páginas A4 (JPEG 95%) y descarga `RelacionDespacho_<tiendaSlug>_<fecha>_<hora>.pdf` |
 
 ---
 

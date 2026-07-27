@@ -12,6 +12,10 @@ Estado: produccion
 
 **Tipo:** Endpoint on-demand, Cold Start
 
+**Url servicio prod:** [https://7elgyten88.execute-api.us-east-1.amazonaws.com/Produccion/obtenerDatosPaginasPancake](https://7elgyten88.execute-api.us-east-1.amazonaws.com/Produccion)
+
+**Url servicio preprod:** [https://g3iz6qk3f0.execute-api.us-east-1.amazonaws.com/obtenerDatosPaginasPancake](https://g3iz6qk3f0.execute-api.us-east-1.amazonaws.com/obtenerDatosPaginasPancake)
+
 ---
 
 ## ¿Qué hace?

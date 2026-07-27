@@ -1,7 +1,7 @@
 ## Componente: CargaMasivaComponent
 
-**Selector:** `app-carga-masiva`
-**Ubicación:** `src/app/views/logistica/relacion-despacho/components/carga-masiva/carga-masiva.component.ts`
+**Selector:** `app-carga-masiva`  
+**Ubicación:** `src/app/views/logistica/relacion-despacho/components/carga-masiva/carga-masiva.component.ts`  
 **Acceso:** Modal abierto desde el botón `rd-btn-masiva` de Relación de Despacho
 
 ---

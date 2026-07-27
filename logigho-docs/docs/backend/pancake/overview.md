@@ -1,4 +1,5 @@
 ## Autor: Iker Acevedo
+
 Fecha creacion: 2026-07-13
 
 Estado: produccion
@@ -30,7 +31,7 @@ Tener historificadas, por **franja del día** y por **campaña**, las métricas 
                                    │
                                    ▼  { slot_id, tipo_calculo }
           ┌───────────────────────────────────────────────────┐
-          │   Step Function:  PipelineEstadisticasPancake       │
+          │   Step Function:  PipelineEstadisticasPancake     │
           └───────────────────────────────────────────────────┘
                                    │
   1) ApiLambdaCalcularVentanaTiempo ──► $.ventana { since, until, fecha_reporte, tipo, slot_id }
@@ -54,37 +55,45 @@ Tener historificadas, por **franja del día** y por **campaña**, las métricas 
 
 ## Las 5 lambdas de un vistazo
 
-| # | Lambda | Rol en el pipeline | Lee / Escribe |
-| - | ------ | ------------------ | ------------- |
-| 1 | **[ApiLambdaCalcularVentanaTiempo](lambdas/01-calcular-ventana-tiempo.md)** | Calcula la ventana de tiempo (`since`/`until`) según el tipo de corrida — los parámetros necesarios para consumir la API de Pancake. | (cálculo puro) |
-| 2 | **[ApiLambdaObtenerCuentasPrincipales](lambdas/02-obtener-cuentas-principales.md)** | Devuelve las cuentas madre activas con su token | Lee `PancakeCuentasPrincipales` |
-| 3 | **[ApiLambdaListarPaginasPancake](lambdas/03-listar-paginas-pancake.md)** | Trae y sincroniza las páginas de cada cuenta madre | Escribe `PancakePaginas` |
-| 4 | **[ApiLambdaObtenerPaginasActivas](lambdas/04-obtener-paginas-activas.md)** | Devuelve las páginas activas con token para el 2º Map | Lee `PancakePaginas` |
-| 5 | **[ApiLambdaObtenerEstadisticas](lambdas/05-obtener-estadisticas.md)** | Trae las estadísticas por campaña y las guarda (doble escritura) | Escribe `PancakeEstadisticasPaginas` (Mongo + MySQL) |
+
+| #   | Lambda                                                                              | Rol en el pipeline                                                                                                                   | Lee / Escribe                                        |
+| --- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| 1   | **[ApiLambdaCalcularVentanaTiempo](lambdas/01-calcular-ventana-tiempo.md)**         | Calcula la ventana de tiempo (`since`/`until`) según el tipo de corrida — los parámetros necesarios para consumir la API de Pancake. | (cálculo puro)                                       |
+| 2   | **[ApiLambdaObtenerCuentasPrincipales](lambdas/02-obtener-cuentas-principales.md)** | Devuelve las cuentas madre activas con su token                                                                                      | Lee `PancakeCuentasPrincipales`                      |
+| 3   | **[ApiLambdaListarPaginasPancake](lambdas/03-listar-paginas-pancake.md)**           | Trae y sincroniza las páginas de cada cuenta madre                                                                                   | Escribe `PancakePaginas` (Mongo + MySQL)             |
+| 4   | **[ApiLambdaObtenerPaginasActivas](lambdas/04-obtener-paginas-activas.md)**         | Devuelve las páginas activas con token para el 2º Map                                                                                | Lee `PancakePaginas`                                 |
+| 5   | **[ApiLambdaObtenerEstadisticas](lambdas/05-obtener-estadisticas.md)**              | Trae las estadísticas por campaña y las guarda (doble escritura)                                                                     | Escribe `PancakeEstadisticasPaginas` (Mongo + MySQL) |
+
+
+> **Fuera del pipeline** hay además un **endpoint on-demand**: **[ApiLambdaConsultarEstadisticasPagina](endpoint-consultar-estadisticas.md)** — un `POST` de API Gateway que trae estadísticas **frescas** de UNA página (hoy / ayer / rango personalizado), **sin persistir**. Para cuando alguien duda de una tienda y quiere ver los números al instante.
 
 ---
 
 ## Tecnologías
 
-| Área | Tecnología |
-| ---- | ---------- |
+
+| Área                    | Tecnología                                                              |
+| ----------------------- | ----------------------------------------------------------------------- |
 | Lenguaje / arquitectura | **.NET 8**, Clean Architecture (Dominio / Aplicación / Infraestructura) |
-| Cómputo | AWS Lambda (runtime `dotnet8`, `Zip`, `x86_64`) |
-| Orquestación | AWS Step Functions (tipo **Standard**) |
-| Agendamiento | Amazon EventBridge Scheduler (con zona horaria `America/Bogota`) |
-| Persistencia | MongoDB + **Aurora MySQL** (driver `MySqlConnector`) |
-| Seguridad | Cadenas de conexión cifradas **AES-256-ECB** (módulo `Seguridad`) |
-| API externa | Pancake |
+| Cómputo                 | AWS Lambda (runtime `dotnet8`, `Zip`, `x86_64`)                         |
+| Orquestación            | AWS Step Functions (tipo **Standard**)                                  |
+| Agendamiento            | Amazon EventBridge Scheduler (con zona horaria `America/Bogota`)        |
+| Persistencia            | MongoDB + **Aurora MySQL** (driver `MySqlConnector`)                    |
+| Seguridad               | Cadenas de conexión cifradas **AES-256-ECB** (módulo `Seguridad`)       |
+| API externa             | Pancake                                                                 |
+
 
 ---
 
 ## Colecciones y tablas
 
-| Nombre | Motor | Rol |
-| ------ | ----- | --- |
-| `PancakeCuentasPrincipales` | MongoDB | **Entrada**: cuentas madre con su `tokenAcceso` y `estado` |
-| `PancakePaginas` | MongoDB | Páginas sincronizadas (activas e inactivas), clave `pageId` |
-| `PancakeEstadisticasPaginas` | MongoDB **y** MySQL | **Salida**: un registro por campaña, por franja del día |
+
+| Nombre                       | Motor               | Rol                                                         |
+| ---------------------------- | ------------------- | ----------------------------------------------------------- |
+| `PancakeCuentasPrincipales`  | MongoDB             | **Entrada**: cuentas madre con su `tokenAcceso` y `estado`  |
+| `PancakePaginas`             | MongoDB **y** MySQL | Páginas sincronizadas (activas e inactivas), clave `pageId` |
+| `PancakeEstadisticasPaginas` | MongoDB **y** MySQL | **Salida**: un registro por campaña, por franja del día     |
+
 
 ---
 
@@ -100,6 +109,10 @@ Tener historificadas, por **franja del día** y por **campaña**, las métricas 
 
 ## Historial de cambios
 
-| Fecha | Autor | Cambio |
-| ----- | ----- | ------ |
-| 2026-07-13 | Iker Acevedo | Construcción e implementación completa de la integración: 5 lambdas, Step Function, EventBridge y doble escritura Mongo + Aurora MySQL. |
+
+| Fecha      | Autor        | Cambio                                                                                                                                                                   |
+| ---------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-07-13 | Iker Acevedo | Construcción e implementación completa de la integración: 5 lambdas, Step Function, EventBridge y doble escritura Mongo + Aurora MySQL.                                  |
+| 2026-07-27 | Iker Acevedo | `ListarPaginasPancake` con doble escritura Mongo + MySQL; fix ventana de cierre (`until` a `23:59:59`); nuevo endpoint on-demand `ApiLambdaConsultarEstadisticasPagina`. |
+
+

@@ -1,4 +1,5 @@
 ## Autor: Iker Acevedo
+
 Fecha creacion: 2026-07-13
 
 Estado: produccion
@@ -33,14 +34,16 @@ Cada iteración del `Map` recibe **un elemento** del array `$.cuentas` (una cuen
 { "cuenta_id": "10001", "token_acceso": "eyJhbGciOiJ..." }
 ```
 
-| Campo | Tipo | Requerido | Descripción |
-| ----- | ---- | --------- | ----------- |
-| `cuenta_id` | `string` | Sí | Id de la cuenta madre (se guarda en cada página) |
-| `token_acceso` | `string` | Sí | Token con el que se consulta `pages.fm` |
+
+| Campo          | Tipo     | Requerido | Descripción                                      |
+| -------------- | -------- | --------- | ------------------------------------------------ |
+| `cuenta_id`    | `string` | Sí        | Id de la cuenta madre (se guarda en cada página) |
+| `token_acceso` | `string` | Sí        | Token con el que se consulta `pages.fm`          |
+
 
 ---
 
-## Respuesta de Pancake (estructura relevante)
+## Respuesta de Pancake
 
 ```json
 {
@@ -53,12 +56,9 @@ Cada iteración del `Map` recibe **un elemento** del array `$.cuentas` (una cuen
 }
 ```
 
-!!! warning "El token de la página está anidado"
-    El `page_access_token` de cada página **no** está al nivel de la página, sino dentro de `settings.page_access_token`. Es fácil de pasar por alto.
-
 ---
 
-## Response (de la lambda)
+## Response lambda
 
 Devuelve un resumen de la sincronización (el pipeline no usa esta salida, solo confirma que corrió):
 
@@ -103,8 +103,12 @@ ApiLambdaListarPaginasPancake/
 │       ├── Repositorios/ IPaginasRepository.cs
 │       └── Servicios/    IPancakeClient.cs
 └── Infraestructura/
-    ├── Repositorio/  DocumentRepository.cs      ← MongoDB (UPSERT)
-    └── Servicios/    PancakeClient.cs           ← HttpClient a pages.fm
+    ├── Repositorio/
+    │   ├── PaginasRepository.cs             ← MongoDB (UPSERT), PRIMARIO
+    │   ├── SqlPaginasRepository.cs          ← Aurora MySQL (UPSERT), best-effort
+    │   ├── CompositePaginasRepository.cs    ← combina Mongo + SQL
+    │   └── PancakePaginas.sql               ← DDL propuesto de la tabla MySQL
+    └── Servicios/    PancakeClient.cs       ← HttpClient a pages.fm
 ```
 
 ---
@@ -133,40 +137,71 @@ Se guardan **todas** las páginas (activadas e inactivadas); campos en español:
 
 ---
 
+## Doble escritura: MongoDB y RDS
+
+Además de MongoDB, esta lambda escribe las páginas en la **RDS MySQL** (tabla `PancakePaginas`), con el mismo patrón **Composite** de las estadísticas: **Mongo primario, SQL best-effort**.
+
+```
+CompositePaginasRepository
+  ├── PaginasRepository      (Mongo, PRIMARIO)    → si falla, propaga (el Catch del Map marca la iteración)
+  └── SqlPaginasRepository   (MySQL, BEST-EFFORT) → si falla, se loguea y NO bloquea (Mongo ya quedó)
+```
+
+- **Plug-and-play:** el repo SQL arranca **inerte** si no existe `CADENA_CONEXION_SQL`; se activa solo cuando se configura dentro de las variables de entrada de una lambda.
+- **Idempotencia:** UPSERT `INSERT ... ON DUPLICATE KEY UPDATE` por `pageId`.
+- **Se omiten** en SQL los arrays `usuarios[]` e `idsUsuariosActivos[]`; solo se guarda `cantidadUsuarios` (un conteo).
+- `**tokenAccesoPagina`** existe como columna en la tabla pero **hoy NO se escribe** (queda NULL) — reservada para activarla a futuro sin migrar (seguridad: no esparcir tokens).
+- DDL en el proyecto: `Infrastructura/Repositorio/PancakePaginas.sql`.
+
+> El detalle de encendido de la RDS (cifrar la cadena, `CADENA_CONEXION_SQL`, DBeaver) es análogo al de estadísticas — ver [Operación → Doble escritura RDS](../operacion.md#doble-escritura-rds).
+
+---
+
 ## Variables de entorno
 
-| Variable | Descripción | Valor ejemplo |
-| -------- | ----------- | ------------- |
-| `CADENA_CONEXION` | Cadena de conexión MongoDB (cifrada AES-256-ECB) | String cifrado |
-| `DATABASE_NAME` | Nombre de la base de datos MongoDB | `"LogighoDB"` |
+
+| Variable              | Descripción                                                         | Valor ejemplo      |
+| --------------------- | ------------------------------------------------------------------- | ------------------ |
+| `CADENA_CONEXION`     | Cadena de conexión MongoDB (cifrada AES-256-ECB)                    | String cifrado     |
+| `DATABASE_NAME`       | Nombre de la base de datos MongoDB                                  | `"LogighoDB"`      |
+| `CADENA_CONEXION_SQL` | Cadena MySQL (cifrada). **Si falta, la escritura SQL queda inerte** | String cifrado     |
+| `TABLA_PAGINAS_SQL`   | *(opcional)* nombre de la tabla destino si difiere                  | `"PancakePaginas"` |
+
 
 ---
 
 ## Configuración Lambda
 
-| Parámetro | Valor |
-| --------- | ----- |
-| Runtime | `dotnet8` |
-| Handler | `ApiLambdaListarPaginasPancake::ApiLambdaListarPaginasPancake.Function::FunctionHandler` |
-| Memory | `512 MB` |
-| Timeout | `60 segundos` |
-| Architecture | `x86_64` |
+
+| Parámetro    | Valor                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| Runtime      | `dotnet8`                                                                                |
+| Handler      | `ApiLambdaListarPaginasPancake::ApiLambdaListarPaginasPancake.Function::FunctionHandler` |
+| Memory       | `512 MB`                                                                                 |
+| Timeout      | `60 segundos`                                                                            |
+| Architecture | `x86_64`                                                                                 |
+
 
 ---
 
 ## Dependencias externas
 
-| Servicio | Uso |
-| -------- | --- |
+
+| Servicio             | Uso                                                      |
+| -------------------- | -------------------------------------------------------- |
 | `Pancake (pages.fm)` | `GET /api/v1/pages` para listar las páginas de la cuenta |
+
 
 ---
 
 ## Historial de cambios
 
-| Fecha | Autor | Cambio |
-| ----- | ----- | ------ |
-| 2026-07-13 | Iker Acevedo | Creación. Sincroniza páginas (activas e inactivas) a `PancakePaginas` con UPSERT por `pageId`. |
+
+| Fecha      | Autor        | Cambio                                                                                                                                                                                                                                  |
+| ---------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-13 | Iker Acevedo | Creación. Sincroniza páginas (activas e inactivas) a `PancakePaginas` con UPSERT por `pageId`.                                                                                                                                          |
+| 2026-07-27 | Iker Acevedo | Doble escritura a Aurora MySQL (patrón Composite, Mongo primario / SQL best-effort, `MySqlConnector`). Modo inerte si falta `CADENA_CONEXION_SQL`. Arrays de usuarios omitidos (solo `cantidadUsuarios`); token reservado sin escribir. |
+
 
 ---
 
@@ -176,3 +211,4 @@ Se guardan **todas** las páginas (activadas e inactivadas); campos en español:
 - El `page_access_token` se lee de `settings.page_access_token` (anidado).
 - La `zonaHoraria` puede venir "sucia" desde Pancake (ej. `7.0`); se modela como número.
 - Se guardan también las páginas **inactivas** para tener trazabilidad completa; la lambda 4 se encarga de filtrar solo las activas con token.
+

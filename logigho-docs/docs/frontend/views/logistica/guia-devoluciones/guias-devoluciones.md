@@ -1,157 +1,157 @@
+# Módulo: Guías de Devoluciones
+
 ---
 
 ## Autor: Adalberto González
-Fecha creacion: 2026-06-03
-Fecha actualizacion: 2026-07-28
-Estado: produccion
-Tipo: vista
-
-# Vista: GuiasDevolucionesComponent
-
-**Selector:** `app-guias-devoluciones`
-**Ubicación:** `src/app/views/logistica/guias-devoluciones/guias-devoluciones.component.ts`
-**Acceso:** Autenticado | Rol: Todos
+Fecha creación: 2026-06-03  
+Estado: produccion  
+Tipo: módulo (1 vista + Store + Repository + Rules + 3 Workers)
 
 ---
 
-## ¿Qué hace?
+## Índice
 
-El módulo de Guías de Devoluciones es un tablero de seguimiento que permite consultar el estado de las guías que han sido enviadas para devolución. Segmenta la información por día en un chart de barras, muestra un árbol jerárquico mes → fecha → tienda → guía, y una tabla de detalle paginada con badges de estado y exportación a Excel independiente por sección.
-
----
-
-## Ruta
-
-| Ruta | Guard | Parámetros de URL |
-|---|---|---|
-| `/logistica/guias-devoluciones` | `AuthGuard` | — |
-
----
-
-## Arquitectura del módulo
-
-El componente es un **orquestador delgado**: no contiene lógica de filtros, cómputo de chart/tabla ni acceso HTTP directo. Todo eso vive en `helpers/`:
-
-| Pieza | Responsabilidad |
-|---|---|
-| `DevolucionesStore` (signals) | Única fuente de verdad del estado — datos crudos, filtros, resultado del chart/tabla, paginación |
-| `DevolucionesRepository` | Todo el acceso HTTP (fases 1/2, tiendas, config del worker histórico) |
-| `devoluciones.rules.ts` | Funciones puras sin clase — cálculos de filtros, formateo de badges, nombre corto de tienda |
-| `agregacion.worker.ts` | Filtrado + cómputo de chart y tabla, en un Web Worker (nunca en el hilo principal) |
-| `historico.worker.ts` / `data-processor.worker.ts` | Descarga y descompresión ZSTD, también en Web Workers |
-
-Este es el mismo patrón que `dashboard-sin-despacho` (Store + Repository + Workers), adaptado con `devoluciones.rules.ts` en lugar de un service de Angular para las funciones puras — así el módulo no depende de `@Injectable` para lógica que no necesita inyección de dependencias.
+1. [Vista: GuiasDevolucionesComponent](componente/guias-devoluciones.md)
+2. [Servicio: DevolucionesStore](helpers/devoluciones-store.md)
+3. [Servicio: DevolucionesRepository](helpers/devoluciones-repository.md)
+4. [Servicio: devoluciones.rules](helpers/devoluciones-rules.md)
+5. [Servicio: agregacion.worker](helpers/agregacion-worker.md)
+6. [Servicio: historico.worker](helpers/historico-worker.md)
+7. [Servicio: data-processor.worker](helpers/data-processor-worker.md)
+8. [Servicio: worker-utils](helpers/worker-utils.md)
+9. [Dominio: Devoluciones (modelos)](modelos/models-guia-devolucion.md)
+10. [ADR-001: Arquitectura por capas (reemplazada)](arquitectura/ADR-guias-devolucion.md)
+11. [ADR-002: Migración a Store + Repository + Workers](arquitectura/ADR-002-guias-devolucion-store.md)
 
 ---
 
-## Decoradores y configuración técnica
+## 1. Vista: GuiasDevolucionesComponent
+
+**Selector:** `app-guias-devoluciones`  
+**Ubicación:** `src/app/views/logistica/guias-devoluciones/guias-devoluciones.component.ts`  
+**Acceso:** Logística → Guías de Devoluciones
+
+---
+
+### ¿Qué hace? (para el usuario)
+
+Es el tablero de seguimiento de guías enviadas a devolución. Al abrirla, carga automáticamente las devoluciones en 3 fases y muestra:
+
+- **Un chart de barras** con las devoluciones recibidas y pendientes por día.
+- **Filtros** por mes, fecha, tipo de día, tienda, ecosistema, transportadora y estado.
+- **Una tabla resumen** en árbol jerárquico: mes → fecha → tienda → guía.
+- **Una tabla de detalle** paginada, con badges de estado y tienda acortada.
+- Cada sección tiene su propio botón para exportar a Excel, respetando los filtros activos.
+- Puede actualizar los datos con un botón dedicado en el topbar.
+- Tiene un tour guiado que explica cada sección (oculto en móvil).
+
+---
+
+### Ruta
+
+```
+logistica/guias-devoluciones
+```
+
+---
+
+### Decoradores y configuración técnica
 
 ```typescript
 @Component({
-    selector: 'app-guias-devoluciones',
-    standalone: true,
-    imports: [CommonModule, FormsModule, TourGuiadoComponent],
-    templateUrl: './guias-devoluciones.component.html',
-    styleUrls: ['./guias-devoluciones.component.scss'],
+  selector: 'app-guias-devoluciones',
+  standalone: true,
+  imports: [CommonModule, FormsModule, TourGuiadoComponent],
+  templateUrl: './guias-devoluciones.component.html',
+  styleUrls: ['./guias-devoluciones.component.scss'],
 })
 export class GuiasDevolucionesComponent implements OnInit, OnDestroy
 ```
 
 ---
 
-## Propiedades clave
+### Arquitectura del módulo
 
-Casi todas son getters que leen directamente del `DevolucionesStore` (signals) — el componente no mantiene su propio estado de datos.
+El componente es un **orquestador delgado** — no contiene lógica de filtros, cómputo de chart/tabla ni acceso HTTP directo. Todo vive en `helpers/`:
+
+| Pieza | Responsabilidad |
+|---|---|
+| `DevolucionesStore` | Única fuente de verdad — datos crudos, filtros, resultado de chart/tabla, paginación |
+| `DevolucionesRepository` | Todo el acceso HTTP |
+| `devoluciones.rules.ts` | Funciones puras sin clase — cálculos de filtros, badges, tienda corta |
+| `agregacion.worker.ts` | Filtrado + cómputo de chart y tabla, en Web Worker |
+| `historico.worker.ts` / `data-processor.worker.ts` | Descarga y descompresión ZSTD |
+
+Mismo patrón que `dashboard-sin-despacho` y `relacion-despacho`.
+
+---
+
+### Propiedades clave
 
 | Propiedad | Tipo | Descripción |
 |---|---|---|
-| `isLoading` | `boolean` | `store.loading()` — activa skeleton del chart y deshabilita los 3 botones de exportar |
-| `historicoListo` | `boolean` | `store.historicoListo()` — `true` cuando los 2 workers históricos terminaron |
-| `chartData` | `DayPoint[]` | `store.chartData()` — barras publicadas por `agregacion.worker` |
-| `tablaResumen` | `TablaFila[]` | `store.tablaResumen()` — árbol jerárquico mes → fecha → tienda → guía |
-| `tablaDetallePagina` | `DevolucionRow[]` | `store.tablaDetallePagina()` — página actual (50 filas) de la tabla de detalle |
-| `tablaDetalle` | `{ length: number }` | Wrapper sobre `store.totalDetalle()` para no romper el template que usa `.length` |
-| `filters` | `FilterState[]` | `store.filters()` — estado de los 7 filtros (antes vivía en `FilterService`, ahora en el Store) |
-| `hayFiltrosActivos` | `boolean` | `store.hayFiltrosActivos()` |
-| `skeletonHeights` | `number[]` | Alturas predefinidas para las barras del skeleton — evita que el skeleton sea uniforme |
-| `tourAbierto` / `tourSteps` | `boolean` / `TourStep[]` | Estado y pasos del tour guiado (`TourGuiadoComponent`) |
+| `isLoading` | `boolean` | Activa el skeleton del chart y deshabilita los botones de exportar |
+| `historicoListo` | `boolean` | `true` cuando los 2 workers históricos terminaron |
+| `chartData` | `DayPoint[]` | Barras del chart, publicadas por `agregacion.worker` |
+| `tablaResumen` | `TablaFila[]` | Árbol jerárquico mes → fecha → tienda → guía |
+| `tablaDetallePagina` | `DevolucionRow[]` | Página actual (50 filas) de la tabla de detalle |
+| `filters` | `FilterState[]` | Estado de los 7 filtros multi-select |
 
 ---
 
-## Servicios y endpoints
+### Servicios y endpoints
 
-| Servicio | Método | Cuándo |
-|---|---|---|
-| `DevolucionesRepository` | `getPrimeraPagina()`, `getPagina()` | Fases 1 y 2 de carga |
-| `DevolucionesRepository` | `getTiendas()` | Al inicializar, en paralelo con la carga de datos |
-| `DevolucionesRepository` | `buildHistoricoWorkerConfig()` | Antes de lanzar los 2 workers de la fase 3 |
-| `DevolucionesStore` | Todos los métodos | Al inicializar y en cada interacción de filtros/paginación |
-| `data-processor.worker` | `postMessage` | Fases 1 y 2, para descomprimir payloads |
-| `historico.worker` | `postMessage` | Fase 3, para cargar el histórico completo (últimos 4 meses) |
-| `agregacion.worker` | `postMessage` | Cada vez que cambian `rawRows`, filtros o página — calcula chart y tabla |
+| Servicio | Uso |
+|---|---|
+| `DevolucionesRepository` | Fases 1/2/3 de carga, tiendas, config del worker histórico |
+| `DevolucionesStore` | Estado reactivo de todo el módulo |
+| `agregacion.worker` | Cómputo de chart/tabla fuera del hilo principal |
+
+**Patrón de URL:**
+```
+metodoGenerico?coleccion=PedidosInter&Tienda=<TIENDAS>&Estado=<ESTADO>&fechasFiltro=<RANGO>&campos=<CAMPOS>&mcomp=2
+```
+
+**Endpoints por colección:**
+
+| Colección | Propósito |
+|---|---|
+| `PedidosInter` | Devoluciones (fases 1/2/3) |
+| `Tienda` | Ecosistemas para el filtro de tienda |
 
 ---
 
-## Flujo principal
+### Flujo principal
 
 ```
 ngOnInit()
-  → store.inicializarFiltroMes()      ← últimos 4 meses, no 8
-  → iniciarDotsAnimation()
-  → iniciarAggWorker()                ← lanza el Web Worker de agregación una sola vez
-  → Promise.all([cargarDatos(), cargarTiendas()])
+  └─► store.inicializarFiltroMes() + iniciarAggWorker()
+      └─► Promise.all([cargarDatos(), cargarTiendas()])
 
 cargarDatos()
-  → Fase 1: repo.getPrimeraPagina() x7 estados en paralelo (ventana: últimos 60 días)
-      → procesarConWorker(payloads)   ← data-processor.worker
-      → store.appendLote(nuevos)      ← dedup O(1) via Map interno
-      → dispararAggregation()         ← chart visible para el usuario
-      → store.setLoading(false)
-  → Fase 2: cargarPaginasRestantes()  ← páginas 2..N en segundo plano
-      → store.appendLote() + dispararAggregation()
-  → Fase 3: cargarHistoricoConWorker()
-      → 2 workers históricos en paralelo (ventana: últimos 4 meses)
-      → por cada lote: store.appendLote() + dispararAggregation()
-      → cuando ambos terminan: store.setHistoricoListo(true)
+  ├─► Fase 1: 7 estados en paralelo (últimos 60 días) → chart visible rápido
+  ├─► Fase 2: páginas restantes en segundo plano
+  └─► Fase 3: histórico completo (últimos 4 meses) vía 2 workers
 
-dispararAggregation()
-  → aggWorker.postMessage({ rows: store.rawRows(), tiendas: store.tiendas(),
-                             filtros: store.buildFiltrosAgg(), pagina, pageSize })
-  → coalescing: si ya hay una agregación en curso, marca aggPending y la
-    vuelve a disparar cuando la actual termine (nunca encola mensajes)
+Usuario interactúa con filtros
+  └─► store.toggleOption() → dispararAggregation() → agregacion.worker recalcula
 
-agregacion.worker → onmessage
-  → store.setAggResult(data)          ← publica chart/tabla al Store
-  → store.actualizarOpcionesTransp()
-  → store.actualizarFiltroFechas()
+Usuario exporta un panel
+  └─► exportarChartExcel() / exportarResumenExcel() / exportarDetalleExcel()
 ```
 
 ---
 
-## Exportar a Excel (por panel, no global)
+### Historial de cambios
 
-Cada uno de los 3 paneles visuales tiene su propio botón "Exportar Excel", exportando **solo lo que se ve en pantalla en ese momento** (respetando los filtros activos):
-
-| Método | Exporta |
+| Fecha | Cambio |
 |---|---|
-| `exportarChartExcel()` | El detalle diario (recibida/pendiente/total) del chart de barras |
-| `exportarResumenExcel()` | El árbol mes/fecha ya filtrado, tal como se ve en la tabla resumen |
-| `exportarDetalleExcel()` | **Todo** el detalle filtrado (todas las páginas, no solo las 50 filas visibles) — se lo pide al `agregacion.worker` con `exportarDetalle: true` para no recorrer el dataset completo en el hilo principal |
+| 2026-06-03 | Creación del módulo, migrado de Power BI a HTML |
+| 2026-07-28 | Migración a Store + Repository + Rules + Workers; histórico reducido a 4 meses; exportación a Excel por panel; rediseño visual y badges de estado |
 
 ---
 
-## Historial de cambios
+### Observaciones
 
-| Fecha | Autor | Cambio |
-|---|---|---|
-| 2026-06-03 | Adalberto González | Se rediseñó el módulo, pasándolo de vista de Power BI a HTML |
-| 2026-07-28 | Adalberto González | Histórico reducido de 8 a 4 meses; agregado `&campos=` en las consultas a `PedidosInter` (reduce ~951 KB a ~317 KB por página); corregido bug de header `headersecurity`/`headerSecurity` que dejaba el header de seguridad `undefined` en las requests del histórico |
-| 2026-07-28 | Adalberto González | Exportación a Excel dividida en 3 botones independientes (chart, resumen, detalle completo), en vez de un único botón global |
-
----
-
-## Observaciones
-
-- El componente no contiene lógica de filtros ni de cómputo — todo se delega al `DevolucionesStore`, a `devoluciones.rules.ts` y al `agregacion.worker`. Su única responsabilidad es orquestar la carga y conectar el Store con el template.
-- `estadoBadge(estado)` y `tiendaCorta(nombre)` son wrappers delgados sobre funciones puras de `devoluciones.rules.ts`, expuestos como métodos del componente para poder llamarlos desde el template.
-- El tour guiado se oculta en pantallas ≤860px (`button.btn-tour { display: none }`) — depende de posicionamiento por hover que no tiene sentido en móvil.
+- El componente no contiene lógica de filtros ni de cómputo — todo se delega a `DevolucionesStore`, `devoluciones.rules.ts` y `agregacion.worker`.
+- El tour guiado se oculta en pantallas ≤860px.

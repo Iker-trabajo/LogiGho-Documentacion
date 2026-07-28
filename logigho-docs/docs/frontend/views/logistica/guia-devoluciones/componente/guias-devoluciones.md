@@ -1,56 +1,56 @@
 ---
 
 ## Autor: Adalberto González
-Fecha creacion: 2026-06-03  
-Estado: Desarrollo  
+
+Fecha creacion: 2026-06-03
+Estado: produccion
 Tipo: vista
 
 # Vista: GuiasDevolucionesComponent
 
-**Selector:** `app-guias-devoluciones`  
-**Ubicación:** `src/app/views/logistica/guias-devoluciones/guias-devoluciones.component.ts`  
+**Selector:** `app-guias-devoluciones`
+**Ubicación:** `src/app/views/logistica/guias-devoluciones/guias-devoluciones.component.ts`
 **Acceso:** Autenticado | Rol: Todos
 
 ---
 
 ## ¿Qué hace?
 
-El módulo de Guías de Devoluciones es un tablero de seguimiento que permite consultar el estado de las guías que han sido enviadas para devolución. Segmentandolas por días en barras individuales, y permintiendo a el usuario mirar el detalle de cuales son esas guias en especifico.
+Tablero de seguimiento de guías enviadas a devolución. Muestra un chart de barras por fecha, un árbol jerárquico mes → fecha → tienda → guía, y una tabla de detalle paginada con badges de estado y exportación a Excel independiente por sección.
 
 ---
 
 ## Ruta
 
-| Ruta | Guard | Parámetros de URL |
-|---|---|---|
-| `/logistica/guias-devoluciones` | `AuthGuard` | — |
+| Ruta                          | Guard      | Parámetros de URL |
+| ------------------------------ | ----------- | ------------------ |
+| `/logistica/guias-devoluciones` | `AuthGuard` | —                  |
 
 ---
 
 ## Propiedades clave
 
-| Propiedad | Tipo | Descripción |
-|---|---|---|
-| `datos` | `DevolucionRow[]` | Array privado con todos los registros acumulados en memoria. Fuente de verdad del componente. |
-| `historicoListo` | `boolean` | `true` cuando los 2 workers históricos terminaron. Habilita el botón de refresh y cambia el badge de estado. |
-| `chartData` | `DayPoint[]` | Barras del chart — asignadas desde `ChartComputerService.computar()` |
-| `tablaResumen` | `TablaFila[]` | Árbol jerárquico — asignado desde `ChartComputerService.computar()` |
-| `tablaDetalle` | `DevolucionRow[]` | Registros del mes activo para la tabla de detalle |
-| `tablaDetallePagina` | `DevolucionRow[]` | Subconjunto de `tablaDetalle` para la página actual (50 registros) |
-| `skeletonHeights` | `number[]` | Alturas predefinidas para las barras del skeleton — evita que el skeleton sea uniforme |
+> Casi todas son getters que leen `DevolucionesStore` (signals) — el componente no mantiene su propio array de datos.
+
+| Propiedad             | Tipo                | Descripción                                                              |
+| ---------------------- | -------------------- | -------------------------------------------------------------------------- |
+| `isLoading`            | `boolean`            | Activa skeleton del chart y deshabilita los botones de exportar            |
+| `historicoListo`       | `boolean`            | `true` cuando los 2 workers históricos terminaron                          |
+| `chartData`            | `DayPoint[]`         | Barras publicadas por `agregacion.worker`                                  |
+| `tablaResumen`         | `TablaFila[]`        | Árbol jerárquico mes → fecha → tienda → guía                               |
+| `tablaDetallePagina`   | `DevolucionRow[]`    | Página actual (50 filas) de la tabla de detalle                            |
+| `filters`              | `FilterState[]`      | Estado de los 7 filtros, ahora en el Store                                 |
 
 ---
 
 ## Servicios y endpoints
 
-| Servicio | Método | Endpoint | Cuándo |
-|---|---|---|---|
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET metodoGenerico?coleccion=PedidosInter&Estado=...&mcomp=2` | Fases 1 y 2 de carga |
-| `ConsumoGenericoService` | `consultarGenerico()` | `GET metodoGenerico?coleccion=Tienda&Estado=ACTIVO&mcomp=1` | Al inicializar, en paralelo con la carga de datos |
-| `FilterService` | Todos los métodos | — | Al inicializar y en cada interacción de filtros |
-| `ChartComputerService` | `computar()` | — | Cada vez que `datos` o filtros cambian |
-| `data-processor.worker` | `postMessage` | — | Fases 1 y 2, para descomprimir payloads |
-| `historico.worker` | `postMessage` | — | Fase 3, para cargar el histórico completo |
+| Servicio                | Método                       | Endpoint                          | Cuándo                              |
+| ------------------------ | ----------------------------- | ---------------------------------- | ------------------------------------- |
+| `DevolucionesRepository` | `getPrimeraPagina()`          | `GET metodoGenerico?coleccion=PedidosInter&...` | Fases 1 y 2 de carga    |
+| `DevolucionesRepository` | `getTiendas()`                | `GET metodoGenerico?coleccion=Tienda&...`       | Al inicializar          |
+| `DevolucionesStore`      | Todos los métodos             | —                                   | Al inicializar y en cada interacción |
+| `agregacion.worker`      | `postMessage`                 | —                                   | Cada vez que cambian datos/filtros/página |
 
 ---
 
@@ -58,42 +58,27 @@ El módulo de Guías de Devoluciones es un tablero de seguimiento que permite co
 
 ```
 ngOnInit()
-  → filterService.inicializarFiltroMes()
-  → iniciarDotsAnimation()
-  → Promise.all([cargarDatos(), cargarTiendas()])
+  -> store.inicializarFiltroMes()
+  -> iniciarAggWorker()
+  -> Promise.all([cargarDatos(), cargarTiendas()])
 
 cargarDatos()
-  → Fase 1: getPrimeraPagina() x3 estados en paralelo
-      → procesarConWorker(payloads)   ← data-processor.worker
-      → acumular(nuevos)
-      → recalcular()                  ← chart visible para el usuario
-      → isLoading = false
-  → Fase 2: cargarPaginasRestantes()  ← páginas 2..N en segundo plano
-      → procesarConWorker(payloads)
-      → acumular() + recalcular()
-  → Fase 3: cargarHistoricoConWorker()
-      → 2 workers históricos en paralelo
-      → por cada lote: acumular() + recalcular()
-      → cuando ambos terminan: historicoListo = true
-
-recalcular()
-  → filterService.actualizarOpcionesTransp(datos)
-  → filterService.actualizarFiltroFechas(datos)
-  → chartComputer.computar(datos)     ← aplica filtros + calcula chart y tabla
-  → asigna resultado al template
-  → actualiza paginación
+  -> Fase 1: repo.getPrimeraPagina() x7 estados -> store.appendLote() -> dispararAggregation()
+  -> Fase 2: páginas restantes en segundo plano
+  -> Fase 3: 2 workers de histórico (últimos 4 meses) -> store.setHistoricoListo(true)
 ```
 
 ---
 
 ## Historial de cambios
 
-| Fecha | Autor | Cambio |
-|---|---|---|
-| 2026-06-03 | Adalberto González | Se rediseñó el módulo, pasándolo de vista de Power BI a HTML |
+| Fecha      | Autor              | Cambio                                                                                                                    |
+| ----------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-28 | Adalberto González | Migrado a Store + Repository + Rules + Workers (`helpers/`); histórico reducido de 8 a 4 meses; exportación a Excel dividida por panel; rediseño visual siguiendo el estándar de `dashboard-sin-despacho` |
 
 ---
 
 ## Observaciones
 
-- El componente no contiene lógica de filtros ni de cómputo — todo se delega a `FilterService` y `ChartComputerService`. Su única responsabilidad es orquestar la carga y conectar los servicios con el template.
+- El componente no contiene lógica de filtros ni de cómputo — todo se delega a `DevolucionesStore`, `devoluciones.rules.ts` y `agregacion.worker`.
+- `estadoBadge()` y `tiendaCorta()` son wrappers delgados sobre funciones puras de `devoluciones.rules.ts`, expuestos como métodos para poder llamarlos desde el template.

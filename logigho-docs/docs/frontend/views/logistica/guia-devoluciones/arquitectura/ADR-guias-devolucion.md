@@ -1,82 +1,65 @@
 ---
 
 ## Autor: Adalberto González
-Fecha creacion: 2026-06-03  
-Estado: Desarrollo
+Fecha creacion: 2026-06-03
+Estado: reemplazada
 
 # ADR-001 — Arquitectura del módulo Guías de Devoluciones
 
-**Autor:** Adalberto González  
-**Fecha:** 2026-06-03  
-**Estado:** Desarrollo
+**Autor:** Adalberto González
+**Fecha:** 2026-06-03
+**Estado:** Reemplazada por ADR-002
 
 ---
 
 ## Contexto
 
-El módulo de Guías de Devoluciones empezó siendo una pantalla que mostraba información creada en Power BI.
-Se decidió construirla directamente en la aplicación usando HTML y Angular el cual nos pueda brindar informacion de devoluciones en tiempo real.
-Por esta razón, se analizaron alternativas para reorganizar la solución de una forma más clara y fácil de mantener.
+El módulo empezó siendo una pantalla de Power BI. Se decidió construirla en Angular para datos en tiempo real, extrayendo lógica a `FilterService` y `ChartComputerService`, con el componente manteniendo `datos[]` como fuente de verdad, sin signals.
 
 ---
 
-## Arquitectura Por Capas (Dentro de el modulo)
+## Opciones consideradas
 
-Extraer lógica a servicios Angular simples (`FilterService`, `ChartComputerService`) y funciones puras compartidas (`worker-utils`). El componente mantiene el array `datos[]` como fuente de verdad y sigue orquestando la carga. Sin signals reactivos, sin persistencia offline.
+### Opción A — Arquitectura por capas (services simples)
 
-**Pros:**
-- Cambios mínimos sobre el comportamiento ya probado
-- Sin nuevas dependencias externas
-- El componente queda en ~280 líneas
-- Cada servicio tiene una sola responsabilidad clara
-- Riesgo bajo de regresiones
+`FilterService` + `ChartComputerService`, sin reactividad automática.
 
-**Contras:**
-- El componente sigue siendo la fuente de verdad del array de datos
-- Sin reactividad automática — hay que llamar `recalcular()` manualmente tras cada cambio
-- No escala bien si en el futuro se necesita compartir datos entre rutas
+**Pros:** cambios mínimos, sin dependencias nuevas, componente en ~280 líneas.
+**Contras:** el cómputo de chart/tabla corría en el hilo principal; sin reactividad automática; no seguía el mismo patrón que otros dashboards migrados de Power BI.
 
 ---
-
 
 ## Decisión
 
-**Se eligió:** Arquitectura Por Capas (Dentro de el modulo)
+**Se eligió:** Opción A (arquitectura por capas).
 
-**Razón:** El módulo funciona correctamente. Con lo que hicimos reduce el componente por capas, elimina duplicación entre workers y hace testeable la lógica de filtros y chart sin tocar el flujo de carga.
+**Razón:** El módulo funcionaba correctamente y reducía el componente por capas sin tocar el flujo de carga ya probado.
 
 ---
 
 ## Consecuencias
 
-**Positivas:**
-- Componente reducido de 890 a ~280 líneas — solo orquestación
-- Lógica de filtros centralizada en `FilterService` — testeable de forma aislada
-- Cómputo de chart centralizado en `ChartComputerService` — testeable de forma aislada
-- Duplicación entre workers eliminada via `worker-utils.ts`
-- Tipos centralizados en `devoluciones.models.ts` — fuente de verdad única
-
-**Negativas:**
-- Se debe llamar `recalcular()` manualmente tras cada cambio de filtro o datos — sin reactividad automática
-- Si en el futuro se necesita compartir `datos[]` entre rutas, habrá que migrar al Signal Store
+**Positivas:** componente reducido de 890 a ~280 líneas; lógica de filtros y chart testeable de forma aislada.
+**Negativas:** sin reactividad automática (`recalcular()` manual); cómputo pesado bloqueaba el hilo principal con el histórico completo en memoria.
 
 ---
 
 ## Impacto en el código
 
-| Módulo / Repo | Cambio |
-|---|---|
-| `SitioLogiGho` | 
-Componente refactorizado. Nuevos archivos: `models/`, `services/`, `workers/worker-utils.ts`, `models/devoluciones.models.ts` 
-`services/chart-computer.service.ts`, `services/filter.service.ts`, `workers/data-processor.worker.ts`, `workers/historico.worker.ts` 
-|
+| Módulo / Repo  | Cambio                                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `SitioLogiGho` | Nuevos `models/`, `services/chart-computer.service.ts`, `services/filter.service.ts`, `workers/worker-utils.ts` |
 
 ---
 
 ## Historial de cambios
 
-| Fecha | Autor | Cambio |
-|---|---|---|
-| 2026-06-03 | Adalberto González | Se implemento la Arquitectura por capas en todo el modulo. |
+| Fecha      | Autor              | Cambio                                                |
+| ----------- | -------------------- | ------------------------------------------------------ |
+| 2026-06-03 | Adalberto González | Se implementó la Arquitectura por capas en todo el módulo |
 
 ---
+
+## Referencias
+
+- Reemplazada por [ADR-002](./ADR-002-guias-devolucion-store.md)

@@ -1,6 +1,6 @@
 ## Utilidad: resolver-corte
 
-**Ubicación:** `src/app/views/tienda/pancake-paginas/utils/resolver-corte.ts`  
+**Ubicación:** `src/app/views/tienda/pancake-paginas/helpers/resolver-corte.ts`
 **Tipo:** funciones puras (sin clase, sin estado, sin inyección de Angular)
 
 ---
@@ -53,12 +53,13 @@ resolverfilasParaComparacion(filas, ['2', '3', '4'])
 
 | Fecha | Autor | Cambio |
 |---|---|---|
+| 2026-07-30 | Adalberto González | Se reubicó el archivo de `utils/resolver-corte.ts` a `helpers/resolver-corte.ts`, junto con el resto de la lógica del módulo (repositorio, pipeline de estadísticas, export a Excel), para centralizar todo lo que no es la vista misma en una sola carpeta |
 | 2026-07-24 | Adalberto González | Documentación inicial de la utilidad, ya en su forma actual |
 
 ---
 
 ### Observaciones
 
-- Estas funciones son **puras**: no tocan signals, no hacen HTTP, no dependen de Angular. Reciben datos y devuelven datos — por eso viven en `utils/` y no en el componente ni en el repositorio.
-- Tienen su propio archivo de pruebas (`resolver-corte.spec.ts`), separado del resto del módulo, precisamente porque al ser funciones puras son fáciles de probar con distintos escenarios de filas.
-- El componente `PancakePaginasComponent` usa `resolverFilaVigente()` para armar los KPIs y el resumen de campañas por página, y `resolverfilasParaComparacion()` para la tabla y el gráfico de "Comparativa de cortes".
+- Estas funciones son **puras**: no tocan signals, no hacen HTTP, no dependen de Angular. Reciben datos y devuelven datos.
+- Tienen su propio archivo de pruebas (`resolver-corte.spec.ts`, en la misma carpeta `helpers/`), separado del resto del módulo, precisamente porque al ser funciones puras son fáciles de probar con distintos escenarios de filas.
+- Ya no las consume el componente directamente: `EstadisticasPipeline` usa `resolverFilaVigente()` para armar los KPIs y el resumen de campañas por página, y `resolverfilasParaComparacion()` para la tabla y el gráfico de "Comparativa de cortes". Ver [EstadisticasPipeline](estadisticas-pipeline.md).

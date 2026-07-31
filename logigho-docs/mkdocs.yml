@@ -77,6 +77,8 @@ nav:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
               - ApiLambdaCrudGenericoAOT:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrudGenericoAOT/ApiLambdaCrudGenericoAOT.md
+              - ApiLambdaSincronizacionSqlMongo:
+                  - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionSqlMongo/ApiLambdaSincronizacionSqlMongo.md
               - ApiLambdaOrquestadorCotizaciones:
                   - Orquestador: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md
                   - Interrapidísimo: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarInterrapidisimo/ApiLambdaCotizarInterrapidisimo.md

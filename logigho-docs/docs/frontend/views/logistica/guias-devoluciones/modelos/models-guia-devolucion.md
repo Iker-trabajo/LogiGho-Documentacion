@@ -130,6 +130,7 @@ Forma de la respuesta HTTP del backend comprimido.
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-06-03 | Adalberto González | Se crearon los modelos |
+| 2026-07-28 | Adalberto González | Agregados `DevolucionesFiltrosAgg`, `AggWorkerInput`/`AggWorkerOutput` (contratos del nuevo `agregacion.worker`), `ESTADOS_DEVOLUCION` y `ESTADOS_HISTORICO_WORKER_1` como fuente única de verdad de estados; `Estado` de `DevolucionRow` ampliado a los 4 valores reales (`devolucion regional` y `devolucion` genérico) |
 
 ---
 

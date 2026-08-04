@@ -43,11 +43,16 @@ theme:
 plugins:
   - search:
       lang: es
+  - mermaid2
 
 markdown_extensions:
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.tabbed:
@@ -125,6 +130,7 @@ nav:
               - Creacion Cuenta Bancaria: frontend/components/creacion-cuenta-bancaria.md
               - Creaciones Masiva Productos: frontend/components/creaciones-masiva-productos.md
               - Tour Guiado: frontend/components/guided-tour.md
+              - Escaner Camara: frontend/components/escaner-camara.md
               - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
               - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md

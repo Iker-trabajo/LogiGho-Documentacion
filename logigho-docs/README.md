@@ -17,7 +17,7 @@ docs/
 ## Cómo ver la documentación localmente
 
 ```bash
-pip install mkdocs-material
+pip install -r requirements.txt
 mkdocs serve
 ```
 

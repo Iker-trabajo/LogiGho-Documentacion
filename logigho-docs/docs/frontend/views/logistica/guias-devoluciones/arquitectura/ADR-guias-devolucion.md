@@ -72,6 +72,5 @@ Componente refactorizado. Nuevos archivos: `models/`, `services/`, `workers/work
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-06-03 | Adalberto González | Se implemento la Arquitectura por capas en todo el modulo. |
-| 2026-07-28 | Adalberto González | Reemplazada por la arquitectura Store + Repository + Rules + Workers, alineando el módulo con `dashboard-sin-despacho` y `relacion-despacho` (ver ADR-002) |
 
 ---

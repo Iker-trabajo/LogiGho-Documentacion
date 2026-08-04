@@ -5,6 +5,16 @@ docs_dir: docs
 repo_url: https://github.com/TU_USUARIO/logigho-docs
 repo_name: logigho-docs
 
+validation:
+  nav:
+    omitted_files: ignore
+    not_found: warn
+    absolute_links: warn
+  links:
+    not_found: warn
+    absolute_links: ignore
+    unrecognized_links: warn
+
 theme:
   name: material
   language: es
@@ -140,6 +150,12 @@ nav:
                       - Componente: frontend/views/tienda/pauta/pauta.md
                   - Wallet:
                       - Componente: frontend/views/tienda/wallet/wallet-view.md
+                  - Gestion Cuentas:
+                      - Componente: frontend/views/tienda/gestion-cuentas/gestion-cuentas.md
+                  - Gestion Paginas:
+                      - Componente: frontend/views/tienda/gestion-paginas/gestion-paginas.md
+                  - Pancake Paginas:
+                      - Componente: frontend/views/tienda/pancake-paginas/pancake-paginas.md
                   - Pedidos Masivo:
                       - Arquitectura: frontend/views/tienda/pedidos-masivo/pedidos-masivo-ADR.md
                       - Carga-guias: frontend/views/tienda/pedidos-masivo/carga-guias/carga-guias.md
@@ -158,16 +174,7 @@ nav:
                   - Gestion Bodegas:
                       - Componente: frontend/views/logistica/gestion-bodegas/gestion-bodegas.md
                   - Guias Devolucion:
-                      - Componente: frontend/views/logistica/guia-devoluciones/componente/guias-devoluciones.md
-                      - Arquitectura: frontend/views/logistica/guia-devoluciones/arquitectura/ADR-guias-devolucion.md
-                      - Workers:
-                          - Procesador: frontend/views/logistica/guia-devoluciones/workers/data-processor-worker.md
-                          - Historico: frontend/views/logistica/guia-devoluciones/workers/historico-worker.md
-                          - Descompresor: frontend/views/logistica/guia-devoluciones/workers/worker-utils.md
-                      - Servicios:
-                          - Servicio de filtrado de datos: frontend/views/logistica/guia-devoluciones/servicios/filter-service.md
-                          - Servicio de gestion de informacion: frontend/views/logistica/guia-devoluciones/servicios/chart-service.md
-                      - Modelo de datos: frontend/views/logistica/guia-devoluciones/modelos/models-guia-devolucion.md
+                      - Componente: frontend/views/logistica/guias-devoluciones/componente/guias-devoluciones.md
                   - Resumen Inventario:
                       - Componente: frontend/views/logistica/resumen-inventario/resumen-inventario.md
       - Estilos y SCSS: frontend/estilos.md

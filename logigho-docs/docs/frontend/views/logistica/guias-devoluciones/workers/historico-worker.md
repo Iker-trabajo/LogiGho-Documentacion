@@ -1,11 +1,8 @@
----
+## Worker: historico.worker
 
-## Autor: Adalberto González
-Fecha creacion: 2026-06-03  
-Estado: desarrollo
-
-# Worker: historico.worker
-
+**Autor:** Adalberto González  
+**Fecha:** 2026-06-03  
+**Estado:** desarrollo  
 **Ubicación:** `src/app/views/logistica/guias-devoluciones/workers/historico.worker.ts`  
 **Tipo:** Web Worker
 

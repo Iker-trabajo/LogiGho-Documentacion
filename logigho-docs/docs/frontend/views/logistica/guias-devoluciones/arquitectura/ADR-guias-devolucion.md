@@ -1,14 +1,8 @@
----
-
-## Autor: Adalberto González
-Fecha creacion: 2026-06-03  
-Estado: Desarrollo
-
-# ADR-001 — Arquitectura del módulo Guías de Devoluciones
+## ADR-001: Arquitectura del módulo Guías de Devoluciones
 
 **Autor:** Adalberto González  
 **Fecha:** 2026-06-03  
-**Estado:** Desarrollo
+**Estado:** desarrollo
 
 ---
 

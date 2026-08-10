@@ -1,0 +1,30 @@
+stateDiagram-v2
+    [*] --> ObtenerPaginasActivas: Input {} (EventBridge, cron cada 3h)
+
+    ObtenerPaginasActivas --> MapSincronizarConversaciones: lista de páginas activas
+
+    state MapSincronizarConversaciones {
+        [*] --> SincronizarConversaciones: 1 iteración por página (MaxConcurrency 8)
+        SincronizarConversaciones --> Fin1: OK
+        SincronizarConversaciones --> IgnorarErrorPagina: Catch (States.ALL)
+        IgnorarErrorPagina --> Fin1
+        Fin1: [*]
+    }
+
+    MapSincronizarConversaciones --> SincronizarMensajesPendientes
+
+    state "SincronizarMensajesPendientes\n(lote de 800, self-loop)" as SincronizarMensajesPendientes
+    SincronizarMensajesPendientes --> QuedanPendientes
+
+    state QuedanPendientes <<choice>>
+    QuedanPendientes --> SincronizarMensajesPendientes: ConversacionesProcesadas > 0
+    QuedanPendientes --> FinSincronizacion: Default (= 0)
+
+    FinSincronizacion --> [*]
+
+    note right of SincronizarMensajesPendientes
+        Nunca recibe la lista de pendientes
+        por el estado del Step Function —
+        la autoconsulta en MySQL cada vez
+        (evita States.DataLimitExceeded).
+    end note

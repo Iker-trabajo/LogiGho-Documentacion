@@ -126,7 +126,7 @@ ejecutarImportacion() [por cada fila válida]
 
 ## Observaciones
 
-- **Race condition mitigada, no eliminada:** La consulta fresca antes de cada inserción reduce la ventana de colisión a milisegundos, pero la solución definitiva es que el backend genere y garantice los IDs atómicamente. Ver [ADR](../views/tienda/portafolio/portafolio-ADR.md) para contexto.
+- **Race condition mitigada, no eliminada:** La consulta fresca antes de cada inserción reduce la ventana de colisión a milisegundos, pero la solución definitiva es que el backend genere y garantice los IDs atómicamente. Ver [ADR](../views/tienda/Portafolio/portafolio-ADR.md) para contexto.
 - **Plantilla desde S3:** Si `cargarPlantilla()` falla (sin conexión o bucket inaccesible), el botón "Descargar plantilla" queda silencioso (no muestra Swal). Hay un `Swal.fire` comentado que puede reactivarse si se prefiere feedback explícito.
 - **Compresión diferenciada:** Tiendas y proveedores usan Zstd (`mcomp: '2'`), categorías y productos usan Gzip estándar. Seguir este patrón al agregar nuevas fuentes de datos.
 - **`cantidad` se guarda como `String`:** Consistencia con el tipo del campo en MongoDB. El resto de campos numéricos se guardan como `Number`.

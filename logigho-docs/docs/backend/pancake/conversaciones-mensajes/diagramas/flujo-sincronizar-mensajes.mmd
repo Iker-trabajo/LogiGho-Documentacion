@@ -1,0 +1,23 @@
+flowchart TD
+    A["Step Function\n(self-loop directo, sin Map)"] --> B["Function.cs"]
+    B --> C["SincronizarMensajesPendientesUseCase"]
+    C --> D[("MySQL: SELECT pendientes\nWHERE MensajesSincronizadosHasta IS NULL\nOR FechaActualizacionPancake > MensajesSincronizadosHasta\nLIMIT 800")]
+    D --> E["IntercalarPorPagina\n(round-robin: evita que 1 página\nmonopolice los slots paralelos)"]
+    E --> F["Parallel.ForEachAsync\nGradoParalelismo = 80"]
+
+    subgraph POR_CONVERSACION ["1 tarea por conversación (hasta 80 a la vez)"]
+        F --> G["SincronizarMensajesUseCase"]
+        G --> H{"Token de página\nvigente?"}
+        H -- No --> I["Semáforo por página +\ncaché de token fresco\n(nivel de instancia, coordina las 80 tareas)"]
+        I --> J
+        H -- Sí --> J{"ObtenerMensajesAsync\n(rate limit 3 req/s por página)"}
+        J --> K["MensajeRepository.GuardarLoteAsync"]
+        K --> L[("MySQL: PancakeMensajes\nUPSERT")]
+        L --> M["ConversacionContextoRepository.ActualizarAsync\n(SIEMPRE, haya o no mensajes nuevos)"]
+        M --> N[("MySQL: PancakeConversaciones.\nMensajesSincronizadosHasta = ahora")]
+    end
+
+    N --> O["Respuesta: SalidaSincronizacionMensajesPendientes\n{ ConversacionesProcesadas, ConversacionesConError,\nTotalMensajesSincronizados, SeCortoPorTiempo }"]
+    O --> P{"Step Function Choice:\n¿ConversacionesProcesadas > 0?"}
+    P -- Sí --> A
+    P -- No --> Q["Fin"]

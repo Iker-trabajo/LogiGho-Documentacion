@@ -1,0 +1,35 @@
+flowchart TB
+    subgraph EXTERNO["Actores y sistemas externos"]
+        EB["EventBridge Scheduler\ncron cada 3h, 9am–6pm\n(America/Bogota)"]
+        PANCAKE["Pancake API externa\nfuente de conversaciones y mensajes\n(WhatsApp / Facebook)"]
+    end
+
+    subgraph LOGIGHO["Backend"]
+        PIPELINE["Lambdas Sincronización\nConversaciones y Mensajes\n(Step Functions + self-loop)"]
+    end
+
+    subgraph DATOS["Persistencia"]
+        MONGO[("MongoDB LogighoDB\ninformación de cada página / línea")]
+        MYSQL[("RDS MySQL dbarchivoslogigho\nPancakeConversaciones\nPancakeMensajes")]
+    end
+
+    EB -->|"Dispara (StartExecution)"| PIPELINE
+    PIPELINE -->|"Consulta conversaciones\ny mensajes (HTTPS REST, paginado)"| PANCAKE
+    PIPELINE -->|"Lee token de página"| MONGO
+    PIPELINE -->|"Escribe / actualiza"| MYSQL
+
+    classDef trigger fill:#FF9900,color:#1a1a1a,stroke:#B36B00,stroke-width:2px,font-weight:bold
+    classDef pipeline fill:#5B7CFA,color:#ffffff,stroke:#2748C9,stroke-width:2px,font-weight:bold
+    classDef externo fill:#6B7280,color:#ffffff,stroke:#3F4652,stroke-width:1.5px
+    classDef mongo fill:#3FA34D,color:#ffffff,stroke:#276E32,stroke-width:1.5px
+    classDef mysql fill:#2F6FEB,color:#ffffff,stroke:#1D47A3,stroke-width:1.5px
+
+    class EB trigger
+    class PIPELINE pipeline
+    class PANCAKE externo
+    class MONGO mongo
+    class MYSQL mysql
+
+    style EXTERNO fill:#F3F4F6,stroke:#D1D5DB,color:#374151
+    style LOGIGHO fill:#EEF1FF,stroke:#C7D0FF,color:#374151
+    style DATOS fill:#F3F4F6,stroke:#D1D5DB,color:#374151

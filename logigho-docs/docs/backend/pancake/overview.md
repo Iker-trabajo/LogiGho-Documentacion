@@ -6,6 +6,9 @@ Estado: produccion
 
 # Integración Pancake — Visión general
 
+!!! info "Pancake tiene 2 procesos automáticos independientes"
+    Esta página documenta el proceso de **Estadísticas de Cuentas (Marketing)**. Existe un 2º proceso separado, con su propio Step Function, sus propias lambdas y su propia base de datos de trabajo: **[Conversaciones y Mensajes](conversaciones-mensajes/overview.md)** (sincroniza el histórico de chats de WhatsApp/Facebook para auditoría y soporte). No comparten código ni pipeline — solo la fuente de datos externa (Pancake).
+
 ## ¿Qué es?
 
 Es un proceso automatizado que corre 4 veces al día: recolecta las estadísticas de campañas publicitarias de **todas las páginas conectadas en Pancake** y las almacena en **MongoDB** y en la **RDS MySQL**.
@@ -65,7 +68,7 @@ Tener historificadas, por **franja del día** y por **campaña**, las métricas 
 | 5   | **[ApiLambdaObtenerEstadisticas](lambdas/05-obtener-estadisticas.md)**              | Trae las estadísticas por campaña y las guarda (doble escritura)                                                                     | Escribe `PancakeEstadisticasPaginas` (Mongo + MySQL) |
 
 
-> **Fuera del pipeline** hay además un **endpoint on-demand**: **[ApiLambdaConsultarEstadisticasPagina](endpoint-consultar-estadisticas.md)** — un `POST` de API Gateway que trae estadísticas **frescas** de UNA página (hoy / ayer / rango personalizado), **sin persistir**. Para cuando alguien duda de una tienda y quiere ver los números al instante.
+> **Fuera del pipeline** hay además un **endpoint on-demand**: **[ApiLambdaConsultarEstadisticasPagina](lambdas/ApiLambdaConsultarEstadisticasPagina/ApiLambdaConsultarEstadisticasPagina.md)** — un `POST` de API Gateway que trae estadísticas **frescas** de UNA página (hoy / ayer / rango personalizado), **sin persistir**. Para cuando alguien duda de una tienda y quiere ver los números al instante.
 
 ---
 

@@ -1,0 +1,14 @@
+flowchart TD
+    A["Step Function Map\n(1 invocación por página)"] --> B["Function.cs"]
+    B --> C["SincronizarConversacionesUseCase"]
+    C --> D["PaginaTokenRepository\n(Mongo: token de página + token de usuario)"]
+    C --> E["ConversacionRepository.ObtenerWaterMarkAsync\n(MySQL: MAX FechaActualizacionPancake)"]
+    E --> F["since = max(watermark, ahora - MAXIMO_DIAS_SINCRONIZAR)"]
+    F --> G{"Llamar Pancake API\nObtenerConversacionesAsync"}
+    G -- "token vencido (PancakeApiException)" --> H["GenerarTokenPaginaAsync\n(regenerar token)"]
+    H --> G
+    G -- OK --> I["ConversacionMapper.AEntidad\n(por cada conversación del lote)"]
+    I --> J[("MySQL: PancakeConversaciones\nUPSERT por lote")]
+    J --> K{"¿Vinieron 60 filas\n(página llena)?"}
+    K -- Sí, sigue paginando --> G
+    K -- No, fin --> L["Respuesta: SalidaSincronizacion\n{ PageId, TotalSincronizadas, Error }"]

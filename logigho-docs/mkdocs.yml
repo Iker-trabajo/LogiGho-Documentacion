@@ -46,6 +46,9 @@ plugins:
   - mermaid2
 
 markdown_extensions:
+  - pymdownx.snippets:
+      base_path: ['docs']
+      check_paths: true
   - admonition
   - pymdownx.details
   - pymdownx.superfences:
@@ -100,16 +103,25 @@ nav:
                   - Servientrega: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaGenerarCotizacion/ApiLambdaGenerarCotizacion.md
                   - Envía: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
           - Integración Pancake:
-              - Visión general: backend/pancake/overview.md
-              - Lambdas:
-                  - 1 · Calcular Ventana de Tiempo: backend/pancake/lambdas/01-calcular-ventana-tiempo.md
-                  - 2 · Obtener Cuentas Principales: backend/pancake/lambdas/02-obtener-cuentas-principales.md
-                  - 3 · Listar Páginas Pancake: backend/pancake/lambdas/03-listar-paginas-pancake.md
-                  - 4 · Obtener Páginas Activas: backend/pancake/lambdas/04-obtener-paginas-activas.md
-                  - 5 · Obtener Estadísticas: backend/pancake/lambdas/05-obtener-estadisticas.md
-              - Orquestación (Step Functions + EventBridge): backend/pancake/orquestacion.md
-              - Operación: backend/pancake/operacion.md
-          - Servicio Consultar Estadisticas Pagina: backend/pancake/ApiLambdaConsultarEstadisticasPagina.md
+              - Estadísticas de Cuentas (Marketing):
+                  - Descripción general: backend/pancake/overview.md
+                  - Lambdas:
+                      - 1 · Calcular Ventana de Tiempo: backend/pancake/lambdas/01-calcular-ventana-tiempo.md
+                      - 2 · Obtener Cuentas Principales: backend/pancake/lambdas/02-obtener-cuentas-principales.md
+                      - 3 · Listar Páginas Pancake: backend/pancake/lambdas/03-listar-paginas-pancake.md
+                      - 4 · Obtener Páginas Activas: backend/pancake/lambdas/04-obtener-paginas-activas.md
+                      - 5 · Obtener Estadísticas: backend/pancake/lambdas/05-obtener-estadisticas.md
+                  - Orquestación (Step Functions + EventBridge): backend/pancake/orquestacion.md
+                  - Operación: backend/pancake/operacion.md
+              - Conversaciones y Mensajes:
+                  - Descripción general: backend/pancake/conversaciones-mensajes/overview.md
+                  - Diagramas (índice): backend/pancake/conversaciones-mensajes/diagramas/README.md
+                  - Lambdas:
+                      - Sincronizar Conversaciones: backend/pancake/lambdas/ApiLambdaSicronizarConversacionesPancake/ApiLambdaSincronizarConversacionesPancake.md
+                      - Sincronizar Mensajes: backend/pancake/lambdas/ApiLambdaSincronizarMensajes/ApiLambdaSincronizarMensajes.md
+                  - Orquestación (Step Functions + EventBridge): backend/pancake/conversaciones-mensajes/orquestacion.md
+                  - Operación: backend/pancake/conversaciones-mensajes/operacion.md
+          - Servicio Consultar Estadisticas Pagina: backend/pancake/lambdas/ApiLambdaConsultarEstadisticasPagina/ApiLambdaConsultarEstadisticasPagina.md
 
   - Frontend:
       - Overview: frontend/overview.md
@@ -150,8 +162,8 @@ nav:
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
               - Tienda:
                   - Portafolio:
-                      - Componente: frontend/views/tienda/portafolio/portafolio.md
-                      - Arquitectura: frontend/views/tienda/portafolio/portafolio-ADR.md
+                      - Componente: frontend/views/tienda/Portafolio/portafolio.md
+                      - Arquitectura: frontend/views/tienda/Portafolio/portafolio-ADR.md
                   - Pauta:
                       - Componente: frontend/views/tienda/pauta/pauta.md
                   - Wallet:

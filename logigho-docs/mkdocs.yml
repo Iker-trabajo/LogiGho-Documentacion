@@ -148,6 +148,13 @@ nav:
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
       - Vistas:
           - Views:
+              - Analytics (Reportes ETL):
+                  - Vision general y seguridad: frontend/views/analytics/overview.md
+                  - Gestion de Reportes: frontend/views/analytics/gestion-reportes.md
+                  - Lista de Reportes: frontend/views/analytics/lista-reportes.md
+                  - Visor de Reporte: frontend/views/analytics/vista-reporte.md
+                  - Componente Sandbox: frontend/views/analytics/reporte-sandbox.md
+                  - Servicios: frontend/views/analytics/servicios.md
               - Controller:
                   - Facturas transportadoras:
                       - Componente: frontend/views/controller/facturas-trans/facturas-trans.md

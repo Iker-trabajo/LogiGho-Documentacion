@@ -134,6 +134,8 @@ nav:
               - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
               - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
+              - Modal Creacion Pedidos: frontend/components/modal-creacion-pedidos.component.md
+              - Menu Acciones: frontend/views/dropshipping/product-hub/components/menu-acciones.md
       - Vistas:
           - Views:
               - Controller:
@@ -145,6 +147,18 @@ nav:
                       - Arquitectura: frontend/views/controller/conciliacion-pagos/conciliacion-pagos-ADR.md
               - Administracion:
                   - Documentos Tienda: frontend/views/administracion/documentos-tiendas/documentos-tienda.md
+                  - Administrar Comunidades:
+                      - Componente: frontend/views/administracion/administrar-comunidades/administrar-comunidades.md
+                      - Modal Comunidad: frontend/views/administracion/administrar-comunidades/components/comunidad-form-modal.md
+              - Dropshipping:
+                  - Product HUB:
+                      - Explorar Comunidades: frontend/views/dropshipping/product-hub/explorar-comunidades.md
+                      - Comunidad Detalle: frontend/views/dropshipping/product-hub/comunidad-detalle.md
+                      - Gestion Comunidad: frontend/views/dropshipping/product-hub/gestion-comunidad.md
+                      - Entidad-Relacion: frontend/views/dropshipping/product-hub/product-hub-er.md
+                      - Diagrama de flujo: frontend/views/dropshipping/product-hub/product-hub-flujo.md
+                      - Modal Seleccion Tienda: frontend/views/dropshipping/product-hub/components/seleccion-tienda-modal.md
+                      - Modal Solicitud: frontend/views/dropshipping/product-hub/components/solicitud-modal.md
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md

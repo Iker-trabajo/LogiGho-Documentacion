@@ -102,6 +102,8 @@ nav:
                   - Interrapidísimo: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarInterrapidisimo/ApiLambdaCotizarInterrapidisimo.md
                   - Servientrega: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaGenerarCotizacion/ApiLambdaGenerarCotizacion.md
                   - Envía: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
+              - ApiLambdaProcesoAutomaticoInter:
+                  - Lambda: backend/lambdas-dotnet/aplicacion/interrapidismo/ApiLambaProcesoAutomaticoInter/ApiLambaProcesoAutomaticoInter.md
           - Integración Pancake:
               - Estadísticas de Cuentas (Marketing):
                   - Descripción general: backend/pancake/overview.md
@@ -202,6 +204,15 @@ nav:
                       - Componente: frontend/views/logistica/guias-devoluciones/componente/guias-devoluciones.md
                   - Resumen Inventario:
                       - Componente: frontend/views/logistica/resumen-inventario/resumen-inventario.md
+                  - Cambio Entrega Inter:
+                      - Componente: frontend/views/logistica/cambio-entrega-inter/cambio-entrega-inter.md
+                      - Arquitectura (ADR-001): frontend/views/logistica/cambio-entrega-inter/adr/ADR-001-desenlace-final.md
+                      - Modelo: frontend/views/logistica/cambio-entrega-inter/modelos/cambio-entrega-inter-models.md
+                      - Servicio: frontend/views/logistica/cambio-entrega-inter/servicios/cambio-entrega-inter-repository.md
+                      - Tabla: frontend/views/logistica/cambio-entrega-inter/components/cambio-entrega-tabla.md
+                      - Filtros: frontend/views/logistica/cambio-entrega-inter/components/cambio-entrega-filtros.md
+                      - Modal de detalle: frontend/views/logistica/cambio-entrega-inter/components/cambio-entrega-detalle-modal.md
+                      - Modal de gráficas: frontend/views/logistica/cambio-entrega-inter/components/cambio-entrega-analisis.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 

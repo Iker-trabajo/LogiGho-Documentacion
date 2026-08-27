@@ -104,6 +104,21 @@ nav:
                   - Envía: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
               - ApiLambdaProcesoAutomaticoInter:
                   - Lambda: backend/lambdas-dotnet/aplicacion/interrapidismo/ApiLambaProcesoAutomaticoInter/ApiLambaProcesoAutomaticoInter.md
+              - ApiLambdaDevolucionesMasivo:
+                  - Lambda: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/ApiLambdaDevolucionesMasivo.md
+                  - Iniciar Handler: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/handlers/iniciar-handler.md
+                  - Worker Handler: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/handlers/worker-handler.md
+                  - Estado Handler: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/handlers/estado-handler.md
+                  - Iniciar Job (Caso de Uso): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/casos-uso/iniciar-job-usecase.md
+                  - Procesar Job (Caso de Uso): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/casos-uso/procesar-job-usecase.md
+                  - Consultar Job (Caso de Uso): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/casos-uso/consultar-job-usecase.md
+                  - Modelos de Dominio: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/dominio/modelos.md
+                  - Repositorios: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/infraestructura/repositorios.md
+                  - Clientes Transportadora: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/infraestructura/clientes-transportadora.md
+                  - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-001-tres-funciones-un-proyecto.md
+                  - JobDevolucion (ADR-002): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-002-jobdevolucion-solo-contadores.md
+                  - JobId en Inventario (ADR-003): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-003-jobid-en-inventariodevolucion.md
+                  - Fechas UTC (ADR-004): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-004-fechas-utc.md
           - Integración Pancake:
               - Estadísticas de Cuentas (Marketing):
                   - Descripción general: backend/pancake/overview.md
@@ -227,6 +242,19 @@ nav:
                       - Filtros: frontend/views/logistica/cambio-entrega-inter/components/cambio-entrega-filtros.md
                       - Modal de detalle: frontend/views/logistica/cambio-entrega-inter/components/cambio-entrega-detalle-modal.md
                       - Modal de gráficas: frontend/views/logistica/cambio-entrega-inter/components/cambio-entrega-analisis.md
+                  - Ingreso Devoluciones:
+                      - Componente: frontend/views/logistica/ingreso-devoluciones/ingreso-devoluciones.md
+                      - Modelo: frontend/views/logistica/ingreso-devoluciones/modelos/ingreso-devoluciones-models.md
+                      - Repositorio: frontend/views/logistica/ingreso-devoluciones/servicios/ingreso-devoluciones-repository.md
+                      - Store: frontend/views/logistica/ingreso-devoluciones/servicios/ingreso-devoluciones-store.md
+                      - Reglas (rules.ts): frontend/views/logistica/ingreso-devoluciones/helpers/ingreso-devoluciones-rules.md
+                      - Buffer de Escaneo: frontend/views/logistica/ingreso-devoluciones/helpers/escaneo-buffer.md
+                      - Carga de Archivo: frontend/views/logistica/ingreso-devoluciones/components/carga-archivo.md
+                      - Panel de Escaneo: frontend/views/logistica/ingreso-devoluciones/components/panel-escaneo.md
+                      - Progreso del Lote: frontend/views/logistica/ingreso-devoluciones/components/progreso-lote.md
+                      - Detalle del Lote: frontend/views/logistica/ingreso-devoluciones/components/detalle-lote.md
+                      - Historial de Lotes: frontend/views/logistica/ingreso-devoluciones/components/historial-lotes.md
+                      - Filtro Múltiple: frontend/views/logistica/ingreso-devoluciones/components/filtro-multiple.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 

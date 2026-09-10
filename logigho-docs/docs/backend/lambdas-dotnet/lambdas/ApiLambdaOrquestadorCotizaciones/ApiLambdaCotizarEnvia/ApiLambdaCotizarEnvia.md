@@ -1,13 +1,14 @@
 ## Autor: Iker Acevedo
 
 Fecha creación: 2026-07-16
-Estado: desarrollo (⚠️ desplegada pero NO se invoca — ver Deuda técnica)
+Última actualización: 2026-09-09
+Estado: produccion
 
 ---
 
 ## Lambda: ApiLambdaCotizarEnvia
 
-**Trigger:** Invocación Lambda-a-Lambda (AWS SDK) — *actualmente **no se invoca***
+**Trigger:** Invocación Lambda-a-Lambda (AWS SDK) desde `ApiLambdaOrquestadorCotizaciones`
 **AOT:** No
 
 ---
@@ -16,7 +17,7 @@ Estado: desarrollo (⚠️ desplegada pero NO se invoca — ver Deuda técnica)
 
 Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve el flete real del envío. Es un *worker*, igual que los de Inter y Servientrega.
 
-> ⚠️ **Hoy el cotizador NO la usa.** El orquestador estima la tarifa de Envía de forma **geográfica** porque no se logró consumir la API de Envía de forma confiable. La lambda sigue desplegada y funcional a nivel de código, esperando la reunión con la transportadora. Ver **Deuda técnica** abajo.
+**Desde el 2026-09-09 el orquestador SÍ la invoca de verdad.** Antes se estimaba la tarifa de Envía de forma geográfica porque no se lograba consumir la API de Envía de forma confiable — la causa raíz era un bug de negocio (ver **Observaciones**), no un problema de la lambda en sí.
 
 ---
 
@@ -29,7 +30,7 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
 
 **Handler:** `ApiLambdaCotizarEnvia::ApiLambdaCotizarEnvia.Lambda.Handlers.DirectFunction::HandleAsync`
 
-**Env var que lo referencia:** `FN_ENVIA_LIQUIDACION` (en el orquestador) — **actualmente sin uso**
+**Env var que lo referencia:** `FN_ENVIA_LIQUIDACION` (en el orquestador)
 
 ---
 
@@ -42,7 +43,11 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
   "cod_formapago": "6",
   "cod_servicio": 12,
   "mca_docinternacional": 0,
-  "info_contenido": { "num_documentos": "12345-67890" },
+  "cod_regional_cta": "11",
+  "cod_oficina_cta": "110010",
+  "cod_cuenta": "XXXXXX",
+  "con_cartaporte": 0,
+  "info_contenido": { "num_documentos": "12345-67890", "valorproducto": 100000 },
   "info_cubicacion": [
     { "declarado": 100000, "peso": 3, "alto": 10, "ancho": 10, "largo": 10, "cantidad": "1" }
   ]
@@ -53,13 +58,18 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
 | ----- | ---- | --------- | ----------- |
 | `ciudad_origen` | `string` | Sí | Ciudad origen en **código DANE 8**. |
 | `ciudad_destino` | `string` | Sí | Ciudad destino en **código DANE 8**. |
-| `cod_formapago` | `string` | Sí | Forma de pago: `4` = Crédito · `6` = Contado · `7` = Contraentrega. |
+| `cod_formapago` | `string` | Sí | Forma de pago: `4` = Crédito (**con recaudo** en Envía) · `6` = Contado · `7` = Contraentrega (**sin recaudo** en Envía). Ver nota de semántica invertida abajo. |
 | `cod_servicio` | `int` | Sí | Modalidad. `12` = Paquete Terrestre (1–8 kg, una unidad). |
 | `mca_docinternacional` | `int` | Sí | `0` si no aplica. |
+| `cod_regional_cta` / `cod_oficina_cta` / `cod_cuenta` | `string` | Sí | Datos de la cuenta de Envía a usar. El orquestador los resuelve con `EnviaCuentaResolver` según `ConRecaudo` — ver [ADR-001](../ADR-001-strategy-cotizadores.md). |
+| `con_cartaporte` | `int` | Sí | `0`/`1`. Requerido por el contrato de Envía. |
 | `info_contenido.num_documentos` | `string` | Sí | Número de factura/documento. |
+| `info_contenido.valorproducto` | `decimal` | Sí | Valor de la mercancía, para el cálculo de `valor_costom`. |
 | `info_cubicacion[]` | `array` | Sí | Peso, dimensiones, valor declarado y cantidad. Reemplaza a `num_unidades`/`mpesoreal_k`/`valor_declarado`. |
 
-> El orquestador armaría este request con `FromCommonMapper.ToEnvia(Common)`.
+> ⚠️ **Semántica invertida respecto al resto del mercado**: en Envía, Crédito (`4`) = CON recaudo y Contraentrega (`7`) = SIN recaudo — al revés de Inter y Servientrega, donde con recaudo = contado/contraentrega. Ver el ADR del orquestador para la tabla completa.
+>
+> El orquestador arma este request con `FromCommonMapper.ToEnvia(Common)` + `EnviaCuentaResolver`.
 
 ---
 
@@ -90,12 +100,13 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
 | `dias_entrega` | Tiempo ofrecido. |
 | `guia` / `urlguia` | Solo en generación de guía, no en liquidación. |
 
-⚠️ **Envía responde `200 OK` incluso con errores de negocio**: el error viene en el campo `respuesta` y los valores en `0`. Hay que revisar `respuesta`, no solo el status code.
+⚠️ **Envía responde `200 OK` incluso con errores de negocio**: el error viene en el campo `respuesta` y los valores en `0`. Hay que revisar `respuesta`, no solo el status code. Esto es exactamente lo que antes hacía que el orquestador leyera un error (ej. peso fuera de rango) como una cotización válida con flete `$0`.
 
 ### Errores
 
 | Código | Cuándo |
 | ------ | ------ |
+| `EnviaLiquidacionException` | Envía respondió `200` pero `respuesta != ""` (error de negocio: peso fuera de rango, ciudad sin cubrimiento, etc.). |
 | `InvalidOperationException` | Falta la env var `ENVIA_ENDPOINT` |
 | `HttpRequestException` | Envía respondió != 2xx (incluye el detalle) |
 | `TimeoutException` | Se agotó el presupuesto de tiempo (ver `Timeouts`) |
@@ -113,9 +124,10 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
 | **Lambda** | `Timeouts.cs` | **Presupuesto de tiempo inteligente**: respeta el `RemainingTime` del contexto Lambda (menos 1s de seguridad) para no morir por timeout de la lambda. |
 | **Lambda** | `Cors.cs`, `Serialization.cs` | Headers CORS y serializador. |
 | **Aplicacion/Services** | `IEnviaLiquidacionService.cs` | Contrato del servicio. |
-| **Aplicacion/Services** | `EnviaLiquidacionService.cs` | Delega al cliente HTTP (capa fina). |
-| **Dominio/Entidades** | `EnviaLiquidacionRequest.cs` | Request + `InfoContenido` + `InfoCubicacion`. |
+| **Aplicacion/Services** | `EnviaLiquidacionService.cs` | Delega al cliente HTTP (capa fina) y lanza `EnviaLiquidacionException` si `respuesta != ""`. |
+| **Dominio/Entidades** | `EnviaLiquidacionRequest.cs` | Request + `InfoContenido` (con `valorproducto`) + `InfoCubicacion` + datos de cuenta (`cod_regional_cta`, `cod_oficina_cta`, `cod_cuenta`, `con_cartaporte`). |
 | **Dominio/Entidades** | `EnviaLiquidacionResponse.cs` | Respuesta de Envía. |
+| **Dominio/Excepciones** | `EnviaLiquidacionException.cs` | Se lanza cuando Envía responde `200` con `respuesta` lleno (error de negocio). Antes ese caso se leía como cotización válida con flete `$0`. |
 | **Infraestructura/Http** | `EnviaLiquidacionApiClient.cs` | Cliente HTTP: POST JSON, fuerza HTTP/1.1, convierte cancelaciones en `TimeoutException` con diagnóstico. |
 
 ---
@@ -134,6 +146,7 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
 | `REQUEST_TIMEOUT_SECONDS` | No | Presupuesto total de la petición (default `20`). |
 | `HTTP_TIMEOUT_SECONDS` | No | Timeout del `HttpClient` (default `25`). |
 | `USE_REMAININGTIME_CAP` | No | Si respeta el `RemainingTime` del contexto (default `true`). |
+| `ENVIA_CUENTA_RECAUDO` / `ENVIA_CUENTA_SIN_RECAUDO` | **Sí** *(en el orquestador)* | No son env vars de esta lambda — viven en `ApiLambdaOrquestadorCotizaciones` y `EnviaCuentaResolver` las usa para armar `cod_regional_cta`/`cod_oficina_cta`/`cod_cuenta` antes de invocar esta lambda. |
 
 ---
 
@@ -141,16 +154,20 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
 
 | Fecha | Autor | Cambio |
 |-------|-------|--------|
-| — | — | Sin cambios en esta iteración. Se evaluó integrarla al cotizador pero se dejó como deuda técnica (ver abajo). |
+| 2026-09-09 | Iker Acevedo | **Integrada al cotizador**: el orquestador ya la invoca de verdad. Se completó `EnviaLiquidacionRequest` con datos de cuenta (`cod_regional_cta`, `cod_oficina_cta`, `cod_cuenta`, `con_cartaporte`, `info_contenido.valorproducto`). Nueva `EnviaLiquidacionException` para el bug de error de negocio con HTTP 200. |
+| 2026-07-16 | Iker Acevedo | Creación de la lambda. Se evaluó integrarla al cotizador pero se dejó como deuda técnica en ese momento. |
 
 ---
 
 ## Observaciones
 
-### Deuda técnica: Envía no está integrada al cotizador
+### El bug que impedía integrarla (ya corregido)
 
-**Estado:** el orquestador **NO invoca** esta lambda. Estima la tarifa de Envía geográficamente.
-
-**Por qué:** el endpoint de liquidación rechaza sistemáticamente con:
+El endpoint de liquidación de Envía rechazaba sistemáticamente con:
 > `"Ciudad sin cubrimiento o valor producto supera el valor maximo para proceso recaudos."`
+
+La causa real no era la ciudad ni el valor: **faltaban campos del contrato** (`cod_regional_cta`, `cod_oficina_cta`, `cod_cuenta`, `con_cartaporte`, `info_contenido.valorproducto`) y, además, el orquestador no distinguía el caso de error de negocio (HTTP 200 con `respuesta` lleno) de una cotización válida. Corregido en la Ronda 1 de `feature/integracion-cotizador-envia` (2026-09-09): request completado + `EnviaLiquidacionException`.
+
+- **Guía con recaudo para Envía sin-recaudo** sigue sin soportarse operativamente (se puede crear el pedido pero no se factura bien) — fuera de alcance de esta feature.
+- `cubrimiento`: esta lambda no lo expone en el response documentado aquí, pero el modelo de respuesta del orquestador sí lo trae; el front decidió no mostrarlo.
 

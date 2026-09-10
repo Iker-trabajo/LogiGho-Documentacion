@@ -99,6 +99,7 @@ nav:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionSqlMongo/ApiLambdaSincronizacionSqlMongo.md
               - ApiLambdaOrquestadorCotizaciones:
                   - Orquestador: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md
+                  - Arquitectura (ADR-001, Strategy + recaudo): backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ADR-001-strategy-cotizadores.md
                   - Interrapidísimo: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarInterrapidisimo/ApiLambdaCotizarInterrapidisimo.md
                   - Servientrega: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaGenerarCotizacion/ApiLambdaGenerarCotizacion.md
                   - Envía: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
@@ -147,9 +148,12 @@ nav:
       - Componentes:
           - Core:
             - Estandarizador de direcciones: frontend/core/estandarizador-direcciones.md
+            - Servicio de Cotizacion: frontend/core/cotizacion-service.md
+            - Reglas Modalidad de Pago: frontend/core/reglas-modalidad-pago.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
+              - Paso Cotizacion (Modal Pedidos): frontend/components/paso-cotizacion.md
               - Importacion Pauta: frontend/components/importacion-pauta.md
               - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md

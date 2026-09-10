@@ -58,7 +58,7 @@ Consulta el **Cotizador Corporativo de Servientrega** y devuelve el flete real d
 | `ValorDeclarado` | `int` | Sí | Valor de la mercancía. |
 | `IdDaneCiudadOrigen` | `string` | Sí | Ciudad origen en **código DANE**. |
 | `IdDaneCiudadDestino` | `string` | Sí | Ciudad destino en **código DANE**. |
-| `EnvioConCobro` | `bool` | Sí | Si el envío lleva logística de cobro. |
+| `EnvioConCobro` | `bool` | Sí | Si el envío lleva logística de cobro (con/sin recaudo). El contrato ya lo tenía nativo — hasta el 2026-09-09 `FromCommonMapper.ToServientrega` lo **forzaba siempre a `true`**; ahora sigue `Common.ConRecaudo`. Cero cambios en esta lambda. |
 | `Token` | `string` | **No** | Token de Servientrega. **Si viene vacío, la lambda lo genera sola.** |
 | `IdProducto`, `NumeroPiezas`, `FormaPago`, `TiempoEntrega`, `MedioTransporte`, `NumRecaudo` | `int` | Sí | Se reciben, pero ⚠️ **el servicio los sobrescribe** con valores fijos (ver Observaciones). |
 
@@ -146,6 +146,7 @@ La lambda valida `estado == true` y `token` no vacío antes de continuar (**fail
 
 | Fecha | Autor | Cambio |
 |-------|-------|--------|
+| 2026-09-09 | Iker Acevedo | Soporte con/sin recaudo: `FromCommonMapper.ToServientrega` deja de forzar `EnvioConCobro = true`, ahora sigue `Common.ConRecaudo`. Migrada al patrón Strategy (`CotizadorServientrega`). Cero cambios en esta lambda (el contrato ya soportaba el campo). |
 | 2026-07-16 | Iker Acevedo | **La lambda genera su propio token**: si el request no trae `Token`, hace login con `SERVI_LOGIN`/`SERVI_PASSWORD`/`SERVI_COD_FACTURACION` |
 | 2026-07-16 | Iker Acevedo | Nuevo modelo `ServientregaTokenResponse` + validación de `estado`/`token` (fail-loud) |
 | 2026-07-16 | Iker Acevedo | Nuevas env vars `SERVI_LOGIN`, `SERVI_PASSWORD`, `SERVI_COD_FACTURACION` |

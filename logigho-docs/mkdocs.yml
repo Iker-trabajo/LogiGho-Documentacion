@@ -97,12 +97,12 @@ nav:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrudGenericoAOT/ApiLambdaCrudGenericoAOT.md
               - ApiLambdaSincronizacionSqlMongo:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionSqlMongo/ApiLambdaSincronizacionSqlMongo.md
-              - ApiLambdaOrquestadorCotizaciones:
-                  - Orquestador: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md
-                  - Arquitectura (ADR-001, Strategy + recaudo): backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ADR-001-strategy-cotizadores.md
-                  - Interrapidísimo: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarInterrapidisimo/ApiLambdaCotizarInterrapidisimo.md
-                  - Servientrega: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaGenerarCotizacion/ApiLambdaGenerarCotizacion.md
-                  - Envía: backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
+              - Cotizacion (FuncionesCotizar):
+                  - Orquestador: backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md
+                  - Arquitectura (ADR-001, Strategy + recaudo): backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaOrquestadorCotizaciones/ADR-001-strategy-cotizadores.md
+                  - Interrapidísimo: backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaCotizarInterrapidisimo/ApiLambdaCotizarInterrapidisimo.md
+                  - Servientrega: backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaGenerarCotizacion/ApiLambdaGenerarCotizacion.md
+                  - Envía: backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
               - ApiLambdaProcesoAutomaticoInter:
                   - Lambda: backend/lambdas-dotnet/aplicacion/interrapidismo/ApiLambaProcesoAutomaticoInter/ApiLambaProcesoAutomaticoInter.md
               - ApiLambdaDevolucionesMasivo:

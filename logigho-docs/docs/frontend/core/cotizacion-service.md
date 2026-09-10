@@ -36,7 +36,7 @@ Cotiza contra las 3 transportadoras (o las que vengan en `Proveedores`). El mism
 
 | Método | Ruta | Descripción |
 | ------ | ---- | ----------- |
-| `POST` | `/orquestadorCotizacion` | Cotiza en las 3 transportadoras a la vez. Ver [ApiLambdaOrquestadorCotizaciones](../../backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md) |
+| `POST` | `/orquestadorCotizacion` | Cotiza en las 3 transportadoras a la vez. Ver [ApiLambdaOrquestadorCotizaciones](../../backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md) |
 
 ---
 

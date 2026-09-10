@@ -30,7 +30,7 @@ Existe porque había un bug real en producción: Envía estaba **forzado** a `FO
 | Servientrega | `FORMA DE PAGO = CONTADO`, `APLICA CONTRA PAGO = SI` | `FORMA DE PAGO = CREDITO`, `APLICA CONTRA PAGO = NO` |
 | Envía | **`FORMA DE PAGO = CREDITO`**, `APLICA CONTRA PAGO = SI` | **`FORMA DE PAGO = CONTADO`**, `APLICA CONTRA PAGO = NO` |
 
-⚠️ **Envía está invertida** respecto a Inter y Servientrega — mismo patrón de inversión que ya existe en el backend (`EnviaCuentaResolver`, ver [ADR-001](../../backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ADR-001-strategy-cotizadores.md)). Este es justo el caso que estaba mal en producción antes de esta feature.
+⚠️ **Envía está invertida** respecto a Inter y Servientrega — mismo patrón de inversión que ya existe en el backend (`EnviaCuentaResolver`, ver [ADR-001](../../backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaOrquestadorCotizaciones/ADR-001-strategy-cotizadores.md)). Este es justo el caso que estaba mal en producción antes de esta feature.
 
 **Si se agrega una transportadora nueva sin entrada en `REGLAS_MODALIDAD_PAGO`**: cae a la regla estándar (Contado con recaudo / Crédito sin recaudo) y **avisa por consola** — no falla en silencio.
 

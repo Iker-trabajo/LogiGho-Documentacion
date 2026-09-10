@@ -16,7 +16,7 @@ Estado: aceptada
 
 El cotizador orquesta 3 transportadoras. Antes de esta feature:
 
-- **Envía nunca se invocaba de verdad**: el orquestador estimaba su tarifa geográfico, sin tocar la API real de Envía.
+- **Envía nunca se invocaba de verdad**: el orquestador estimaba su tarifa geográfico y hacia el calculo algoritmicamente, sin tocar la API real de Envía.
 - **Inter y Servientrega sí cotizaban real, pero siempre con recaudo forzado** — no existía el concepto de "sin recaudo" para ellas (Servientrega tenía el campo `EnvioConCobro` en su contrato, pero el mapeo lo forzaba a `true`).
 - `DirectFunction` (el orquestador) tenía un bloque `if/else` duplicado por transportadora, de casi 200 líneas, mezclando armado de request, invocación y aplicación de la fórmula Logigho.
 
@@ -31,7 +31,7 @@ Al integrar Envía real y agregar el switch "con/sin recaudo" a las 3 transporta
 Agregar el `ConRecaudo` y la integración de Envía dentro del mismo bloque condicional.
 
 **Pros:** cambio mínimo, no hay que tocar la estructura del proyecto.
-**Contras:** el método ya era difícil de leer con 2 transportadoras; con 3 y con recaudo variable se vuelve inmanejable. Cada transportadora nueva futura implicaría tocar el orquestador entero. Difícil de testear en aislamiento.
+**Contras:** el método ya era difícil de leer con 2 transportadoras, con 3 y con recaudo variable se vuelve aumentabamos la complejidad del codigo y lo haciamos insostenible. Cada transportadora nueva futura implicaría tocar el orquestador entero. Difícil de testear en aislamiento.
 
 ### Opción B — Patrón Strategy (`ICotizadorProveedor`)
 
@@ -39,10 +39,7 @@ Cada transportadora implementa una interfaz común (`ICotizadorProveedor`): mape
 
 **Pros:** `DirectFunction` baja de ~200 a ~55 líneas. Agregar una transportadora nueva es 1 clase + 1 línea en el registro, sin tocar el orquestador (Open/Closed). Cada estrategia se testea en aislamiento con mocks.
 **Contras:** una capa de indirección más para quien no conoce el patrón; ligero costo de aprendizaje inicial.
-
-> No se consideró una Opción C — no había otra alternativa seria además de seguir acumulando `if/else`.
-
----
+--
 
 ## Decisión
 
@@ -62,7 +59,6 @@ La parte no obvia que motivó documentar esto aparte: **cada transportadora expr
 | Servientrega | `EnvioConCobro = true` | `EnvioConCobro = false` |
 | Envía | Cuenta `ENVIA_CUENTA_RECAUDO` → `cod_formapago = 4` (**Crédito**) | Cuenta `ENVIA_CUENTA_SIN_RECAUDO` → `cod_formapago = 7` (**Contraentrega**) |
 
-Para Inter se evaluó y **se descartó** un valor mínimo fijo de $45.000 para el caso "sin recaudo" — se decidió que `ValorDeclarado` siempre sea el valor real del pedido, con o sin recaudo, por ser más simple y no introducir un número mágico sin respaldo de negocio.
 
 > 💡 **Por qué importa la inversión de Envía**: si se replica ciegamente la regla de Inter/Servientrega (con recaudo → contado/contraentrega) a Envía, la cuenta y la forma de pago quedan cruzadas y Envía facturará mal. Esta es la razón por la que existe `EnviaCuentaResolver` como pieza separada en vez de una condición más dentro del mapeo genérico.
 
@@ -99,6 +95,6 @@ Para Inter se evaluó y **se descartó** un valor mínimo fijo de $45.000 para e
 ## Referencias
 
 - [ApiLambdaOrquestadorCotizaciones](ApiLambdaOrquestadorCotizaciones.md)
-- [ApiLambdaCotizarEnvia](ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md)
-- [ApiLambdaCotizarInterrapidisimo](ApiLambdaCotizarInterrapidisimo/ApiLambdaCotizarInterrapidisimo.md)
-- [reglas-modalidad-pago.ts (front)](../../../../frontend/core/reglas-modalidad-pago.md)
+- [ApiLambdaCotizarEnvia](../ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md)
+- [ApiLambdaCotizarInterrapidisimo](../ApiLambdaCotizarInterrapidisimo/ApiLambdaCotizarInterrapidisimo.md)
+- [reglas-modalidad-pago.ts (front)](../../../../../../frontend/core/reglas-modalidad-pago.md)

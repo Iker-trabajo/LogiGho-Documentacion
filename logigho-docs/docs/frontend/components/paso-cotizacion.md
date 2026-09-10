@@ -22,7 +22,7 @@ Es el paso 3 del [modal de creación de pedidos](modal-creacion-pedidos.componen
 
 ## Con/sin recaudo
 
-Switch "Con recaudo / Sin recaudo" que aplica a las **3** transportadoras a la vez (`Common.ConRecaudo` en el request al orquestador). Antes solo existía visualmente para Envía — el campo ya era global en el payload, pero el backend lo ignoraba para Inter/Servientrega hasta la Ronda 2 de `feature/integracion-cotizador-envia`. Ver [ApiLambdaOrquestadorCotizaciones](../../backend/lambdas-dotnet/lambdas/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md).
+Switch "Con recaudo / Sin recaudo" que aplica a las **3** transportadoras a la vez (`Common.ConRecaudo` en el request al orquestador). Antes solo existía visualmente para Envía — el campo ya era global en el payload, pero el backend lo ignoraba para Inter/Servientrega hasta la Ronda 2 de `feature/integracion-cotizador-envia`. Ver [ApiLambdaOrquestadorCotizaciones](../../backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaOrquestadorCotizaciones/ApiLambdaOrquestadorCotizaciones.md).
 
 ---
 

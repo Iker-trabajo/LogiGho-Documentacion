@@ -1,26 +1,16 @@
 ## Autor: Iker Acevedo
-
 Fecha creación: 2026-07-16
-
 Estado: produccion
-
 ---
 
 ## Lambda: ApiLambdaOrquestadorCotizaciones
-
 **Trigger:** API Gateway
-
 **AOT:** No
-
 ---
 
 ## ¿Qué hace?
 
-Cotiza un mismo envío en las **3 transportadoras** (Interrapidísimo, Servientrega y Envía) en una sola llamada y devuelve las tres tarifas juntas para que el usuario elija. Similar a la fórmula con la que después se **liquida** la guía.
-
-Esta lambda se consume por medio del API Gateway. Las lambdas internas de cada transportadora, en cambio, sí se invocan por SDK de AWS.
-
-Desde `feature/integracion-cotizador-envia` **Envía cotiza real** (antes se estimaba geográfico, ver `ApiLambdaCotizarEnvia`) y **las 3 transportadoras soportan cotización con/sin recaudo** vía `Common.ConRecaudo` (antes solo existía el concepto para Envía, y ni siquiera se aplicaba porque no se invocaba de verdad).
+Orquesta las cotizaciones con cada transportadora integrada en el sistema LogiGho, actualmente estan (Interrapidísimo, Servientrega y Envía). Dentro de la misma llamada se comunica con las transportadoras mediante peticion HTTP cada transportadora tiene su propia lambda invocada por SDK, el orquestador su funcion principal es invocar a cada transportadora y asignar sus costos tal cual como se genera en la liquidacion . Incluye el concepto de la guia con o sin recaudo para hacer la cotizacion mediante esas 2 formas de envio. 
 
 ---
 
@@ -28,10 +18,12 @@ Desde `feature/integracion-cotizador-envia` **Envía cotiza real** (antes se est
 
 | Método | Ruta | Auth |
 | ------ | ---- | ---- |
-| `POST` | `/orquestadorCotizacion` | Sin authorizer en API Gateway. El front envía `Token` y `headersecurity` como headers para el consumo. |
+| `POST` | `/orquestadorCotizacion` | Autorizacion en API Gateway. El front envía `Token` y `headersecurity` como headers para el .consumo. |
 | `OPTIONS` | `/orquestadorCotizacion` | Preflight CORS (responde `200`) |
 
-**Handler:** `ApiLambdaOrquestadorCotizaciones::ApiLambdaOrquestadorCotizaciones.Lambda.Handlers.ApiGatewayFunction::HandleAsync`
+**Handler:** 
+
+`ApiLambdaOrquestadorCotizaciones::ApiLambdaOrquestadorCotizaciones.Lambda.Handlers.ApiGatewayFunction::HandleAsync`
 
 ---
 
@@ -39,7 +31,7 @@ Desde `feature/integracion-cotizador-envia` **Envía cotiza real** (antes se est
 
 ```json
 {
-  "Proveedores": ["inter", "servientrega", "envia"], // Transportadoras
+  "Proveedores": ["inter", "servientrega", "envia"], // Transportadoras que se requieren cotizar
   "CotizacionLogigho": true,        // Siempre true
   "NombreTienda": "TIENDA A COTIZAR",
   "IdTienda": "100001",
@@ -55,7 +47,7 @@ Desde `feature/integracion-cotizador-envia` **Envía cotiza real** (antes se est
       "Envia":           { "Origen": "11001000", "Destino": "05001000" }
     },
     "FormaPago": { "Interrapidisimo": 1, "Servientrega": 1, "Envia": "6" },
-    "ConRecaudo": true
+    "ConRecaudo": true    // Defina la forma del envio
   }
 }
 ```
@@ -64,8 +56,8 @@ Desde `feature/integracion-cotizador-envia` **Envía cotiza real** (antes se est
 | ----- | ---- | --------- | ----------- |
 | `Proveedores` | `string[]` | Sí | A las transportados que quieren cotizar: `inter`, `servientrega` (o `servi`), `envia`. Solo se ejecutan los listados. |
 | `CotizacionLogigho` | `bool` | Sí | `true` = tarifa propia de LogiGho. |
-| `NombreTienda` | `string` | No* | Nombre de la tienda. **Fallback** si no llega `IdTienda`. |
-| `IdTienda` | `string` | No* | Id de la tienda. **Se prioriza sobre el nombre**. |
+| `NombreTienda` | `string` | Sí* | Nombre de la tienda. **Fallback** si no llega `IdTienda`. |
+| `IdTienda` | `string` | Sí* | Id de la tienda. **Se prioriza sobre el nombre**. |
 | `Common.IdProducto` | `int` | Sí | Tipo de producto. |
 | `Common.NumeroPiezas` | `int` | Sí | Cantidad de bultos. |
 | `Common.Piezas[]` | `array` | Sí | Peso y dimensiones por pieza. El **peso total** = suma de `Peso`; define si aplica kilo adicional. |
@@ -169,30 +161,42 @@ Cada `CotizadorXxx` tiene un constructor `internal` alterno que recibe el invoke
 | Servientrega | `EnvioConCobro = true` | `EnvioConCobro = false` |
 | Envía | Cuenta `ENVIA_CUENTA_RECAUDO` (`cod_formapago = 4`, Crédito) | Cuenta `ENVIA_CUENTA_SIN_RECAUDO` (`cod_formapago = 7`, Contraentrega) |
 
-⚠️ **Envía tiene la semántica invertida respecto al resto del mercado**: en Envía, Crédito = CON recaudo y Contraentrega = SIN recaudo. Ver `EnviaCuentaResolver` abajo y la tabla completa de forma de pago en el ADR de este módulo.
+⚠️ **Envía tiene la forma de pago invertida respecto al resto del mercado**: en Envía, Crédito = CON recaudo y Contraentrega = SIN recaudo. Ver `EnviaCuentaResolver` abajo y la tabla completa de forma de pago en el ADR de este módulo.
 
-### Fórmula Logigho (`LogighoPricingService`)
+### Calculo cotizacion
 
-`fleteBase` (el mayor entre el flete real que devuelve la transportadora y la config geográfica en Mongo) `+ valorDeclarado * porcentaje`:
-
+- `fleteBase`
 - **Con recaudo:** `%Recaudo + %Seguro`.
-- **Sin recaudo:** solo `%Seguro` — no se cobra comisión de recaudo sobre algo que no se está recaudando.
+- **Sin recaudo:** solo `%Seguro` 
 
-Mismo patrón para las 3 transportadoras (`CalcularTarifaEnviaConFleteRealAsync` y sus equivalentes de Inter/Servientrega).
 
 ### Cuentas de Envía (`EnviaCuentaResolver`)
 
-Envía no maneja "con/sin recaudo" como un flag suelto: son **2 cuentas distintas configuradas del lado de Envía**, globales para toda la plataforma (no por tienda). `EnviaCuentaResolver` elige la cuenta (`cod_regional_cta`, `cod_oficina_cta`, `cod_cuenta`) según `ConRecaudo`, leyendo `ENVIA_CUENTA_RECAUDO` / `ENVIA_CUENTA_SIN_RECAUDO`. Regional y oficina son constantes fijas en código (iguales en ambas cuentas).
+Envía no maneja "con/sin recaudo" como un flag suelto: son **2 cuentas distintas configuradas del lado de Envía**.
 
 ---
 
-### Resolución de la tienda (`BuscarCostoEnMemoria`)
+### Costos de transporte de la tienda (`BuscarCostoEnMemoria`)
 
 Orden de búsqueda en `CostosTransporteTienda` (siempre con `EstadoGuia = ENTREGA`):
 
 1. Por **`IdTienda`** + transportadora → robusto, camino preferido.
 2. Por **`NombreTienda`** + transportadora → fallback si no vino el Id.
 3. **Genérico**: `Generico <Transportadora> Entrega` → si la tienda no tiene configuración propia.
+
+---
+
+## Resumen: cómo se autentica cada lambda hija contra su transportadora
+
+Las 3 lambdas (`ApiLambdaCotizarInterrapidisimo`, `ApiLambdaGenerarCotizacion`, `ApiLambdaCotizarEnvia`) las invoca este orquestador **por SDK de AWS** (`lambda:InvokeFunction`, sin body HTTP — el rol de ejecución IAM es la autenticación entre lambdas). Puertas afuera, cada una habla con su transportadora de forma distinta:
+
+| Transportadora | Método/URL real | Autenticación contra la transportadora |
+| --------------- | ---------------- | ---------------------------------------- |
+| Interrapidísimo | `GET` — parámetros **en el path** de la URL | 2 headers fijos por request: `x-app-signature` + `x-app-security_token`. No hay login ni token que expire. |
+| Servientrega | `POST` (login) + `POST` (cotización) | Login con usuario/contraseña (Sisclinet) devuelve un **Bearer token** que se usa en la cotización. La lambda se autogestiona el token si no le llega uno. |
+| Envía | `POST` — body JSON | **Sin token ni API key** — la identidad de la cuenta va en el body (`cod_regional_cta`/`cod_oficina_cta`/`cod_cuenta`), y esos 3 datos cambian según con/sin recaudo. |
+
+Ver la sección **"Cómo se consume la API real de..."** en la doc de cada lambda para el detalle completo (URL exacta, headers, ejemplo para probar a mano): [Interrapidísimo](../ApiLambdaCotizarInterrapidisimo/ApiLambdaCotizarInterrapidisimo.md#cómo-se-consume-la-api-real-de-interrapidísimo), [Servientrega](../ApiLambdaGenerarCotizacion/ApiLambdaGenerarCotizacion.md#cómo-se-consume-la-api-real-de-servientrega), [Envía](../ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md#cómo-se-consume-la-api-real-de-envía).
 
 ---
 
@@ -233,8 +237,8 @@ Orden de búsqueda en `CostosTransporteTienda` (siempre con `EstadoGuia = ENTREG
 
 ## Observaciones
 
-- **Pendiente / fuera de esta feature**: guía con recaudo para Envía en modo sin-recaudo aún no se factura bien operativamente (se puede crear el pedido, pero falla la facturación). No es un bug de esta entrega, es un caso no soportado todavía.
-- `cubrimiento` de Envía: el backend lo sigue devolviendo, pero el front decidió no mostrarlo en la UI.
-- **Validación en preprod**: Envía se validó con matemática exacta contra datos reales de tienda. Inter se probó aislado. Servientrega solo con tests unitarios (mock del repositorio) — revisar si ya se validó en preprod real antes de dar esto por "100% probado en producción".
+- **Pendiente / fuera de esta feature**:Aun no se implementa la guia sin recaudo en la creacion de pedidos de envia, toca siempre generarla con un valor minimo de recaudo. 
+- `Trayecto` de Envía: Dentro de la respuesta de la cotización de envia 
+- **Validación en preprod**: Se hicieron pruebas end to end validando cada transportadora y avalado por el area financiero.
 - **Tests**: `test/ApiLambdaOrquestadorCotizaciones.Tests` (xUnit + Moq + FluentAssertions, net8.0). El proyecto principal excluye `test\**` del compile.
 - Ver [ADR — Strategy para cotizadores y semántica de recaudo](ADR-001-strategy-cotizadores.md) para el porqué del refactor y la tabla completa de forma de pago por transportadora.

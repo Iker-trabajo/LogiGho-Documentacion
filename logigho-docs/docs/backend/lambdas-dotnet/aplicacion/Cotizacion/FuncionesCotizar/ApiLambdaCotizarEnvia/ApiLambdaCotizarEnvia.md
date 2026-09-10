@@ -1,7 +1,9 @@
 ## Autor: Iker Acevedo
 
 Fecha creación: 2026-07-16
+
 Última actualización: 2026-09-09
+
 Estado: produccion
 
 ---
@@ -46,10 +48,10 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
   "cod_regional_cta": "11",
   "cod_oficina_cta": "110010",
   "cod_cuenta": "XXXXXX",
-  "con_cartaporte": 0,
-  "info_contenido": { "num_documentos": "12345-67890", "valorproducto": 100000 },
+  "con_cartaporte": "0",
+  "info_contenido": { "num_documentos": "12345-67890", "valorproducto": "100000" },
   "info_cubicacion": [
-    { "declarado": 100000, "peso": 3, "alto": 10, "ancho": 10, "largo": 10, "cantidad": "1" }
+    { "declarado": 100000, "peso": 3, "alto": 10, "ancho": 10, "largo": 10, "cantidad": 1 }
   ]
 }
 ```
@@ -61,10 +63,10 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
 | `cod_formapago` | `string` | Sí | Forma de pago: `4` = Crédito (**con recaudo** en Envía) · `6` = Contado · `7` = Contraentrega (**sin recaudo** en Envía). Ver nota de semántica invertida abajo. |
 | `cod_servicio` | `int` | Sí | Modalidad. `12` = Paquete Terrestre (1–8 kg, una unidad). |
 | `mca_docinternacional` | `int` | Sí | `0` si no aplica. |
-| `cod_regional_cta` / `cod_oficina_cta` / `cod_cuenta` | `string` | Sí | Datos de la cuenta de Envía a usar. El orquestador los resuelve con `EnviaCuentaResolver` según `ConRecaudo` — ver [ADR-001](../ADR-001-strategy-cotizadores.md). |
-| `con_cartaporte` | `int` | Sí | `0`/`1`. Requerido por el contrato de Envía. |
+| `cod_regional_cta` / `cod_oficina_cta` / `cod_cuenta` | `string` | Sí | Datos de la cuenta de Envía a usar. El orquestador los resuelve con `EnviaCuentaResolver` según `ConRecaudo` — ver [ADR-001](../ApiLambdaOrquestadorCotizaciones/ADR-001-strategy-cotizadores.md). |
+| `con_cartaporte` | `string` | Sí | `"0"`/`"1"` (string, no bool/int). Requerido por el contrato de Envía. |
 | `info_contenido.num_documentos` | `string` | Sí | Número de factura/documento. |
-| `info_contenido.valorproducto` | `decimal` | Sí | Valor de la mercancía, para el cálculo de `valor_costom`. |
+| `info_contenido.valorproducto` | `string` | Sí | Valor de la mercancía como **string** (así lo espera Envía), para el cálculo de `valor_costom`. Solo aplica de verdad en cuentas con recaudo — sin recaudo se manda `"0"`. |
 | `info_cubicacion[]` | `array` | Sí | Peso, dimensiones, valor declarado y cantidad. Reemplaza a `num_unidades`/`mpesoreal_k`/`valor_declarado`. |
 
 > ⚠️ **Semántica invertida respecto al resto del mercado**: en Envía, Crédito (`4`) = CON recaudo y Contraentrega (`7`) = SIN recaudo — al revés de Inter y Servientrega, donde con recaudo = contado/contraentrega. Ver el ADR del orquestador para la tabla completa.
@@ -110,6 +112,42 @@ Consulta el servicio de **liquidación de Envía** (`hub.envia.co`) y devuelve e
 | `InvalidOperationException` | Falta la env var `ENVIA_ENDPOINT` |
 | `HttpRequestException` | Envía respondió != 2xx (incluye el detalle) |
 | `TimeoutException` | Se agotó el presupuesto de tiempo (ver `Timeouts`) |
+
+---
+
+## Cómo se consume la API real de Envía
+
+> 💡 Guía rápida para cuando toque volver a tocar esto sin tener el contexto fresco.
+
+**Cliente:** `EnviaLiquidacionApiClient.LiquidarAsync` (`Infraestructura/Http/EnviaLiquidacionApiClient.cs`)
+
+| | |
+| --- | --- |
+| **Método HTTP** | `POST` |
+| **URL** | Prod: `https://hub.envia.co/ServicioLiquidacionREST/Service1.svc/Liquidacion/` · Pruebas: `.../ServicioLiquidacionRESTpruebas/...` — siempre viene de la env var `ENVIA_ENDPOINT`, **sin default en código** (si falta, la lambda ni arranca). |
+| **Autenticación** | ⚠️ **No hay token, API key ni Bearer.** La identidad de la cuenta va **dentro del body**: `cod_regional_cta` + `cod_oficina_cta` + `cod_cuenta`. Envía autentica por los datos de cuenta que llegan en cada request, no por un header aparte. |
+| **Detalle de transporte** | Fuerza `HttpVersion.Version11` (`VersionPolicy: RequestVersionOrLower`) — Envía tuvo problemas históricos con HTTP/2, por eso el cliente lo baja a la fuerza. |
+
+### De dónde salen los datos de cuenta
+
+`cod_regional_cta` / `cod_oficina_cta` / `cod_cuenta` **no los arma esta lambda** — llegan ya resueltos en el request. Quien decide cuál cuenta usar es `EnviaCuentaResolver` en el orquestador, según `ConRecaudo` (ver [ADR-001](../ApiLambdaOrquestadorCotizaciones/ADR-001-strategy-cotizadores.md)). Si vas a probar esta lambda de forma aislada (sin pasar por el orquestador), tenés que armar esos 3 campos a mano con la cuenta correcta según el caso que quieras probar.
+
+### Con / sin recaudo en la práctica
+
+| | Con recaudo | Sin recaudo |
+| --- | --- | --- |
+| Cuenta (`cod_regional_cta`/`cod_oficina_cta`/`cod_cuenta`) | `ENVIA_CUENTA_RECAUDO` | `ENVIA_CUENTA_SIN_RECAUDO` |
+| `cod_formapago` | `"4"` (Crédito) | `"7"` (Contraentrega) |
+| `info_contenido.valorproducto` | Valor real del pedido | `"0"` |
+
+⚠️ Recordar la inversión: en Envía "Crédito" es el código de **con** recaudo, al revés de Inter/Servientrega donde crédito = sin recaudo.
+
+### Si hay que probar esto a mano (Postman, curl)
+
+1. Conseguir el endpoint (prod o pruebas) y los 3 datos de cuenta según el caso (con o sin recaudo) — pedirlos a quien tenga acceso al Secrets Manager / configuración de Envía, no están en este repo de docs.
+2. `POST` con el body completo (`ciudad_origen`, `ciudad_destino`, `cod_formapago`, `cod_servicio`, datos de cuenta, `info_contenido`, `info_cubicacion`).
+3. **Revisar siempre el campo `respuesta` del body**, aunque el HTTP sea `200`. Si trae texto, es un error de negocio, no una cotización válida.
+4. Si necesitas depurar el endpoint de pruebas vs producción, recordá que son **hosts distintos** (`ServicioLiquidacionREST` vs `ServicioLiquidacionRESTpruebas`), no solo un query param.
 
 ---
 

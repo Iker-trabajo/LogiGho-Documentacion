@@ -1,0 +1,35 @@
+flowchart TD
+    A(["PedidoLiquidable"]) --> B["ClasificadorTipoLiquidacion"]
+    B --> C{"Entrega, Devolución<br/>o ninguna"}
+    C -- "ninguna" --> ZAudit["Auditoría: MotivoNoLiquidacion.TipoNoDeterminado"]
+
+    C -- "Entrega o Devolución" --> D["ValidadorTrayecto"]
+    D --> E{"¿Trayecto en la<br/>lista blanca?"}
+    E -- "No, y sin default" --> ZAudit2["Auditoría: MotivoNoLiquidacion.TrayectoSinResolver"]
+    E -- "Sí, o cae al default" --> F["ResolvedorTarifa<br/>(por IdTienda, o Genérica)"]
+
+    F --> G{"¿Hay tarifa<br/>de tienda o genérica?"}
+    G -- "No" --> ZAudit3["Auditoría: MotivoNoLiquidacion.TarifaNoEncontrada"]
+    G -- "Sí" --> H["CalculadoraBaseRecaudo"]
+
+    H --> I["Política de Peso:<br/>TablaIncrementosConTope<br/>o PorcentajeSobreFleteTransportadora"]
+    I --> J["CalculadoraFleteTienda<br/>(nunca menos que lo cobrado por la transportadora)"]
+
+    J --> K{"Entrega o<br/>Devolución"}
+    K -- "Entrega" --> L["CalculadoraEntrega"]
+    L --> M{"¿Tiene<br/>proveedor?"}
+    M -- "Sí" --> N["CalculadoraDropshipper"]
+    M -- "No" --> O
+    N --> O["CalculadoraMarketing / CalculadoraReferido<br/>(deciden SI se paga, no pagan)"]
+    O --> P["CalculadoraImpuestoGobierno<br/>0.4% del recaudo"]
+
+    K -- "Devolución" --> Q["CalculadoraDevolucion"]
+
+    P --> R["ConstructorPeticion"]
+    Q --> R
+
+    R --> S[("LiquidacionesLogigho")]
+
+    style ZAudit fill:#fff3e0,stroke:#ef6c00
+    style ZAudit2 fill:#fff3e0,stroke:#ef6c00
+    style ZAudit3 fill:#fff3e0,stroke:#ef6c00

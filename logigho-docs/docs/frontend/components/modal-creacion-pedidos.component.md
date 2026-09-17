@@ -34,8 +34,8 @@ Modal de 4 pasos para crear un pedido manual: elegir productos del catálogo (o 
 
 1. **Productos** — catálogo paginado (24 por página) con búsqueda server-side, o modo "valor declarado" sin productos concretos.
 2. **Envío** — ciudad origen/destino, dimensiones, tienda.
-3. **Cotización** — cotiza contra Interrapidísimo / Servientrega / Envía.
-4. **Guía** — datos del destinatario y generación final.
+3. **Cotización** — extraído a [`PasoCotizacionComponent`](paso-cotizacion.md). Cotiza contra Interrapidísimo / Servientrega / Envía, con switch con/sin recaudo aplicando a las 3.
+4. **Guía** — datos del destinatario y generación final. La forma de pago que se envía se resuelve con [`reglas-modalidad-pago.ts`](../core/reglas-modalidad-pago.md) (Envía tiene la regla invertida respecto a Inter/Servientrega).
 
 ---
 
@@ -90,6 +90,7 @@ Validación de IDs pegados a mano (modo valor-declarado)
 
 | Fecha | Autor | Cambio |
 |---|---|---|
+| 2026-09-09 | Iker Acevedo | Paso 3 (Cotización) extraído a `PasoCotizacionComponent`, con switch con/sin recaudo aplicando a las 3 transportadoras. Paso 4 (Guía) corrige bug de Envía forzado a Crédito y centraliza la regla de forma de pago en `reglas-modalidad-pago.ts`. |
 | 2026-08-19 | Adalberto González | Integración con Product HUB: productos privados con autorización vigente amplían el catálogo visible, sin afectar las reglas de público/privado-propio ya existentes |
 
 ---
@@ -99,3 +100,4 @@ Validación de IDs pegados a mano (modo valor-declarado)
 - `idsProductoAutorizadosProductHub` se resuelve una sola vez por apertura del modal y se reutiliza en cada página/búsqueda — no hay una consulta nueva por cada scroll.
 - Un `IdStockN` guardado como string en algún documento legacy de `PedidosInter` no afecta a este componente (es un problema del lado de `gestion-comunidad` → Estadísticas, no de creación de pedidos).
 - Ver `frontend/views/dropshipping/product-hub/product-hub-flujo.md` para el flujo de negocio completo de cómo un producto llega a tener una autorización vigente.
+- **Cotización (paso 3) y Guía (paso 4)**: ver [paso-cotizacion.md](paso-cotizacion.md) y [reglas-modalidad-pago.md](../core/reglas-modalidad-pago.md) — cubren el switch con/sin recaudo y por qué Envía tiene la regla de forma de pago invertida respecto a Inter/Servientrega.

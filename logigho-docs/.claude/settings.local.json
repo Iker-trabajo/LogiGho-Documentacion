@@ -18,6 +18,9 @@
       "Bash(python -c \"import yaml; yaml.safe_load\\(open\\('mkdocs.yml', encoding='utf-8'\\)\\)\")",
       "Bash(mkdocs build *)",
       "Bash(xargs grep -ln \"Envia\")"
+      "Bash(python -m mkdocs build)",
+      "Bash(find /c/Users/Iker/Documents -maxdepth 4 -iname \"*LogiGho*\" -type d 2>/dev/null | grep -v Repo-LogiGho-Documentacion)",
+      "Bash(grep -rn \"\\\\.\\\\./\\\\.\\\\./\\\\.\\\\.\\\\|\\\\.\\\\./\\\\.\\\\./\\\\|frontend/core\\\\|frontend/components\" docs/backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaOrquestadorCotizaciones/)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Iker\\Documents\\LogiGho\\Repo-LogiGho-Documentacion\\logigho-docs\\docs\\backend\\lambdas-dotnet\\lambdas\\ApiLambdaOrquestadorCotizaciones"

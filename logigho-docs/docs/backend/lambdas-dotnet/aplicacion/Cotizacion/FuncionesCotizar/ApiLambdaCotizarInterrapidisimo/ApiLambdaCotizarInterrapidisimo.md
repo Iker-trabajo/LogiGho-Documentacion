@@ -1,6 +1,7 @@
 ## Autor: Iker Acevedo
 
 Fecha creación: 2026-07-16
+
 Estado: produccion
 
 ---
@@ -13,7 +14,7 @@ Estado: produccion
 
 ## ¿Qué hace?
 
-Consulta el **cotizador de Interrapidísimo** y devuelve el flete real del envío. Es un *worker*: no aplica lógica de negocio de LogiGho, solo traduce el request, llama a la API de Inter y normaliza la respuesta.
+Consulta el servicio de **cotizador de Interrapidísimo** y devuelve el flete real del envío. Es un *worker*: no aplica lógica de negocio de LogiGho, solo traduce el request, llama a la API de Inter y normaliza la respuesta.
 
 El orquestador la invoca para obtener el **flete real** y sobre ese valor aplica la tarifa LogiGho.
 
@@ -36,8 +37,8 @@ El orquestador la invoca para obtener el **flete real** y sobre ese valor aplica
 
 ```json
 {
-  "valorContraPago": 100000,
-  "idFormaPago": 1,
+  "valorDeclarado": 100000,
+  "aplicaContrapago": true,
   "idLocalidadOrigen": "11001000",
   "idLocalidadDestino": "05001000",
   "peso": 3,
@@ -47,14 +48,16 @@ El orquestador la invoca para obtener el **flete real** y sobre ese valor aplica
 
 | Campo | Tipo | Requerido | Descripción |
 | ----- | ---- | --------- | ----------- |
-| `valorContraPago` | `decimal` | Sí | Valor declarado / a recaudar. No puede ser negativo. |
-| `idFormaPago` | `int` | Sí | Código de forma de pago de Inter. Debe ser `> 0`. |
+| `valorDeclarado` | `decimal` | Sí | Valor de la mercancía. Sirve **tanto para el seguro como para el monto a recaudar** — a diferencia de Envía/Servientrega, Inter no separa ambos conceptos. **Siempre es el valor real del pedido**, con o sin recaudo (no hay valor mínimo fijo). |
+| `aplicaContrapago` | `bool` | Sí | El switch con/sin recaudo (`Common.ConRecaudo`). `true` = con recaudo, `false` = sin recaudo. |
 | `idLocalidadOrigen` | `string` | Sí | Ciudad origen en **código DANE 8**. |
 | `idLocalidadDestino` | `string` | Sí | Ciudad destino en **código DANE 8**. |
 | `peso` | `decimal` | Sí | Peso en kilos. Debe ser `> 0`. Se **redondea hacia arriba** (`Math.Ceiling`) al llamar a Inter. |
 | `fecha` | `datetime` | Sí | Fecha del envío. Se envía a Inter con formato `dd-MM-yyyy`. |
 
 > El orquestador arma este request con `FromCommonMapper.ToInter(Common)`.
+>
+> ⚠️ **Campos que cambiaron (2026-09-09)**: `valorContraPago` se separó en `valorDeclarado` (que va a Inter como valor declarado real) porque antes el cliente HTTP mandaba `ValorContraPago` en el campo que debía llevar `ValorDeclarado` — un bug de mapeo. `idFormaPago` se **eliminó**: la doc de Inter confirma que "no aplica para cliente crédito integrado", era un campo muerto.
 
 ---
 
@@ -94,11 +97,51 @@ Si Inter no devuelve resultados, retorna un **array vacío**.
 
 | Código | Cuándo |
 | ------ | ------ |
-| `ArgumentException` | Falta `idLocalidadOrigen`/`idLocalidadDestino`, `peso <= 0`, `idFormaPago <= 0` o `valorContraPago < 0` |
+| `ArgumentException` | Falta `idLocalidadOrigen`/`idLocalidadDestino`, `peso <= 0` o `valorDeclarado < 0` |
 | `HttpRequestException` | Inter respondió con código != 2xx (incluye el detalle) |
 | `InvalidOperationException` | Falta alguna env var (`INTER_CLIENT_ID`, `INTER_APP_SIGNATURE`, `INTER_SECURITY_TOKEN`) |
 
 > Al invocarse por SDK, los errores llegan al orquestador como `FunctionError=Unhandled` y este los devuelve en `interrapidisimo.error`.
+
+---
+
+## Cómo se consume la API real de Interrapidísimo
+
+> 💡 Guía rápida para cuando toque volver a tocar esto sin tener el contexto fresco.
+
+**Cliente:** `InterPricingApiClient.CotizarAsync` (`Infraestructura/InterPricingApiClient.cs`)
+
+| | |
+| --- | --- |
+| **Método HTTP** | `GET` |
+| **URL base** | `https://www3.interrapidisimo.com/ApiServInter/api/CotizadorCliente/ResultadoListaCotizar` (o `INTER_BASE_URL` si está seteada) |
+| **Forma de la URL** | Todo va **en el path, no en query ni body** — es una API tipo RPC por segmentos: `{baseUrl}/{clienteId}/{idLocalidadOrigen}/{idLocalidadDestino}/{peso}/{valorDeclarado}/{tipoEntrega}/{fecha}/{aplicaContrapago}` |
+| **Autenticación** | 2 headers fijos, **no hay token que expire ni login previo**: `x-app-signature: {INTER_APP_SIGNATURE}` y `x-app-security_token: {INTER_SECURITY_TOKEN}` |
+
+### Cómo se arma cada segmento de la URL
+
+| Segmento | De dónde sale |
+| -------- | -------------- |
+| `{clienteId}` | Env var `INTER_CLIENT_ID` — identifica la cuenta de LogiGho ante Inter, va en la URL (no es un header). |
+| `{idLocalidadOrigen}` / `{idLocalidadDestino}` | Código DANE de 8 dígitos, tal cual llega en el request. |
+| `{peso}` | `Math.Ceiling(payload.Peso)` — Inter espera el peso **redondeado hacia arriba**, sin decimales. |
+| `{valorDeclarado}` | Valor real del pedido (con o sin recaudo, siempre el mismo). |
+| `{tipoEntrega}` | **Constante `1`** — no configurable, hardcodeado en el cliente. |
+| `{fecha}` | Formateada `dd-MM-yyyy` (no ISO). |
+| `{aplicaContrapago}` | `"TRUE"` / `"FALSE"` (string, mayúsculas) — **este es el switch de con/sin recaudo**. |
+
+### Con / sin recaudo en la práctica
+
+- **Con recaudo:** `aplicaContrapago=TRUE` al final de la URL.
+- **Sin recaudo:** `aplicaContrapago=FALSE` al final de la URL.
+- `valorDeclarado` **no cambia** entre los dos casos — es siempre el valor real del pedido (ver Observaciones abajo, se descartó un piso fijo).
+
+### Si hay que probar esto a mano (Postman, curl)
+
+1. Conseguir `INTER_CLIENT_ID`, `INTER_APP_SIGNATURE`, `INTER_SECURITY_TOKEN` (no van en este repo de docs — pedirlos a quien tenga acceso al `.env`/Secrets Manager).
+2. Armar la URL completa reemplazando cada segmento en el orden de la tabla de arriba.
+3. `GET` con los 2 headers. Respuesta esperada: un array JSON (puede venir vacío si no hay servicios disponibles para esa ruta/peso).
+4. Si Inter responde algo distinto de 2xx, el body trae el detalle del error — el cliente lo propaga en el mensaje de la excepción.
 
 ---
 
@@ -139,10 +182,11 @@ Si Inter no devuelve resultados, retorna un **array vacío**.
 
 | Fecha | Autor | Cambio |
 |-------|-------|--------|
-| — | — | Sin cambios en esta iteración. La lógica de trayectos/kilo adicional de Inter vive en el **orquestador**, no aquí. |
+| 2026-09-09 | Iker Acevedo | Soporte con/sin recaudo (`aplicaContrapago`). Bug corregido: se separó `valorDeclarado` de `valorContraPago` (el cliente HTTP mandaba el campo equivocado). Eliminado `idFormaPago` (campo muerto, no aplica para cliente crédito integrado según la doc de Inter). Migrada al patrón Strategy (`CotizadorInter`). |
+| — | — | Sin cambios previos. La lógica de trayectos/kilo adicional de Inter vive en el **orquestador**, no aquí. |
 
 ---
 
 ## Observaciones
 
-Sin observaciones.
+- Sin observaciones

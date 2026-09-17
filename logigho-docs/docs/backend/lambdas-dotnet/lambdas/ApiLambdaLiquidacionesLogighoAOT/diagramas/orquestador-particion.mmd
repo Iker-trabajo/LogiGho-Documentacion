@@ -1,0 +1,17 @@
+flowchart LR
+    A[("ConfiguracionLiquidacionTransportadora")] --> B["Agrupar por NombreEnPedidos<br/>(normalizado: trim + mayúsculas)"]
+    C[("Pedidos entrantes<br/>(PedidosInter)")] --> D{"¿Existe configuración para<br/>Transportadora del pedido?"}
+    B --> D
+
+    D -- "No existe" --> E["Lote LEGACY"]
+    D -- "Sí" --> F{"MotorLiquidacion"}
+
+    F -- "Dinamica" --> G["Lote DINÁMICOS<br/>(persiste)"]
+    F -- "Sombra" --> G
+    F -- "Legacy" --> E
+    F -- "Deshabilitado" --> H["No se procesa"]
+
+    G --> I["LiquidarAsync"]
+    E --> J["DepurarLiquidacionUseCase.DepuraLiquidacionInter"]
+
+    style H fill:#fce4ec,stroke:#ad1457

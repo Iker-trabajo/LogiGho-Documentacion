@@ -1,0 +1,26 @@
+flowchart TD
+    A(["foreach pedido en Request"]) --> B{"¿Tiene Fecha Entrega<br/>y Estado válido?"}
+    B -- "Sí" --> C["Buscar tarifa: tienda+transportadora+estado<br/>→ tienda+transportadora<br/>→ genérica (fallbacks en cascada)"]
+    C --> D{"Trayecto reconocido<br/>por nombre?<br/>(switch if/else)"}
+    D -- "No" --> E["Cae en silencio a<br/>FleteNacionalMetropolitano"]
+    D -- "Sí" --> F["Calcular flete según peso"]
+    E --> F
+    F --> G["Armar Peticion (Entrega)"]
+    G --> H{"¿Tiene Tiendaproveedor?"}
+    H -- "Sí" --> I["Clonar Peticion por JSON<br/>+ resetear ~20 campos a mano"]
+    H -- "No" --> J["Armar Peticion (Impuesto Gobierno)<br/>0.4% del recaudo"]
+    I --> J
+    J --> K{"¿Marketing / Referido<br/>aplican?"}
+    K -- "Sí" --> L["LiquidacionAdicionalLogigho<br/>(inserta inline, side-effect)"]
+    K -- "No" --> M
+    L --> M["Peticiones a insertar"]
+
+    B -- "No, pero tiene<br/>Fecha Devolucion" --> N["Armar/mutar la MISMA Peticion<br/>con campos de Devolución"]
+    N --> M
+
+    M --> O["Insertar por lotes de 1000<br/>(hasta 3 concurrentes, Polly retry)"]
+    O --> P[("LiquidacionesLogigho")]
+
+    style E fill:#fff3e0,stroke:#ef6c00
+    style I fill:#fff3e0,stroke:#ef6c00
+    style L fill:#fff3e0,stroke:#ef6c00

@@ -1,0 +1,42 @@
+flowchart TB
+    Inicio((("Inicio<br/>Pedidos a liquidar"))):::evento --> ObtenerDatos["Obtener de Mongo:<br/>ConfiguracionLiquidacionTransportadora,<br/>TarifasTransportadoraTienda, TrayectosTransportadora"]:::tarea
+
+    ObtenerDatos --> Particionar{"¿MotorLiquidacion de<br/>la transportadora del pedido?"}:::gateway
+
+    Particionar -- "Legacy /<br/>sin configuración" --> PoolLegacy
+    Particionar -- "Dinamica o Sombra" --> PoolDinamico
+    Particionar -- "Deshabilitado" --> Descartado["Guía no se procesa"]:::tareaDescartada
+
+    subgraph PoolLegacy ["MOTOR LEGACY — DepurarLiquidacionUseCase"]
+        direction TB
+        L1["Clasificar Entrega / Devolución<br/>(if/else inline)"]:::tarea --> L2["Buscar tarifa por tienda + transportadora<br/>(fallbacks en cascada)"]:::tarea
+        L2 --> L3["Calcular flete por switch de nombre<br/>de trayecto (Urbano/Nacional/...)"]:::tarea
+        L3 --> L4["Armar Peticion(es):<br/>Entrega / Devolución / Proveedor / Impuesto Gobierno"]:::tarea
+    end
+
+    subgraph PoolDinamico ["MOTOR DINÁMICO — LiquidarPedidosDinamicoUseCase"]
+        direction TB
+        D1["ClasificadorTipoLiquidacion"]:::tarea --> D2["ValidadorTrayecto<br/>(lista blanca + default)"]:::tarea
+        D2 --> D3["ResolvedorTarifa<br/>(por IdTienda, o Genérica)"]:::tarea
+        D3 --> D4["Calculadoras:<br/>BaseRecaudo → PolíticaPeso → FleteTienda →<br/>Entrega/Devolución → Dropshipper/Marketing/Referido"]:::tarea
+        D4 --> D5["ConstructorPeticion"]:::tarea
+        D2 -. "trayecto inválido<br/>y sin default" .-> DAudit
+        D3 -. "sin tarifa ni genérica" .-> DAudit
+        DAudit["Auditoría:<br/>GuiaNoLiquidada + MotivoNoLiquidacion"]:::tareaDescartada
+    end
+
+    L4 --> GatewayPersistLegacy{{"Insertar en Mongo"}}:::gateway
+    D5 --> GatewaySombra{"¿Motor = Sombra?"}:::gateway
+    GatewaySombra -- "Sí — no persiste" --> FinSombra["Solo queda el cálculo,<br/>para comparar"]:::tareaDescartada
+    GatewaySombra -- "No (Dinamica)" --> GatewayPersistDinamico{{"Insertar en Mongo"}}:::gateway
+
+    GatewayPersistLegacy --> Coleccion[("LiquidacionesLogigho<br/>(misma colección, mismo formato)")]:::datastore
+    GatewayPersistDinamico --> Coleccion
+
+    Coleccion --> Fin((("Fin<br/>Liquidaciones disponibles<br/>para contabilidad/reportes"))):::evento
+
+    classDef evento fill:#fce4ec,stroke:#ad1457,stroke-width:2px,color:#000
+    classDef tarea fill:#e3f2fd,stroke:#1565c0,stroke-width:1.5px,color:#000
+    classDef tareaDescartada fill:#fff3e0,stroke:#ef6c00,stroke-width:1.5px,color:#000
+    classDef gateway fill:#fff9c4,stroke:#f9a825,stroke-width:2px,color:#000
+    classDef datastore fill:#ede7f6,stroke:#5e35b1,stroke-width:2px,color:#000

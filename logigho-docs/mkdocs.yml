@@ -91,6 +91,10 @@ nav:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaSincronizacionUnion/ApiLambdaSincronizacionUnion.md
               - ApiLambdaCargarGuias:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCargarGuias/ApiLambdaCargarGuias.md
+              - ApiLambdaCrearGuia:
+                  - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrearGuia/ApiLambdaCrearGuia.md
+              - ApiLambdaCrearEtiquetaManual:
+                  - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrearEtiquetaManual/ApiLambdaCrearEtiquetaManual.md
               - ApiLambdaConsultarPedidos:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
               - ApiLambdaCrudGenericoAOT:
@@ -105,6 +109,22 @@ nav:
                   - Envía: backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
               - ApiLambdaProcesoAutomaticoInter:
                   - Lambda: backend/lambdas-dotnet/aplicacion/interrapidismo/ApiLambaProcesoAutomaticoInter/ApiLambaProcesoAutomaticoInter.md
+              - ApiLambdaLiquidacionesLogighoAOT:
+                  - Vision general: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/overview.md
+                  - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/ApiLambdaLiquidacionesLogighoAOT.md
+                  - Motor Legacy: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/legacy.md
+                  - Motor Dinamico:
+                      - Vision general: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/motor-dinamico/overview.md
+                      - Orquestador: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/motor-dinamico/orquestador.md
+                      - Modelos de dominio: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/motor-dinamico/modelos.md
+                      - Calculadoras: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/motor-dinamico/calculadoras.md
+                      - Politicas de Peso: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/motor-dinamico/politicas-peso.md
+                      - Validacion: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/motor-dinamico/validacion.md
+                      - Infraestructura: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/motor-dinamico/infraestructura.md
+                  - Despliegue PreProd (Financiero): backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/orquestacion-financiero.md
+                  - Operacion: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/operacion.md
+                  - Diagramas (indice): backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/diagramas/README.md
+                  - Arquitectura (ADR-001): backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/adr/ADR-001-strangler-fig-motor-dinamico.md
               - ApiLambdaDevolucionesMasivo:
                   - Lambda: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/ApiLambdaDevolucionesMasivo.md
                   - Iniciar Handler: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/handlers/iniciar-handler.md
@@ -179,6 +199,18 @@ nav:
                   - Visor de Reporte: frontend/views/analytics/vista-reporte.md
                   - Componente Sandbox: frontend/views/analytics/reporte-sandbox.md
                   - Servicios: frontend/views/analytics/servicios.md
+                  - Liquidaciones (Power BI): frontend/views/analytics/liquidaciones-dashboard.md
+              - Director de Operaciones:
+                  - Costos Transportadora:
+                      - Componente (Hub + Panel): frontend/views/director-de-operaciones/costos-transportadora/costos-transportadora.md
+                      - Configuracion General: frontend/views/director-de-operaciones/costos-transportadora/components/configuracion-general.md
+                      - Trayectos: frontend/views/director-de-operaciones/costos-transportadora/components/trayectos.md
+                      - Tarifas por Tienda: frontend/views/director-de-operaciones/costos-transportadora/components/tarifas-tienda.md
+                      - Simulador de Liquidacion: frontend/views/director-de-operaciones/costos-transportadora/components/simulador-liquidacion.md
+                      - Auditoria de Excepciones: frontend/views/director-de-operaciones/costos-transportadora/components/auditoria-excepciones.md
+                      - Modelos: frontend/views/director-de-operaciones/costos-transportadora/modelos/liquidacion-transportadora-models.md
+                      - Servicio de Estado: frontend/views/director-de-operaciones/costos-transportadora/servicios/transportadora-activa-service.md
+                      - Arquitectura (ADR-001): frontend/views/director-de-operaciones/costos-transportadora/adr/ADR-001-simulador-sin-calculo-propio.md
               - Controller:
                   - Facturas transportadoras:
                       - Componente: frontend/views/controller/facturas-trans/facturas-trans.md

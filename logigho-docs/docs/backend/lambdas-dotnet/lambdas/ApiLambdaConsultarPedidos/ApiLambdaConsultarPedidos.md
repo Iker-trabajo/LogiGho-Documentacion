@@ -1,7 +1,9 @@
-## Autor: Iker Acevedo
-Fecha creacion: 2026-06-24
-
-Estado: produccion
+---
+autor: Iker Acevedo
+fecha_creacion: 2026-06-24
+ultima_actualizacion: 2026-09-19
+estado: produccion
+---
 
 ## Lambda: APILambdaConsultarPedidos
 
@@ -14,7 +16,7 @@ Estado: produccion
 
 ## ¿Qué hace?
 
-Expone un endpoint REST para consultar pedidos paginados desde MongoDB (colección `PedidosInter`). Valida el token Cognito del request, extrae las tiendas autorizadas que viajan en los claims de JWT y filtra los pedidos únicamente a las tiendas del usuario. Soporta múltiples tiendas por usuario (el JWT puede tener varios IDs separados por coma). Los campos devueltos en cada pedido son dinámicos y se controlan desde la colección `ConfiguracionCamposApi` en MongoDB sin necesidad de redesplegar la lambda.
+Expone un endpoint REST para consultar pedidos paginados desde MongoDB (colección `PedidosInter`). Valida el token Cognito del request, consulta MongoDB para obtener las tiendas autorizadas del usuario desde la tabla `UsuarioTienda` (migración desde claims JWT — ver [ADR-001](adr-001-migracion-validacion-tiendas.md)), y filtra los pedidos únicamente a las tiendas permitidas. Soporta múltiples tiendas por usuario y lógica de "acceso a todas" (`AccesoATodas: true`). Los campos devueltos en cada pedido son dinámicos y se controlan desde la colección `ConfiguracionCamposApi` sin necesidad de redesplegar la lambda.
 
 ---
 
@@ -107,18 +109,23 @@ FunctionHandler (Function.cs)
   -> [REQUEST] Extrae HttpMethod del request (REST API v1: input.HttpMethod)
   -> Valida método GET
   -> Extrae JWT del header Token o Authorization (Bearer)
-  -> JwtClaimsHelper.ExtraerClaimsUsuario(jwt)
-       -> Decodifica claims del IdToken (sin validar firma — ya validada por Cognito)
-       -> Extrae custom:idTienda  → split por coma → List<string> idTiendas
-       -> Extrae custom:nombreTienda → split por coma → List<string> nombreTiendas
-  -> [AUTH] Valida que idTiendas y nombreTiendas no estén vacíos
+  -> JwtClaimsHelper.ExtraerIdentidadUsuario(jwt)
+       -> Decodifica JWT (sin validar firma — Cognito ya lo hizo)
+       -> Extrae: sub (Cognito user ID), email, username
+  -> [AUTH] UsuarioTiendaRepository.ObtenerPermisosPorSubAsync(sub)
+       -> Consulta MongoDB tabla 'UsuarioTienda' por Sub
+       -> Retorna: { Sub, Username, Email, AccesoATodas, Tiendas[], Activo }
+       -> Valida: usuario existe, está activo
+       -> Si AccesoATodas=true → idTiendas = ["*"], nombreTiendas = ["*"]
+       -> Si no → extrae lista explícita de Tiendas[].IdTienda
   -> Parsea query params: page, pageSize, fechaDesde, fechaHasta, estado, numeropreenvio, transportadora, telefono
   -> ConsultarPedidosUseCase.EjecutarAsync(idTiendas, nombreTiendas, ...)
        -> MongoDB: lee ConfiguracionCamposApi → lista de campos activos (Activo: true)
        -> DocumentRepository.ObtenerPedidosPorTiendaAsync(coleccion, idTiendas, nombreTiendas, ...)
-            -> Filter.In("Idtienda"/"IdTienda", idTiendas)
+            -> Si idTiendas contiene "*" → sin filtro de tienda
+            -> Si no → Filter.In("Idtienda"/"IdTienda", idTiendas)
             -> Filter.In("Tienda"/"tienda", nombreTiendas)
-            -> Filtro de fechas via ObjectId hex (usa índice _id_ sin índice adicional)
+            -> Filtro de fechas via ObjectId hex (usa índice _id_)
             -> Filtros opcionales: estado, numeropreenvio, transportadora, telefono
             -> CountDocumentsAsync (total) + Find con Skip/Limit (página)
             -> Proyección dinámica de campos activos
@@ -132,34 +139,43 @@ FunctionHandler (Function.cs)
 
 ```
 APILambdaConsultarPedidos/
-├── Function.cs                          ← Entry point, HTTP handling, auth
+├── Function.cs                              ← Entry point, HTTP handling, auth
 ├── Dominio/
-│   └── Interfaces/
-│       └── IDocumentRepository.cs       ← Contrato del repositorio
+│   ├── Interfaces/
+│   │   ├── IDocumentRepository.cs           ← Contrato acceso pedidos
+│   │   └── IUsuarioTiendaRepository.cs      ← Contrato acceso usuarios/tiendas
+│   └── Modelos/
+│       └── UsuarioTienda.cs                 ← Entity: Sub, Username, Email, AccesoATodas, Tiendas[]
 ├── Aplicacion/
 │   ├── CasosDeUso/
-│   │   └── ConsultarPedidosUseCase.cs   ← Lógica de negocio y paginación
+│   │   └── ConsultarPedidosUseCase.cs       ← Lógica de negocio y paginación
 │   └── DTO/
-│       └── RespuestaGeneral.cs          ← Estructura de respuesta
+│       └── RespuestaGeneral.cs              ← Estructura de respuesta
 └── Infrastructura/
     ├── Repositorio/
-    │   └── DocumentRepository.cs        ← Acceso a MongoDB
+    │   ├── DocumentRepository.cs            ← Acceso a MongoDB colección Pedidos
+    │   └── UsuarioTiendaRepository.cs       ← Acceso a MongoDB tabla UsuarioTienda
     └── Utilidades/
-        └── JwtClaimsHelper.cs           ← Extracción de claims del JWT
+        └── JwtClaimsHelper.cs               ← Extracción de claims del JWT
 ```
 
 ---
 
-## Multi-tienda
+## Multi-tienda y AccesoATodas
 
-El JWT de Cognito puede tener una o varias tiendas separadas por coma:
+### Antes (JWT claims)
+Viajaban en `custom:idTienda` y `custom:nombreTienda` separados por coma.
 
-```
-custom:idTienda    = "156938,204710"
-custom:nombreTienda = "Tienda Norte,Tienda Sur"
-```
+### Ahora (MongoDB UsuarioTienda)
+La tabla `UsuarioTienda` tiene:
+- `Tiendas[]`: lista de objetos `{ IdTienda, NombreTienda }`
+- `AccesoATodas: bool`: si `true`, usuario accede a **todas** las tiendas (comodín `*`)
 
-El repositorio usa `Filter.In` con la lista completa — una sola tienda o cien tiendas usan el mismo código sin ramificaciones. Esto significa que un usuario con acceso a varias tiendas obtiene los pedidos de todas en una sola consulta.
+**Flujo:**
+- Si `AccesoATodas=true` → sin filtro de tienda en query MongoDB
+- Si `AccesoATodas=false` → filtro `Filter.In("Idtienda", tiendas[].IdTienda)`
+
+El repositorio usa `Filter.In` con la lista completa — una sola tienda, cien tiendas, o todas, usan el mismo código sin ramificaciones. Ventaja vs. claims: **sin límite de tamaño en JWT**.
 
 ---
 
@@ -205,7 +221,8 @@ Solo los documentos con `Activo: true` se incluyen en la proyección y en la res
 
 | Servicio | Uso |
 | -------- | --- |
-| `Amazon Cognito` | Emisión del JWT que esta lambda valida leyendo sus claims |
+| `Amazon Cognito` | Emisión del JWT (solo se extrae el `sub`, no se usan claims personalizados) |
+| `MongoDB Atlas` | Tabla `UsuarioTienda` para validar accesos; colección `Pedidos*` para datos |
 
 ---
 
@@ -213,13 +230,16 @@ Solo los documentos con `Activo: true` se incluyen en la proyección y en la res
 
 | Fecha | Autor | Cambio |
 | ----- | ----- | ------ |
+| 2026-09-19 | Iker Acevedo | **Migración: validación de tiendas de claims JWT → MongoDB tabla `UsuarioTienda`.** Permite revocación inmediata, auditabilidad y UI de gestión. Ver [ADR-001](adr-001-migracion-validacion-tiendas.md). |
+| 2026-09-19 | Iker Acevedo | Nueva interface `IUsuarioTiendaRepository` y implementación `UsuarioTiendaRepository` para consultar permisos desde BD. |
+| 2026-09-19 | Iker Acevedo | Nuevo dominio `UsuarioTienda`: modelo de usuario con tiendas autorizadas e indicador `AccesoATodas`. |
+| 2026-09-19 | Iker Acevedo | Cambio en `JwtClaimsHelper`: ahora extrae solo `sub`, `email`, `username`. Tiendas se obtienen de `UsuarioTiendaRepository`. |
 | 2026-06-24 | Iker Acevedo | Migración a Clean Architecture: separación en Dominio / Aplicacion / Infrastructura. |
-| 2026-06-24 | Iker Acevedo | Fix API Gateway: migrado de HTTP API v2 (`APIGatewayHttpApiV2ProxyRequest`) a REST API v1 (`APIGatewayProxyRequest`) corrigiendo `NullReferenceException` en `input.HttpMethod`. |
-| 2026-06-24 | Iker Acevedo | Fix handler: corregida discrepancia de mayúsculas entre namespace `ApiLambdaConsultarPedidos` y handler configurado en Lambda. |
-| 2026-06-24 | Iker Acevedo | Soporte multi-tienda: `custom:idTienda` y `custom:nombreTienda` del JWT se parsean como listas separadas por coma. El filtro MongoDB usa `Filter.In` para cubrir una o varias tiendas con el mismo código. |
-| 2026-06-24 | Iker Acevedo | Campos dinámicos: proyección de campos leída desde `ConfiguracionCamposApi` en cada request — sin redesplegar para agregar o quitar campos. |
-| 2026-06-24 | Iker Acevedo | Filtro de fechas via ObjectId hex: rango de fechas se convierte a ObjectId para aprovechar el índice `_id_` existente sin crear índice adicional. |
-| 2026-06-24 | Iker Acevedo | Conexión a MongoDB Atlas: cadena de conexión encriptada AES-256-ECB en variable de entorno `CADENA_CONEXION`. |
+| 2026-06-24 | Iker Acevedo | Fix API Gateway: migrado de HTTP API v2 a REST API v1 corrigiendo `NullReferenceException` en `input.HttpMethod`. |
+| 2026-06-24 | Iker Acevedo | Fix handler: corregida discrepancia de mayúsculas entre namespace y handler configurado en Lambda. |
+| 2026-06-24 | Iker Acevedo | Campos dinámicos: proyección desde `ConfiguracionCamposApi` sin necesidad de redesplegar. |
+| 2026-06-24 | Iker Acevedo | Filtro de fechas via ObjectId hex para aprovechar índice `_id_`. |
+| 2026-06-24 | Iker Acevedo | Conexión a MongoDB Atlas con cadena de conexión encriptada AES-256-ECB. |
 
 ---
 
@@ -227,5 +247,8 @@ Solo los documentos con `Activo: true` se incluyen en la proyección y en la res
 
 - El token se acepta tanto en el header `Token` como en `Authorization: Bearer` para compatibilidad con distintos clientes.
 - La firma del JWT no se valida en la lambda — Cognito ya la validó al emitirlo. Solo se leen los claims del payload.
+- **Cambio importante (2026-09-19):** El `sub` del JWT se usa únicamente para identificar al usuario en BD. Ya **no** se extraen tiendas de claims personalizados. Ver [ADR-001](adr-001-migracion-validacion-tiendas.md).
 - El filtro de tienda usa doble variante (`Idtienda` / `IdTienda` y `Tienda` / `tienda`) para tolerar inconsistencias de capitalización en la colección MongoDB.
 - `pageSize` tiene un tope de 500 para proteger la memoria de la lambda (1024 MB).
+- Consulta a `UsuarioTienda` tiene timeout de 5s para evitar bloqueos. Si falla, se retorna `403 Forbidden`.
+- Recomendación: crear índice en MongoDB: `db.UsuarioTienda.createIndex({ "Sub": 1 })` para optimizar lookups.

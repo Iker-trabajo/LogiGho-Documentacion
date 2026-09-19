@@ -95,13 +95,6 @@ nav:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrearGuia/ApiLambdaCrearGuia.md
               - ApiLambdaCrearEtiquetaManual:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrearEtiquetaManual/ApiLambdaCrearEtiquetaManual.md
-              - Servicio Público:
-                  - ApiLambdaConsultarPedidos:
-                      - Lambda: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
-                      - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/adr-001-migracion-validacion-tiendas.md
-                      - Repositorio UsuarioTienda: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/usuario-tienda-repository.md
-                      - Deuda Técnica (TODO): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/TODO-integracion-usuarios-api-completa.md
-                      - Resumen de cambios: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/RESUMEN-CAMBIOS-2026-09-19.md
               - ApiLambdaCrudGenericoAOT:
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaCrudGenericoAOT/ApiLambdaCrudGenericoAOT.md
               - ApiLambdaSincronizacionSqlMongo:
@@ -165,6 +158,13 @@ nav:
                       - Sincronizar Mensajes: backend/pancake/lambdas/ApiLambdaSincronizarMensajes/ApiLambdaSincronizarMensajes.md
                   - Orquestación (Step Functions + EventBridge): backend/pancake/conversaciones-mensajes/orquestacion.md
                   - Operación: backend/pancake/conversaciones-mensajes/operacion.md
+          - Servicio Público:
+              - ApiLambdaConsultarPedidos:
+                  - Lambda: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
+                  - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/adr-001-migracion-validacion-tiendas.md
+                  - Repositorio UsuarioTienda: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/usuario-tienda-repository.md
+                  - Deuda Técnica (TODO): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/TODO-integracion-usuarios-api-completa.md
+                  - Resumen de cambios: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/RESUMEN-CAMBIOS-2026-09-19.md
           - Servicio Consultar Estadisticas Pagina: backend/pancake/lambdas/ApiLambdaConsultarEstadisticasPagina/ApiLambdaConsultarEstadisticasPagina.md
 
   - Frontend:

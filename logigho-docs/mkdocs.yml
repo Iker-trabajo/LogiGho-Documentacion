@@ -204,6 +204,8 @@ nav:
                   - Visor de Reporte: frontend/views/analytics/vista-reporte.md
                   - Componente Sandbox: frontend/views/analytics/reporte-sandbox.md
                   - Servicios: frontend/views/analytics/servicios.md
+                  - Áreas Organizacionales: frontend/views/analytics/areas-organizacionales.md
+                  - Telemetría y Auditoría: frontend/views/analytics/telemetria-reportes.md
                   - Liquidaciones (Power BI): frontend/views/analytics/liquidaciones-dashboard.md
               - Director de Operaciones:
                   - Costos Transportadora:

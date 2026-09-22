@@ -1,112 +1,76 @@
 ---
 autor: Iker Acevedo Vargas
 fecha_creacion: 2026-08-14
-ultima_actualizacion: 2026-08-14
+ultima_actualizacion: 2026-09-21
 estado: desarrollo
+nivel: 4
 ---
 
 # Servicios: Analytics
 
-**Ubicación:** `src/app/views/analytics/services`
-**Scope:** compartidos por las 3 páginas de la sección — ninguno sale de `views/analytics` (ver regla de organización en el [overview](overview.md#arquitectura-de-carpetas))
+**Ubicación:** `src/app/views/analytics/services`<br>
+**Scope:** servicios reutilizados por las vistas del módulo.
+
+---
+
+## Mapa de responsabilidades
+
+| Servicio o utilidad | Qué resuelve |
+|---|---|
+| `ReportesAnalyticsService` | Reportes, versiones, S3, compresión e integridad. |
+| `ReporteSanitizerService` | Validación del HTML y CSP de seguridad. |
+| `AreasOrganizacionalesService` | Áreas, normalización de nombres y asociación por roles. |
+| `TelemetriaTrackerService` | Registro de una sesión real de lectura en el visor. |
+| `TelemetriaConsultaService` | KPIs, gráficas, tabla y auditoría con agregaciones. |
+| `formato.util.ts` | Fechas y tamaños en formato legible para español. |
+| `roles.util.ts` | Lectura de roles de sesión y visibilidad de acciones de gestión. |
 
 ---
 
 ## `ReportesAnalyticsService`
 
-**Ubicación:** `services/reportes-analytics.service.ts`
+Es la única puerta de datos para la gestión de reportes. Lista documentos, publica archivos comprimidos, calcula/valida SHA-256, obtiene versiones desde S3, actualiza metadatos y cambia estado.
 
-CRUD de Mongo + subida/lectura de S3 + compresión + verificación de integridad. Es el único punto de entrada a los datos del módulo — ninguna vista llama a `ConsumoGenericoService`/`PutObjectService`/`GetObjectService` directamente.
-
-### `listarReportes(): Promise<ReporteAnalytics[]>`
-
-Trae todos los documentos de la colección. La respuesta del backend viene gzip-comprimida en base64 (mismo patrón que otros `metodoGenerico`); se descomprime con `DecompressionService.decompressGzip()`.
-
-### `publicarVersion(html, nombreArchivo, datos, reporteExistente): Promise<void>`
-
-Si `reporteExistente` es `null`, crea el documento; si no, hace `push` a `Versiones[]` y mueve `VersionActiva` — versionado real, ninguna key de S3 se sobrescribe. Internamente: gzipea el HTML (`pako`), calcula SHA-256, sube a S3, inserta/actualiza en Mongo.
-
-### `actualizarMetadatos(reporte, datos): Promise<void>`
-
-Edita nombre/descripción/categoría/estado/roles **sin** tocar S3 ni crear una versión nueva.
-
-### `cambiarEstado(reporte, estado): Promise<void>`
-
-`ACTIVO` ⇄ `ARCHIVADO`. Nunca borra nada — solo cambia el campo `Estado`.
-
-### `restaurarVersion(reporte, versionId): Promise<void>`
-
-Rollback: mueve `VersionActiva` a una versión anterior, sin tocar el array `Versiones`.
-
-### `obtenerHtmlVersion(reporte, versionId?): Promise<string>`
-
-Descarga de S3, descomprime, y **recalcula el SHA-256** contra el guardado en Mongo — si no coincide, lanza error en vez de renderizar. Detecta manipulación del objeto en S3 hecha por fuera de la plataforma.
-
-| Parámetro | Tipo | Descripción |
-| --- | --- | --- |
-| `reporte` | `ReporteAnalytics` | El reporte dueño de la versión |
-| `versionId` | `string` (opcional) | Si se omite, usa `reporte.VersionActiva` |
-
-**Constantes internas:**
-
-```ts
-const BUCKET_REPORTES = 'logigho-plantillas';   // temporal — ver overview
-const PREFIJO_REPORTES = 'reportes-analytics';
-```
+| Método | Resultado visible |
+|---|---|
+| `listarReportes()` | Carga catálogo y gestión. |
+| `publicarVersion()` | Crea reporte o agrega versión. |
+| `actualizarMetadatos()` | Cambia información/roles sin crear versión. |
+| `cambiarEstado()` | Archiva o reactiva. |
+| `restaurarVersion()` | Define una versión anterior como vigente. |
+| `obtenerHtmlVersion()` | Descarga, descomprime y verifica archivo antes de mostrarlo. |
 
 ---
 
-## `ReporteSanitizerService`
+## `AreasOrganizacionalesService`
 
-**Ubicación:** `services/reporte-sanitizer.service.ts`
+Centraliza la colección `AreasOrganizacionales`. Normaliza nombres, evita duplicados en interfaz, conserva una caché corta y resuelve el área activa correspondiente a los roles del usuario. Para crear y editar usa operaciones genéricas sin auditoría, compatibles con una colección inicialmente vacía.
 
-Capa 2 (CSP) y Capa 3 (validación en subida) del modelo de seguridad. Ver el detalle completo en el [overview](overview.md#modelo-de-seguridad).
-
-### `validar(html, nombreArchivo): ResultadoValidacion`
-
-Corre una lista de patrones prohibidos (`RECURSO_EXTERNO`, `SALIDA_DE_RED`, `ETIQUETA_PROHIBIDA`, `ACCESO_AL_ANFITRION`, `NAVEGACION`, `META_REFRESH`, `IMPORT_DINAMICO`, `IMPORT_CSS_EXTERNO`) línea por línea. Devuelve `{ valido, hallazgos[] }`, cada hallazgo con línea y extracto exacto.
-
-> No es la defensa real — las capas 1 y 2 bloquean todo aunque un patrón se les escape (ofuscación tipo `window['fe'+'tch']`, documentado y cubierto por test en el spec del servicio). Es feedback temprano para el autor.
-
-### `endurecerHtml(html): string`
-
-Inserta la CSP como primer hijo de `<head>` (crea `<head>` si no existe) y elimina cualquier `<base>` del reporte.
-
-### `obtenerReglasExpuestas(): ReglaExpuesta[]`
-
-Expone la tabla de reglas prohibidas (sin el patrón regex) para que `ReglasAutoresReporteComponent` la renderice — nunca se desincroniza de la validación real porque es la misma fuente.
+Ver modelo y reglas en [Áreas organizacionales](areas-organizacionales.md).
 
 ---
 
-## `formato.util.ts`
+## Servicios de telemetría
 
-**Ubicación:** `services/formato.util.ts` — funciones puras, no un `@Injectable`
+### `TelemetriaTrackerService`
 
-| Función | Firma | Ejemplo |
-| --- | --- | --- |
-| `formatearFechaCorta` | `(fechaIso: string) => string` | `"14 Ago, 2026"` |
-| `formatearFechaLarga` | `(fechaIso: string) => string` | `"14 Ago 2026, 14:30"` |
-| `formatearTamano` | `(bytes: number) => string` | `"1.6 MB"` |
+Inicia una sesión al mostrar un reporte y suma únicamente los segundos de pestaña visible. Envía un latido cada 60 segundos, considera activa una sesión reciente durante 150 segundos y sincroniza antes de eventos importantes o de abandonar la vista.
 
-Sin registrar un `LOCALE_ID` global de Angular — eso afectaría a toda la plataforma, no solo a este módulo.
+### `TelemetriaConsultaService`
+
+Solicita KPIs, franjas horarias, distribución por área, reportes, usuarios y tabla paginada mediante agregaciones de base de datos. Filtra antes de agrupar y pagina en servidor para mantener una carga rápida.
 
 ---
 
-## `roles.util.ts`
+## Compresión de respuestas de catálogos
 
-**Ubicación:** `services/roles.util.ts` — funciones puras, no un `@Injectable`
-
-| Función | Firma | Descripción |
-| --- | --- | --- |
-| `obtenerRolesUsuario` | `() => string[]` | Lee `sessionStorage.roles_asignados` (mismo mecanismo que el sidebar) |
-| `puedeGestionarReportes` | `() => boolean` | `true` si el usuario tiene rol `Jefe Datos` o `Desarrollador` |
-
-> Solo control de UI (mostrar/ocultar el botón "Gestionar ETL") — no reemplaza autorización de backend, que hoy no existe para este módulo.
+El catálogo `Roles` se carga con el método genérico para evitar depender de un endpoint específico. El servicio detecta respuestas comprimidas en Zstandard y aplica una alternativa gzip cuando corresponde, por lo que la interfaz sigue consumiendo los  roles reales de la colección.
 
 ---
 
 ## Historial de cambios
 
 | Fecha | Autor | Cambio |
-| --- | --- | --- |
-| 2026-08-14 | Iker Acevedo Vargas | Documentación inicial de los 4 archivos de `services/` |
+|---|---|---|
+| 2026-08-14 | Iker Acevedo Vargas | Servicios iniciales de reporte, sanitización y utilidades. |
+| 2026-09-21 | Iker Acevedo Vargas | Áreas organizacionales, seguimiento de consumo, consultas agregadas y carga robusta del catálogo de roles. |

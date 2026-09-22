@@ -49,7 +49,7 @@ decirle qué elementos destacar y qué explicar en cada uno.
 
 | Propiedad      | Tipo                 | Descripción |
 | -------------- | -------------------- | ----------- |
-| `stepsActivos` | `TourStep[]`         | Los pasos que realmente se muestran. Se calculan **una sola vez**, al abrir el tour: se filtran los `elementId` cuyo elemento no existe en el DOM en ese instante (ver Observaciones — implica que el elemento debe existir ya al momento de abrir, no puede depender de que un paso anterior lo cree). |
+| `stepsActivos` | `TourStep[]`         | Los pasos que realmente se muestran. Conserva elementos visibles y pasos con `onBeforeStep`, para revelar un drawer o modal antes de ubicarlo. |
 | `stepIndex`    | `number`             | Paso actual, índice sobre `stepsActivos` |
 | `pos`          | `PopoverPos \| null` | Posición calculada del spotlight y la tarjeta. `null` mientras se recalcula |
 
@@ -67,7 +67,7 @@ decirle qué elementos destacar y qué explicar en cada uno.
 
 ## Cómo usarlo en un módulo nuevo
 
-1. Pon `id="algo"` en los elementos del HTML que quieras destacar. **Deben existir en el DOM al momento de abrir el tour** — si dependen de un `*ngIf` (loading, un modal, etc.), deshabilita el botón que abre el tour hasta que esa condición se cumpla.
+1. Pon `id="algo"` en los elementos del HTML que quieras destacar. Si vive dentro de un panel o modal cerrado, usa `onBeforeStep` para abrirlo antes de ubicar el paso.
 2. Define un array `readonly tourSteps: TourStep[]` directamente en el `.ts` del componente que va a mostrar el tour (no hace falta un servicio aparte).
 3. Agrega `TourGuiadoComponent` al array `imports` del componente raíz del módulo.
 4. En el HTML del módulo:
@@ -104,7 +104,7 @@ decirle qué elementos destacar y qué explicar en cada uno.
 
 ```
 El padre pone isOpen = true
-  -> stepsActivos = steps.filter(elemento existe en el DOM AHORA)
+  -> stepsActivos = conserva elementos existentes y pasos con onBeforeStep
   -> si no hay ninguno, cierra inmediatamente (closed.emit())
   -> stepIndex = 0
   -> irAElemento(): scrollIntoView + sondeo del rect del elemento hasta
@@ -130,12 +130,13 @@ Si un paso tiene `onBeforeStep`, se ejecuta y se espera 350 ms extra antes de ha
 | ---------- | ------------------ | ------ |
 | 2026-06-27 | Adalberto González | Creación del componente reutilizable, con filtrado automático de pasos por existencia en el DOM. |
 | 2026-08-20 | Iker Acevedo | **Fix de posicionamiento:** el sondeo de "¿terminó el scroll?" vigilaba `window.scrollY`/el contenedor con scroll, en vez del elemento destino — si la página terminaba de moverse un instante antes de que el layout del elemento se asentara del todo, la posición calculada quedaba "mirando" el paso anterior. Ahora se sondea el `getBoundingClientRect()` del elemento destino directamente. **Fix de condición de carrera:** ningún sondeo de posición se cancelaba al navegar a otro paso o cerrar el tour — un sondeo viejo que terminaba tarde pisaba la posición/el estado del paso vigente (causaba "a veces avanza y a veces no", "si me devuelvo se daña", "si cierro a la mitad se desconfigura"). Se agregó cancelación real (`cancelAnimationFrame`) más un guard por índice de paso. **Fix de compatibilidad con `OnPush`:** el cálculo de posición corre dentro de un `requestAnimationFrame`, un callback que Angular no propaga automáticamente a través de un componente ancestro con `ChangeDetectionStrategy.OnPush` — el resultado se calculaba bien pero no se pintaba hasta el siguiente evento real, mostrando siempre la posición del paso anterior. Se inyectó `ChangeDetectorRef` y se agregó `markForCheck()` después de cada cálculo asíncrono. **Responsive:** en pantallas ≤480px la tarjeta se ancla fija abajo tipo *bottom-sheet* con scroll interno, en vez de la posición calculada (que asume una altura fija de 160px para no salirse de la ventana — en mobile, con textos largos, esa altura estimada quedaba corta y el pie con los botones "Siguiente"/"Cerrar" terminaba fuera de la pantalla, sin scroll posible). |
+| 2026-09-21 | Iker Acevedo Vargas | El tour se recalcula también al hacer scroll, admite pasos que abren un drawer/modal y reserva espacio para explicaciones más largas. Se aplicó al visor de reportes. |
 
 ---
 
 ## Observaciones
 
 - **El filtrado de pasos es una sola pasada, al abrir.** Si un `elementId` vive dentro de un `*ngIf` que depende de datos cargando asíncronamente (ej. una tabla gateada por `loading()`), y el usuario abre el tour antes de que termine de cargar, ese paso se descarta silenciosamente y el conteo total de pasos baja — no se vuelve a evaluar más tarde. Mitigación usada en `cambio-entrega-inter`: deshabilitar el botón que abre el tour mientras `loading()` es `true`.
-- Por el mismo motivo, **no uses `onBeforeStep` para revelar un elemento que solo existe dentro de un modal `*ngIf`** (el elemento no está en el DOM todavía en el momento del filtrado inicial, así que ese paso nunca entra a `stepsActivos`). Si necesitas explicar contenido de un modal, apunta el paso al **botón** que lo abre y describe el contenido en el texto — no lo abras de verdad desde el tour.
+- `onBeforeStep` está pensado para revelar un drawer o modal. Debe abrir un elemento con `id` estable y una animación breve; el tour espera a que el layout se asiente antes de destacarlo.
 - Se construyó desde cero en lugar de usar driver.js porque el sidebar de CoreUI creaba un conflicto de capas que impedía que el overlay de driver.js se viera correctamente.
 - La animación de deslizamiento entre pasos es puro CSS, sin JavaScript de animaciones.

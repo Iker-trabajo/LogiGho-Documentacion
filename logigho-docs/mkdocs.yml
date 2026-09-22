@@ -139,6 +139,14 @@ nav:
                   - JobId en Inventario (ADR-003): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-003-jobid-en-inventariodevolucion.md
                   - Fechas UTC (ADR-004): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-004-fechas-utc.md
                   - Confiabilidad Inter (ADR-005): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-005-confiabilidad-inter.md
+              - ApiLambdaPublicarReporteAnalytics:
+                  - Lambda: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/ApiLambdaPublicarReporteAnalytics.md
+                  - Solicitar Carga (Caso de Uso): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/casos-uso/solicitar-carga-usecase.md
+                  - Confirmar Carga (Caso de Uso): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/casos-uso/confirmar-carga-usecase.md
+                  - Modelos de Dominio: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/dominio/modelos.md
+                  - Repositorios: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/infraestructura/repositorios.md
+                  - Servicios: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/infraestructura/servicios.md
+                  - Autenticación (ADR-001): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/adr/ADR-001-autenticacion-sub-sin-firma-mas-roles-en-users.md
           - Integración Pancake:
               - Estadísticas de Cuentas (Marketing):
                   - Descripción general: backend/pancake/overview.md
@@ -206,6 +214,7 @@ nav:
                   - Servicios: frontend/views/analytics/servicios.md
                   - Áreas Organizacionales: frontend/views/analytics/areas-organizacionales.md
                   - Telemetría y Auditoría: frontend/views/analytics/telemetria-reportes.md
+              - CEO:
                   - Liquidaciones (Power BI): frontend/views/analytics/liquidaciones-dashboard.md
               - Director de Operaciones:
                   - Costos Transportadora:

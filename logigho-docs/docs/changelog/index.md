@@ -24,6 +24,58 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-09-21] — Dominio Datos: API backend para publicar/versionar reportes analíticos
+
+### Nuevas funcionalidades
+
+- **Nueva Lambda `ApiLambdaPublicarReporteAnalytics`** (dominio Datos): mueve al backend
+  el flujo de publicar/versionar reportes analíticos, que hasta ahora corría 100% en el
+  cliente (Angular subía directo a S3/Mongo, sin control server-side). Presigned URL de
+  S3 en 2 pasos (`solicitar-carga` → `PUT` directo a S3 → `confirmar-carga`) para evitar
+  el límite de payload de API Gateway con reportes de hasta 15 MB. Port literal de las 8
+  reglas de validación de contenido del sanitizador Angular (`endurecerHtml`), 8/8
+  verificadas idénticas contra el archivo fuente.
+- Nuevo dominio **Datos** en PreProd: CloudFormation (`datos-infra-preprod.yaml`) +
+  pipeline GitHub Actions (`deploy-datos-preprod.yml`) desde cero, siguiendo la receta
+  estándar del repo. Primera lambda del repo que crea su propio rol IAM por CFN (los
+  demás dominios reusan roles pre-creados a mano).
+- Nuevo campo `Autor` en `CargasReportesAnalytics`, para auditoría legible (email/username)
+  sin tener que cruzar el `sub` contra `Users`.
+
+### Cambios
+
+- **Modelo de autenticación rediseñado** durante la construcción: de un diseño con
+  Cognito Authorizer + colección `IntegracionesExternas` propia, a decodificar el `sub`
+  del JWT sin verificar firma y exigir rol (`Jefe Datos`/`Desarrollador`/`CEO`) en
+  `Users` — consistente con cómo funciona el resto de la plataforma hoy (ningún endpoint
+  tiene Authorizer nativo). Ver ADR-001.
+- `MONGODB_CONNECTION_STRING` migrado a cifrado AES256-ECB (`Seguridad.Encripcion.EncripcionAES`),
+  estándar ya usado en el resto del repo para secretos en variables de entorno.
+- Respuestas de error migradas de objetos anónimos a records tipados (`ErrorResponse`,
+  `ValidacionRechazadaResponse`), consistente con el resto de lambdas del repo.
+
+### Correcciones
+
+- **Bug crítico de despliegue**: el handler usaba tipos de evento API Gateway V1
+  (`APIGatewayProxyRequest`) contra una integración real V2 (`PayloadFormatVersion:
+  "2.0"`) — `request.HttpMethod` quedaba siempre vacío y toda petición real caía en
+  `405 RUTA_NO_ADMITIDA`, aunque los 96 tests unitarios (con eventos V1 simulados)
+  pasaban en verde. Detectado en la primera prueba real contra PreProd con Postman.
+  Migrado a `APIGatewayHttpApiV2ProxyRequest`/`Response`.
+- `ApiLambdaGetObjectMetadataAOT` (necesaria para que Angular lea el HTML ya publicado)
+  no existía en la cuenta AWS de PreProd — replicada manualmente desde Producción
+  (mismo paquete `dotnet8`) con ruta `POST /getObject` en el Gateway de PreProd.
+  Pendiente formalizar en IaC.
+
+### Documentación
+
+- Nueva sección **Backend → Lambdas .NET → LogiGho → ApiLambdaPublicarReporteAnalytics**:
+  visión general con contrato completo de los 2 endpoints, flujo punta a punta, las 8
+  reglas de validación, casos de uso (Solicitar Carga, Confirmar Carga), modelos de
+  dominio, repositorios, servicios de infraestructura, y ADR-001 (autenticación).
+
+---
+
 ## [2026-09-16] — Liquidaciones: motor Dinámico (TCC) conviviendo con el motor Legacy
 
 ### Nuevas funcionalidades

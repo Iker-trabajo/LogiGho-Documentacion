@@ -1,118 +1,77 @@
 ---
 autor: Iker Acevedo Vargas
 fecha_creacion: 2026-08-14
-ultima_actualizacion: 2026-08-14
+ultima_actualizacion: 2026-09-21
 estado: desarrollo
 nivel: 4
 ---
 
 # Vista: Visor de Reporte
 
-**Selector:** `app-vista-reporte`
-
-**Ubicación:** `src/app/views/analytics/vista-reporte`
+**Selector:** `app-vista-reporte`<br>
+**Ubicación:** `src/app/views/analytics/vista-reporte`<br>
+**Ruta:** `/app/analytics/vista-reportes/:id`<br>
+**Parámetro:** `id` es el `ReporteId`; no es el `_id` de Mongo.
 
 ---
 
 ## ¿Qué hace?
 
-Renderiza un reporte HTML específico dentro del sandbox de seguridad, con cabecera de metadatos, controles de canvas (actualizar / pantalla completa), notas de la versión activa e historial de versiones (reciente + completo).
+Muestra un reporte HTML/BI dentro del sandbox seguro de LogiGho. El rediseño prioriza información entendible: identidad visible, estado, fecha, autor, versión actual, acciones y un lienzo del mismo ancho que la cabecera.
 
 ---
 
-## Ruta
+## Elementos de la experiencia
 
-| Ruta | Guard | Parámetros de URL |
-| --- | --- | --- |
-| `/app/analytics/vista-reportes/:id` | `AuthGuard` | `id` = `ReporteId` (UUID propio, no el `_id` de Mongo) |
+| Zona | Qué ofrece |
+|---|---|
+| Cabecera del reporte | Breadcrumb, nombre, estado, tamaño, fecha, autor y **Reporte ID** persistente con botón de copiar. |
+| Controles | Ayuda guiada, selector de versión, Gestionar ETL (si corresponde) y descarga HTML. |
+| Vista del informe | Estado de carga, zoom, actualizar, pantalla completa e historial. |
+| Historial | Drawer lateral derecho con versión activa, notas, autor, versiones anteriores y descarga vigente. |
+| Sandbox | Marco responsivo donde vive el HTML del reporte. |
 
----
-
-## Propiedades clave
-
-| Propiedad | Tipo | Descripción |
-| --- | --- | --- |
-| `reporte` | `ReporteAnalytics \| null` | El reporte cargado por `id` de ruta |
-| `versionSeleccionada` | `string \| null` | `VersionId` que se está mostrando (puede no ser la vigente) |
-| `htmlEndurecido` | `string` | HTML con la CSP inyectada — lo único que recibe el sandbox |
-| `htmlCrudoActual` *(privado)* | `string` | HTML original, sin CSP — se usa solo para "Descargar HTML" |
-| `mostrarHistorialCompleto` | `boolean` | Controla el modal con todas las versiones (el panel lateral solo muestra las 3 últimas) |
-| `puedeGestionar` | `boolean` (readonly) | Igual criterio que en Lista de Reportes — controla el botón "Gestionar ETL" |
+La cabecera no es fija: acompaña el scroll de la página, evitando cubrir el contenido del reporte. El sandbox usa el mismo ancho máximo visual que la ficha superior para mantener una composición coherente.
 
 ---
 
-## Servicios y endpoints
+## Versiones y descarga
 
-| Servicio | Método | Endpoint | Cuándo |
-| --- | --- | --- | --- |
-| `ReportesAnalyticsService` | `listarReportes()` | `GET metodoGenerico?coleccion=ReportesAnalytics` | Al inicializar (busca el reporte por `ReporteId`) |
-| `ReportesAnalyticsService` | `obtenerHtmlVersion()` | `GET` S3 | Al cargar la versión activa o al cambiar de versión |
-| `ReporteSanitizerService` | `endurecerHtml()` | — (cliente) | Sobre cada HTML crudo recibido, antes de pasarlo al sandbox |
-
----
-
-## Secciones de la vista
-
-| # | Sección | Descripción |
-| --- | --- | --- |
-| 1 | **Breadcrumb** | "Reportes › {nombre}" |
-| 2 | **Header** | Título, metadatos (tamaño, fecha de generación, autor, badge "Activo"), botones "Gestionar ETL" (condicional) y "Descargar HTML" |
-| 3 | **Canvas** | Header propio con "Actualizar" (re-fetch de la versión actual) y "Pantalla completa"; monta `ReporteSandboxComponent` con `[mostrarBotonPropio]="false"` |
-| 4 | **Sidebar — Notas de Versión** | `Notas` de la versión activa, o mensaje de vacío |
-| 5 | **Sidebar — Historial Reciente** | Últimas 3 versiones, clic cambia de versión sin recargar la página |
-| 6 | **Modal — Historial completo** | Todas las versiones, mismo comportamiento de clic |
+- Cambiar la versión solo cambia lo que se visualiza; no modifica cuál es la versión activa publicada.
+- **Descargar HTML** entrega el archivo original, no la copia endurecida que se monta dentro del iframe.
+- Las notas e historial se abren como drawer, pueden cerrarse con botón, clic en fondo o `Escape`.
+- El botón de ayuda ejecuta un tour guiado y abre el drawer automáticamente en los pasos que lo explican.
 
 ---
 
-## Flujo principal
+## Flujo de carga
 
-```
-ngOnInit()
-  -> id = ruta.snapshot.paramMap.get('id')
-  -> cargarReporte(id)
-     -> listarReportes() -> encuentra por ReporteId
-     -> valida Estado === 'ACTIVO'
-     -> cargarVersion(VersionActiva)
-        -> obtenerHtmlVersion() -> verifica SHA-256 internamente
-        -> htmlCrudoActual = html
-        -> htmlEndurecido = sanitizer.endurecerHtml(html)
+```text
+Leer ReporteId de la ruta
+  → obtener metadatos y versión solicitada
+  → descargar HTML desde S3
+  → comprobar SHA-256
+  → inyectar CSP de seguridad
+  → renderizar dentro del iframe sandbox
+  → iniciar telemetría de consumo
 ```
 
----
-
-## Métodos clave
-
-### `pantallaCompleta()`
-
-Llama a `this.sandbox?.alternarPantallaCompleta()` vía `@ViewChild(ReporteSandboxComponent)` — el control real vive en el componente hijo; esta vista solo dispara el botón desde su propio header de canvas (con `mostrarBotonPropio=false` en el sandbox para no duplicar el botón flotante).
-
-### `descargarHtml()`
-
-Descarga el HTML **crudo** (`htmlCrudoActual`), nunca el endurecido — un archivo con `connect-src 'none'`/`default-src 'none'` inyectado se vería roto si alguien lo abriera suelto fuera de la plataforma.
+Actualizar, cambiar versión, descargar y abrir pantalla completa sincronizan la sesión de telemetría para que la auditoría no dependa del intervalo siguiente.
 
 ---
 
-## Estados de la vista
+## Diseño responsive y accesibilidad
 
-| Estado | Qué muestra |
-| --- | --- |
-| Cargando | Spinner "Cargando reporte…" |
-| Reporte no existe / fue eliminado | Alerta roja |
-| Reporte no está `ACTIVO` | Alerta "Este reporte no está disponible actualmente." |
-| Cargando una versión distinta | Spinner "Renderizando…" dentro del canvas |
-| Con datos | Header + canvas + sidebar completos |
+- Los controles se reorganizan en filas a medida que se reduce el ancho.
+- El drawer usa espacio seguro, márgenes y desplazamiento propio en móvil.
+- Los botones tienen texto además de iconos y los cierres responden a `Escape`.
+- El ID del reporte se puede copiar sin tener que seleccionar texto manualmente.
 
 ---
 
-## Observaciones
-
-- Fechas y tamaños se formatean con funciones puras de `services/formato.util.ts` (`formatearFechaLarga`, `formatearTamano`) — sin registrar un locale global de Angular, que afectaría a toda la plataforma.
-- No existe modo "pantalla completa" a nivel de página (`?full=1`) — se retiró junto con el botón de pestaña nueva; Fullscreen API lo reemplaza por completo.
-
----
-
-## Changelog
+## Historial de cambios
 
 | Fecha | Autor | Cambio |
-| --- | --- | --- |
-| 2026-08-14 | Iker Acevedo Vargas | Versión inicial: header con metadatos, canvas con fullscreen/refrescar, sidebar de notas e historial, descarga de HTML crudo |
+|---|---|---|
+| 2026-08-14 | Iker Acevedo Vargas | Visor seguro con descarga, versiones y fullscreen. |
+| 2026-09-21 | Iker Acevedo Vargas | Rediseño corporativo responsive, Reporte ID visible, drawer de historial, tour corregido y telemetría integrada. |

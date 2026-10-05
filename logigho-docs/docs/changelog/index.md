@@ -24,6 +24,54 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-02] — Facturas transportadoras: validación de encabezados en la importación
+
+### Nuevas funcionalidades
+
+- **Validación de encabezados** en `uploadFile()` de los tres componentes de importación
+  de facturas (Envía, Inter y genérico — Servientrega y D2E), antes de mapear las
+  columnas. Dos validaciones: (1) la primera fila debe ser de encabezados (texto, sin
+  celdas vacías) → alerta `Archivo sin encabezados`; (2) los encabezados deben existir
+  en el `columnMapping` y venir los obligatorios → alerta `Encabezados incorrectos` con
+  las listas **No reconocidos** y **Faltan obligatorios**. Si falla, no se guarda nada y
+  se deja un `console.warn` para diagnóstico.
+- Nuevo campo opcional `columnasOpcionales?: string[]` en `TransportadoraStrategy`: cada
+  transportadora declara qué columnas no son obligatorias. `ServientregaStrategy` lo usa
+  para `CODIGOCENTROCOSTO` y `NOMBRECENTROCOSTO` (las otras 29 son obligatorias). D2E no
+  lo define, así que sus 9 columnas siguen siendo obligatorias.
+
+### Cambios
+
+- **X-Cargo fuera de servicio** (ya no se usa en la empresa): se comentó, con la nota
+  `FUERA DE SERVICIO POR EL MOMENTO`, el bloque HTML "FACTURACIÓN X-CARGO", el import de
+  `ImportacionFacturasXcargoComponent`, su entrada en `imports` y la llamada a
+  `fetchTableDataXcargo()` en `ngOnInit` (evita una consulta inútil a `FacturacionXcargo`).
+  La carpeta del componente no se tocó.
+- En el componente genérico, la validación anterior (mensaje genérico `Documento no válido`)
+  se reemplazó por la Validación 2 con mensaje detallado. La comparación sigue siendo
+  exacta (distingue mayúsculas).
+- Un archivo con columnas fuera del `columnMapping` ahora se **rechaza**; antes se
+  aceptaba y se guardaba con el nombre que trajera el Excel.
+- Se eliminó un bloque de código comentado de manejo de fechas (`ADM_FechaGrabacion`) en
+  el componente de Envía: estaba copiado de otro módulo y nunca se ejecutaba.
+
+### Correcciones
+
+- Error `toLowerCase is not a function` al importar el Excel de Envía: el archivo no tenía
+  fila de encabezados, la primera fila eran datos con números y el código la trataba como
+  títulos.
+- Agregado `ValorComercial` al `columnMapping` de Inter: existía en la base de datos y
+  faltaba en el mapeo.
+
+### Documentación
+
+- Nuevas páginas **Frontend → Componentes → Importación Facturas Inter** e
+  **Importación Facturas Envía**, con las validaciones y las columnas obligatorias.
+- Actualizadas **Importación Facturas Genérico** (validaciones y `columnasOpcionales`),
+  **Facturas Transportadoras** (X-Cargo fuera de servicio y cómo reactivarlo) y su ADR.
+
+---
+
 ## [2026-09-21] — Dominio Datos: API backend para publicar/versionar reportes analíticos
 
 ### Nuevas funcionalidades

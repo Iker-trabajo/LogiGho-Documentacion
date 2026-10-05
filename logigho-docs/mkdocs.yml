@@ -188,6 +188,8 @@ nav:
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
               - Paso Cotizacion (Modal Pedidos): frontend/components/paso-cotizacion.md
               - Importacion Pauta: frontend/components/importacion-pauta.md
+              - Importacion Facturas Inter: frontend/components/importacion-facturas.md
+              - Importacion Facturas Envia: frontend/components/importacion-facturas-envia.md
               - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md
               - Creacion Productos: frontend/components/creacion-productos.md

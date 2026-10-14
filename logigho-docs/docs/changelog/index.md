@@ -24,6 +24,52 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-14] — Pauta: validaciones de la vista y nueva importación con previsualización
+
+### Nuevas funcionalidades
+
+- **Previsualización editable al importar:** antes de guardar se ven todas las filas del Excel;
+  cada celda se valida mientras se escribe y los errores salen en rojo con un mensaje corto
+  ("Solo números", "Obligatorio"). Solo se deja importar cuando no queda ningún error.
+- **Corregir automáticamente:** deja solo los dígitos en los montos e Idtienda
+  (`1.500.000` → `1500000`); las celdas corregidas quedan en verde con "Antes: …".
+- **Verificación de tiendas:** el nombre de la tienda se llena solo con el Idtienda (una sola
+  consulta para todo el archivo) y se marca "Tienda no existe", "Tienda inactiva" o
+  "No es tu tienda".
+- Filtro **Solo errores**, **Eliminar fila** con Deshacer, **Agregar fila** y confirmación
+  al cerrar con cambios sin importar.
+- Zona para **arrastrar y soltar** el Excel y errores del archivo dentro del modal con temblor.
+- **Tour guiado** en la vista y en el modal.
+- **Celular:** la tabla de Pauta se ve como tarjetas con el total de cada registro, el
+  calendario y el modal salen como hoja desde abajo.
+
+### Cambios
+
+- La vista carga **todas** las páginas de pauta (8 en paralelo, Zstd y solo los campos de la
+  tabla), con barra "Cargando registros… X de N" y aviso con Reintentar si alguna no llega.
+  El contador, los totales, el filtro y la descarga usan todos los registros.
+- Los montos solo aceptan números enteros, al editar y al importar (nueva directiva
+  `appCampoSoloNumeros` con aviso toast).
+- Encabezados exactos de la plantilla: se rechazan columnas faltantes, no permitidas,
+  repetidas o con datos sin nombre.
+- Organización del módulo: llamadas al backend en `PautaRepository`, lectura y validación del
+  Excel en servicios, modelos en `models/` y estilos partidos en `estilos/`.
+
+### Correcciones
+
+- El campo `Otros` se leía como `Otro`: la columna, el total y la descarga salían vacíos.
+- Los totales ya no se vuelven `NaN` con montos viejos mal guardados (ej. `1.500.000`); esos
+  valores se ven en rojo para corregirlos.
+- Al guardar una fila con un monto inválido ya no queda `NaN` en la tabla.
+
+### Documentación
+
+- **Vista Pauta** y **Importacion Pauta** actualizadas.
+- Nuevas páginas en **Frontend → Vistas → Tienda → Pauta:** Modelos, Repositorio, Lectura de
+  Excel, Validacion de filas, Aviso toast y Directiva solo numeros.
+
+---
+
 ## [2026-09-21] — Dominio Datos: API backend para publicar/versionar reportes analíticos
 
 ### Nuevas funcionalidades

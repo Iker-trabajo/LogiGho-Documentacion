@@ -261,6 +261,13 @@ nav:
                       - Arquitectura: frontend/views/tienda/Portafolio/portafolio-ADR.md
                   - Pauta:
                       - Componente: frontend/views/tienda/pauta/pauta.md
+                      - Modal de importacion: frontend/components/importacion-pauta.md
+                      - Modelos: frontend/views/tienda/pauta/models/pauta-models.md
+                      - Repositorio: frontend/views/tienda/pauta/repository/pauta-repository.md
+                      - Lectura de Excel: frontend/views/tienda/pauta/services/lectura-excel-pauta-service.md
+                      - Validacion de filas: frontend/views/tienda/pauta/services/validacion-filas-pauta-service.md
+                      - Aviso toast: frontend/views/tienda/pauta/services/aviso-toast-service.md
+                      - Directiva solo numeros: frontend/views/tienda/pauta/directives/campo-solo-numeros-directive.md
                   - Wallet:
                       - Componente: frontend/views/tienda/wallet/wallet-view.md
                   - Gestion Cuentas:

@@ -24,6 +24,39 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-15] — Layout: menú lateral con teclado y arreglos del menú
+
+### Nuevas funcionalidades
+
+- **Menú con el teclado:** con el menú abierto (mouse encima o **Ctrl + B**) se recorre con las
+  flechas, empezando desde el buscador. ↓ / ↑ pasan entre las opciones que se ven, ↑ desde la
+  primera vuelve al buscador, **Enter** abre el submenú o va a la página y **Escape** cierra el
+  grupo, el submenú o la barra. No hace falta hacer clic: con la barra abierta ↓ va a la primera
+  opción desde cualquier parte de la página (salvo escribiendo en un campo).
+- La opción con el foco lleva un borde morado; al mover el mouse la marca se quita para que no se
+  vean dos opciones marcadas y, si el mouse está fuera del menú, la barra se cierra.
+
+### Cambios
+
+- La directiva `SidebarInteraccionDirective` pasó a `default-layout/directives/` y los estilos del
+  layout de `estilos/` a `styles/`.
+- El atajo Ctrl + B y las flechas se escuchan con un solo `@HostListener('document:keydown')`.
+
+### Correcciones
+
+- Arrastrar la barrita del scroll del menú lo cerraba si el mouse salía de la barra. Ahora sigue
+  abierto mientras se arrastra y se cierra al soltar afuera.
+- Con la barra cerrada y algo escrito en el buscador solo se veían unas rayitas: ahora se ven los
+  iconos del menú completo y al abrirla vuelven los resultados.
+
+### Documentación
+
+- Nueva sección **Frontend → Layout** con **Menú lateral (Default Layout)**: estructura, directiva,
+  uso con el teclado, buscador, diseño, flujo y las 33 pruebas.
+- **Estructura de módulos:** enlace a la página del menú lateral.
+
+---
+
 ## [2026-10-14] — Pauta: validaciones de la vista y nueva importación con previsualización
 
 ### Nuevas funcionalidades

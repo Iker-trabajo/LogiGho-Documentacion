@@ -178,6 +178,8 @@ nav:
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
+      - Layout:
+          - Menu lateral (Default Layout): frontend/layout/default-layout.md
       - Componentes:
           - Core:
             - Estandarizador de direcciones: frontend/core/estandarizador-direcciones.md

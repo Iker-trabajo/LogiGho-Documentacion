@@ -24,6 +24,18 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-17] — Propuesta: Sistema de Experiencias y seguridad de accesos
+
+### Documentación
+- **Sistema de Experiencias (propuesta, pendiente de aprobación):** qué es, ADR-001, estructura del proyecto,
+  crear una vista, crear una experiencia, reglas de cambio entre experiencias, tokens y estilos, seguridad por
+  diseño, buenas prácticas, migración de vistas, ejemplo con `tienda/pedidos` y plan de implementación.
+- **Seguridad y accesos (propuesta):** modelo objetivo de autorización en el servidor.
+- **Plantilla nueva:** documentación de vista del Sistema de Experiencias.
+- **Estilos y SCSS:** ahora enlaza al estándar de tokens.
+
+---
+
 ## [2026-10-14] — Pauta: validaciones de la vista y nueva importación con previsualización
 
 ### Nuevas funcionalidades

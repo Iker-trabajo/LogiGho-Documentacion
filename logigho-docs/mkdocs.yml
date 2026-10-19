@@ -116,7 +116,7 @@ nav:
                   - Observabilidad y monitoreo: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/observabilidad.md
                   - Runbook (puesta en marcha y operación): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/runbook.md
                   - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-001-una-lambda-paso-en-la-step-y-dos-colecciones.md
-                  - Webhook y API key (ADR-002): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-002-webhook-api-propio-con-api-key.md
+                  - Webhook en el REST del entorno (ADR-002): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-002-webhook-en-el-rest-del-entorno-con-api-key.md
               - ApiLambdaLiquidacionesLogighoAOT:
                   - Vision general: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/overview.md
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/ApiLambdaLiquidacionesLogighoAOT.md

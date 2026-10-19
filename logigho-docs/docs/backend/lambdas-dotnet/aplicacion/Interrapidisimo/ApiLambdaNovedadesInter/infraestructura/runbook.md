@@ -12,7 +12,8 @@ scripts los lanza una persona. En producción cada paso es una escritura; léelo
 
 | Pieza | Dónde vive | Quién la crea |
 | ----- | ---------- | ------------- |
-| Lambda, rol, API Gateway del webhook, alarmas, dashboard, SNS | `Terraform_Infraestructura_Logigho` → `environments/<env>/novedades` + `modules/novedades-inter` | `terraform apply` (Iker) |
+| Lambda, rol, alarmas, dashboard, SNS | `Terraform_Infraestructura_Logigho` → `environments/<env>/novedades` + `modules/novedades-inter` | `terraform apply` (Iker) |
+| Ruta del webhook en el REST del entorno + API key | `modules/novedades-webhook`, llamado desde `environments/preprod/datos` (PreProd) y `environments/prod/novedades` (producción) | `terraform apply` (Iker); en producción el deployment lo publica el CLI |
 | Step y disparador de **PreProd** | `environments/preprod/procesos-automaticos/step_procesos_logigho.tf` | `terraform apply` (Iker) |
 | Estado en la Step de **producción** | `pipelines/novedades/scripts/agregar_novedades_a_step_function.py` (la Step prod no está en Terraform) | Script (Iker) |
 | Código y variables sensibles | `pipelines/novedades/` | Pipeline de Azure DevOps |
@@ -22,34 +23,62 @@ scripts los lanza una persona. En producción cada paso es una escritura; léelo
 
 ## A. PreProd
 
-### A1. Infraestructura (Terraform)
+### A1. Infraestructura (Terraform) — en PowerShell
 
-```bash
-cd Terraform_Infraestructura_Logigho
+Son **tres directorios, en este orden** (el webhook vive en el REST de PreProd, que administra `datos`):
+
+1. `environments/preprod/novedades`: la lambda, su rol, las alarmas y el dashboard.
+2. `environments/preprod/datos`: agrega la ruta `/webhooks/ws-inter/flujo-guia` al REST `API_LogiGho_Rest_PreProd`, crea la API key y **redespliega el stage**.
+3. `environments/preprod/procesos-automaticos`: la Step y su disparador (deshabilitado).
+
+```powershell
+cd C:\Users\Iker\Documents\LogiGho\Terraform_Infraestructura_Logigho
 git switch feature/novedades-inter
-export AWS_PROFILE=Dev-logigho-test-01        # cuenta 376313750428
+$env:AWS_PROFILE = "Dev-logigho-test-01"        # cuenta 376313750428 (en PowerShell NO se usa "export")
+aws sts get-caller-identity --query Account --output text     # debe imprimir 376313750428
 
 terraform -chdir=environments/preprod/novedades init
-terraform -chdir=environments/preprod/novedades plan -out=novedades.tfplan
+terraform -chdir=environments/preprod/novedades plan "-out=novedades.tfplan"
 terraform -chdir=environments/preprod/novedades apply novedades.tfplan
 ```
 
-- `init`: descarga los proveedores y conecta con el estado remoto (`logigho-tfstate-preprod`, clave `novedades/terraform.tfstate`).
-- `plan -out`: calcula qué creará (32 recursos, **0 cambios y 0 destrucciones**) y lo guarda. Revísalo.
-- `apply <archivo>`: ejecuta **exactamente** ese plan, no otro.
+- `$env:AWS_PROFILE`: qué credenciales usa AWS en esa ventana. Si olvidas definirla, Terraform usa otra cuenta y su guardia `allowed_account_ids` lo frena.
+- `-chdir=`: ejecuta Terraform dentro de esa carpeta sin moverte. `"-out=…"` va entre comillas porque PowerShell parte el argumento en el punto.
+- `plan -out`: calcula qué cambiará y lo guarda. `apply <archivo>` ejecuta **exactamente** ese plan, no otro.
 - Tras el `apply`, **confirma la suscripción del correo** (AWS envía un mail a cada dirección de `correos_alarma`).
 
-```bash
-terraform -chdir=environments/preprod/novedades output url_webhook          # URL para el proveedor y para URL_WEBHOOK
-terraform -chdir=environments/preprod/novedades output -raw api_key_webhook # API key del webhook (secreta)
+> Si en este directorio ves `destroy` de recursos `aws_api_gateway_*` y de `aws_lambda_permission.api_gateway`, es el API
+> temporal `Webhooks-LogiGho-PreProd` de una primera versión (descartado por ADR-002): se destruye y nadie lo usaba.
+
+Luego `datos`. Este directorio también gestiona la lambda de reportes, así que **necesita el mismo valor** de la cadena Mongo
+que ya usa (si no, el plan intentaría cambiarle las variables). Se lee de la propia lambda, sin imprimirla:
+
+```powershell
+$env:TF_VAR_mongodb_connection_string = aws lambda get-function-configuration --function-name ApiLambdaPublicarReporteAnalytics --query "Environment.Variables.MONGODB_CONNECTION_STRING" --output text
+
+terraform -chdir=environments/preprod/datos init
+terraform -chdir=environments/preprod/datos plan "-out=datos.tfplan"
+```
+
+**Revisa el plan antes de aplicar.** Debe mostrar: 9 recursos `novedades_webhook` por crear, `aws_api_gateway_deployment.preprod`
+reemplazado (redeploy) y `aws_api_gateway_stage.preprod` actualizado. Resultado esperado: `Plan: 10 to add, 1 to change, 1 to destroy`.
+**Si aparece `module.datos.aws_lambda_function.reportes` cambiando, detente**: el valor de la cadena no coincide.
+
+```powershell
+terraform -chdir=environments/preprod/datos apply datos.tfplan
+Remove-Item Env:\TF_VAR_mongodb_connection_string          # no dejar el secreto en la sesión
+
+terraform -chdir=environments/preprod/datos output novedades_url_webhook          # URL para el proveedor y para URL_WEBHOOK
 terraform -chdir=environments/preprod/novedades output azure_devops_novedades_cd_rol_arn
 ```
 
-Después la Step y su disparador (réplica de `Step_Procesos_Logigho`, **deshabilitado**):
+La API key (secreta) se lee solo cuando se necesita: `terraform -chdir=environments/preprod/datos output -raw novedades_api_key_webhook`.
 
-```bash
+Por último la Step y su disparador (réplica de `Step_Procesos_Logigho`, **deshabilitado**):
+
+```powershell
 terraform -chdir=environments/preprod/procesos-automaticos init
-terraform -chdir=environments/preprod/procesos-automaticos plan -out=step.tfplan
+terraform -chdir=environments/preprod/procesos-automaticos plan "-out=step.tfplan"
 terraform -chdir=environments/preprod/procesos-automaticos apply step.tfplan
 ```
 
@@ -90,8 +119,8 @@ Variable group **`novedades-inter-preprod-secretos`** (Azure DevOps → Pipeline
 | -------- | ----- | --------- |
 | `CADENA_CONEXION` | Cadena de Atlas preprod, cifrada | Sí |
 | `API_KEY_WS_INTER` | La clave que da el proveedor para llamar a ws-inter, cifrada | Sí |
-| `WEBHOOK_API_KEY` | Salida `api_key_webhook` de Terraform, cifrada | Sí |
-| `URL_WEBHOOK` | Salida `url_webhook` de Terraform, **sin cifrar** | No |
+| `WEBHOOK_API_KEY` | Salida `novedades_api_key_webhook` de `environments/preprod/datos`, cifrada | Sí |
+| `URL_WEBHOOK` | Salida `novedades_url_webhook` de `environments/preprod/datos`, **sin cifrar** | No |
 | `SLACK_WEBHOOK_ALERTAS` | (opcional en PreProd) webhook del canal de alertas, cifrado; si lo usas, agrégalo a `claves` en `cd-preprod.yml` | Sí |
 
 ### A4. Azure DevOps
@@ -105,8 +134,9 @@ Variable group **`novedades-inter-preprod-secretos`** (Azure DevOps → Pipeline
 ### A5. Prueba de punta a punta
 
 ```bash
-URL=$(terraform -chdir=environments/preprod/novedades output -raw url_webhook)
-KEY=$(terraform -chdir=environments/preprod/novedades output -raw api_key_webhook)
+# (bash; en PowerShell usa curl.exe y $URL = terraform … output -raw novedades_url_webhook)
+URL=$(terraform -chdir=environments/preprod/datos output -raw novedades_url_webhook)
+KEY=$(terraform -chdir=environments/preprod/datos output -raw novedades_api_key_webhook)
 
 # 1) Sin clave: API Gateway rechaza (403)
 curl -i -X POST "$URL" -d '{}'
@@ -137,15 +167,36 @@ Terraform no lo vuelve a apagar.
 
 ## B. Producción
 
-Todo es **nuevo y aditivo** (el plan de producción es 34 recursos a crear, 0 a cambiar, 0 a destruir), salvo el permiso
-y el estado en la Step. Orden:
+Todo es **nuevo y aditivo** (el plan de producción es 29 recursos a crear, 0 a cambiar, 0 a destruir; al REST existente solo se le agrega
+una ruta), salvo el permiso y el estado en la Step. Orden:
 
 1. **Webhook de Slack** del canal `#logigho-alertas-prod` (Slack → Apps → Incoming Webhooks). Cifrarlo (A3).
 2. **Índices** en DocumentDB (túnel SSH al bastion, ver la memoria de conexiones):
    `mongosh "<cadena DocumentDB>" --tls --tlsCAFile global-bundle.pem --file indices.mongosh.js`.
-3. **Terraform**: `AWS_PROFILE=<perfil prod>`; `init`, `plan -out`, revisar, `apply` en `environments/prod/novedades`.
-   Confirmar el correo de SNS. La Lambda queda en la VPC/subred/SG de `ApiLambdaProcesoAutomaticoInter` (ya tiene salida a
+3. **Terraform** (`environments/prod/novedades`), con las credenciales de producción. En PowerShell:
+   ```powershell
+   $env:AWS_PROFILE = "<perfil prod>"            # cuenta 522814697657
+   aws sts get-caller-identity --query Account --output text      # debe imprimir 522814697657
+   terraform -chdir=environments/prod/novedades init
+   terraform -chdir=environments/prod/novedades plan "-out=novedades.tfplan"
+   ```
+   El plan debe decir **`Plan: 29 to add, 0 to change, 0 to destroy`** (lambda, rol, alarmas, dashboard, SNS, rol OIDC y la
+   ruta `/webhooks/ws-inter/flujo-guia` con su API key). **No debe tocar nada existente del REST `API_LogiGho_Rest`**: solo
+   le agrega recursos nuevos. Si es correcto: `terraform -chdir=environments/prod/novedades apply novedades.tfplan` y
+   confirma el correo de SNS. La Lambda queda en la VPC/subred/SG de `ApiLambdaProcesoAutomaticoInter` (ya tiene salida a
    internet por NAT y acceso a DocumentDB).
+   > Terraform solo crea la ruta; **todavía no está publicada** en el stage. Se publica en el paso siguiente.
+
+   **3b. Publicar el deployment del REST** (el stage `Produccion` no es de Terraform, igual que hace el pipeline de `datos`).
+   Antes de publicar, anota el deployment actual (para revertir) y revisa que **no haya cambios manuales sin publicar**
+   de otras personas en `API_LogiGho_Rest`, porque `create-deployment` publica TODO lo pendiente del API:
+   ```powershell
+   aws apigateway get-stage --rest-api-id 7elgyten88 --stage-name Produccion --query deploymentId --output text   # anotar (hoy: r5pecy)
+   aws apigateway create-deployment --rest-api-id 7elgyten88 --stage-name Produccion --description "novedades ws-inter"
+   ```
+   Reversión: `aws apigateway update-stage --rest-api-id 7elgyten88 --stage-name Produccion --patch-operations op=replace,path=/deploymentId,value=<deployment anotado>`.
+   Al ser un REST *edge* (CloudFront), la ruta tarda unos minutos en propagar: mientras tanto responde
+   `403 {"message":"Missing Authentication Token"}`.
 4. **Variable group** `novedades-inter-prod-secretos` (mismas variables que A3 más `SLACK_WEBHOOK_ALERTAS`) y service
    connection **`aws-prod-novedades`** (rol `azdo-novedades-prod`).
 5. **Merge a `main`** → `cd-prod` (pide aprobación en el Environment `produccion`).
@@ -181,7 +232,7 @@ y el estado en la Step. Orden:
 
 La fusión de variables del pipeline es **aditiva**: no cambia una variable que ya existe con otro valor. Para cambiar una:
 `quitar-variables --claves NOMBRE` y luego `variables` (o redesplegar). Para rotar la API key del webhook:
-`terraform apply -replace=module.novedades.aws_api_gateway_api_key.ws_inter`, cifrar la nueva, actualizar el variable
+`terraform apply -replace=module.novedades_webhook.aws_api_gateway_api_key.ws_inter` (en `preprod/datos` o `prod/novedades`; en producción hay que publicar de nuevo el deployment), cifrar la nueva, actualizar el variable
 group, `quitar-variables` + redespliegue y entregarla al proveedor.
 
 ### Si llega una alerta

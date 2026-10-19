@@ -50,16 +50,20 @@ Se publican en formato EMF (una línea por invocación, sin llamadas de red).
 | Operación | Métricas |
 | --------- | -------- |
 | `solicitar` | `GuiasElegibles`, `SolicitudesEnviadas`, `SolicitudesFallidas`, `GuiasSaltadas`, `PendientesPorTope`, `SeguimientosCerrados`, `MotivosReproyectados`, `GuiasMarcadasSinRespuesta`, `WsInterNoDisponible`, `CorridaCortada`, `CredencialInvalida`, `CorridaInterrumpida` |
-| `webhook` | `CallbacksRecibidos`, `CallbacksProcesados`, `MotivosNuevos`, `CallbacksIgnorados`, `CallbacksDesconocidos`, `CallbacksInvalidos`, `WebhookRechazado` |
+| `webhook` | `CallbacksRecibidos`, `CallbacksProcesados`, `MotivosNuevos`, `CallbacksIgnorados`, `CallbacksDesconocidos`, `CallbacksInvalidos`, `WebhookRechazado`, `CallbackErrorInterno` |
 
 ## Alarmas de CloudWatch (Terraform, `modules/novedades-inter/alarmas.tf`) → SNS → correo
 
-`ws-inter-no-disponible`, `corrida-cortada`, `api-key-rechazada`, `guias-sin-callback`, `webhook-rechazado` (≥3 en 5 min),
-`lambda-errores`, `lambda-throttles`, `lambda-cerca-del-timeout` (90 %), `webhook-5xx`, `webhook-4xx` (≥5 en 5 min) y,
+`ws-inter-no-disponible`, `corrida-cortada`, `api-key-rechazada`, `guias-sin-callback`, `webhook-error-interno` (el webhook respondió 500),
+`webhook-rechazado` (≥3 en 5 min), `lambda-errores`, `lambda-throttles`, `lambda-cerca-del-timeout` (90 %) y,
 solo en producción, **`corrida-ausente`**: 9 h sin ninguna corrida (la Step está apagada, fallando o sin permiso para
 invocar la lambda — la Step oculta ese error con su `Catch`).
 
 ## Dashboard
 
 `Novedades-Inter-<entorno>` (CloudWatch): envíos, salud del proveedor (debe estar en 0), callbacks, mantenimiento,
-lambda (invocaciones/errores/duración), API Gateway y estado de todas las alarmas.
+lambda (invocaciones/errores/duración) y estado de todas las alarmas.
+
+> No hay alarmas ni gráficos de API Gateway: el REST es compartido por toda la plataforma y sus métricas por stage mezclan
+> todas las rutas. El webhook se vigila con las métricas que publica la propia lambda. Un 403 que API Gateway da por API key
+> inválida no llega a la lambda; se detecta porque no llegan callbacks (`guias-sin-callback`).

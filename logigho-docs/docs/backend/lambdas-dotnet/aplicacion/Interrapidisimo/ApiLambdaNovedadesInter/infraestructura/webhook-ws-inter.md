@@ -19,19 +19,22 @@ El proveedor usa **una URL de callback fija** porque con muchas guías no alcanz
 
 ## Nuestro webhook
 
-`POST /webhooks/ws-inter/flujo-guia` en el API Gateway REST propio del dominio:
+`POST /webhooks/ws-inter/flujo-guia` en el **REST único del entorno** (regla de la plataforma: ver
+[API Gateway](../../../../../../arquitectura/api-gateway.md) y [ADR-002](../adr/ADR-002-webhook-en-el-rest-del-entorno-con-api-key.md)):
 
-| Entorno | API | Stage |
-| ------- | --- | ----- |
-| PreProd | `Webhooks-LogiGho-PreProd` (regional) | `preprod` |
-| Producción | `Webhooks-LogiGho-Prod` (regional) | `produccion` |
+| Entorno | API | Stage | URL base |
+| ------- | --- | ----- | -------- |
+| PreProd | `API_LogiGho_Rest_PreProd` (`8u5isw5u30`) | `PreProd` | `https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/PreProd` |
+| Producción | `API_LogiGho_Rest` (`7elgyten88`) | `Produccion` | `https://7elgyten88.execute-api.us-east-1.amazonaws.com/Produccion` |
 
-La URL exacta es la salida `url_webhook` de Terraform (`terraform output url_webhook`).
+La URL completa es la base + `/webhooks/ws-inter/flujo-guia`. También sale de Terraform:
+`novedades_url_webhook` en `environments/preprod/datos` y `url_webhook` en `environments/prod/novedades`.
 
 **Seguridad.** El método exige API key (`x-api-key`): sin ella API Gateway responde `403 {"message":"Forbidden"}` sin invocar
 la lambda. La lambda la vuelve a comprobar (comparación en tiempo constante). El *usage plan* limita a 20 peticiones/s
-(ráfaga 40) y 50 000 al día. La clave la genera Terraform (`terraform output -raw api_key_webhook`) y se entrega al
-proveedor por un canal seguro.
+(ráfaga 40) y 50 000 al día **solo para quien use esa clave**; los demás métodos del REST siguen con su authorizer y no se
+ven afectados. La clave la genera Terraform (`output -raw` de `novedades_api_key_webhook` en preprod/datos o de
+`api_key_webhook` en prod/novedades) y se entrega al proveedor por un canal seguro.
 
 ## Contrato del callback — PROVISIONAL
 

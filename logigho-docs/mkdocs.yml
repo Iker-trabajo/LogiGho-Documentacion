@@ -108,6 +108,16 @@ nav:
                   - Envía: backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
               - ApiLambdaProcesoAutomaticoInter:
                   - Lambda: backend/lambdas-dotnet/aplicacion/interrapidismo/ApiLambaProcesoAutomaticoInter/ApiLambaProcesoAutomaticoInter.md
+              - ApiLambdaNovedadesInter:
+                  - Lambda: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInter.md
+                  - Solicitar novedades (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/solicitar-novedades-usecase.md
+                  - Recibir resultado (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/recibir-resultado-usecase.md
+                  - Modelos de Dominio: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/modelos.md
+                  - Webhook y contrato ws-inter: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/webhook-ws-inter.md
+                  - Observabilidad y monitoreo: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/observabilidad.md
+                  - Runbook (puesta en marcha y operación): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/runbook.md
+                  - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-001-una-lambda-paso-en-la-step-y-dos-colecciones.md
+                  - Webhook en el REST del entorno (ADR-002): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-002-webhook-en-el-rest-del-entorno-con-api-key.md
               - ApiLambdaLiquidacionesLogighoAOT:
                   - Vision general: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/overview.md
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/ApiLambdaLiquidacionesLogighoAOT.md

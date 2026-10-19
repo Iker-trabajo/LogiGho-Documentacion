@@ -17,7 +17,7 @@ scripts los lanza una persona. En producción cada paso es una escritura; léelo
 | Step y disparador de **PreProd** | `environments/preprod/procesos-automaticos/step_procesos_logigho.tf` | `terraform apply` (Iker) |
 | Estado en la Step de **producción** | `pipelines/novedades/scripts/agregar_novedades_a_step_function.py` (la Step prod no está en Terraform) | Script (Iker) |
 | Código y variables sensibles | `pipelines/novedades/` | Pipeline de Azure DevOps |
-| Colección e índices | `indices.mongosh.js` | `mongosh` (Iker) |
+| Colección e índices | Tres `createIndex` (secciones A2 y B2) | `mongosh` (Iker) |
 
 ---
 
@@ -88,12 +88,18 @@ terraform -chdir=environments/preprod/procesos-automaticos apply step.tfplan
 
 ### A2. Colección e índices
 
-```bash
-mongosh "<cadena de Atlas preprod>" --file indices.mongosh.js
+En `mongosh` (o la consola de Atlas / DBeaver), contra Atlas PreProd:
+
+```javascript
+use LogighoDB
+db.SeguimientoNovedadesInter.createIndex({ Numeropreenvio: 1 }, { name: "ux_numeropreenvio", unique: true })
+db.SeguimientoNovedadesInter.createIndex({ "Solicitud.Ref": 1 }, { name: "ix_solicitud_ref" })
+db.SeguimientoNovedadesInter.createIndex({ EstadoSeguimiento: 1 }, { name: "ix_estado_seguimiento" })
+db.SeguimientoNovedadesInter.getIndexes()
 ```
 
 Crea la colección `SeguimientoNovedadesInter` y sus 3 índices. No afecta a `PedidosInter`.
-(Si la base de PreProd no se llama `LogighoDB`, edita la primera línea del script.)
+Tanto Atlas PreProd como DocumentDB usan la base `LogighoDB`. Si la colección no existe, `createIndex` la crea.
 
 ### A3. Secretos cifrados y variable group
 
@@ -172,7 +178,15 @@ una ruta), salvo el permiso y el estado en la Step. Orden:
 
 1. **Webhook de Slack** del canal `#logigho-alertas-prod` (Slack → Apps → Incoming Webhooks). Cifrarlo (A3).
 2. **Índices** en DocumentDB (túnel SSH al bastion, ver la memoria de conexiones):
-   `mongosh "<cadena DocumentDB>" --tls --tlsCAFile global-bundle.pem --file indices.mongosh.js`.
+   los mismos tres `createIndex` de A2 sobre la base `LogighoDB` de DocumentDB (versión 5.0):
+
+   ```javascript
+   use LogighoDB
+   db.SeguimientoNovedadesInter.createIndex({ Numeropreenvio: 1 }, { name: "ux_numeropreenvio", unique: true })
+   db.SeguimientoNovedadesInter.createIndex({ "Solicitud.Ref": 1 }, { name: "ix_solicitud_ref" })
+   db.SeguimientoNovedadesInter.createIndex({ EstadoSeguimiento: 1 }, { name: "ix_estado_seguimiento" })
+   db.SeguimientoNovedadesInter.getIndexes()
+   ```
 3. **Terraform** (`environments/prod/novedades`), con las credenciales de producción. En PowerShell:
    ```powershell
    $env:AWS_PROFILE = "<perfil prod>"            # cuenta 522814697657

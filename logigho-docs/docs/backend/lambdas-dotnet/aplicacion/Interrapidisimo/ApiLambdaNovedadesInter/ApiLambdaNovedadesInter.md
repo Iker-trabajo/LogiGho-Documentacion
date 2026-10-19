@@ -165,5 +165,5 @@ Los valores sensibles van **cifrados con AES** (`EncripcionAES.EncryptAES256ECB`
   `MotivoNovedadInter` si coincide con un callback. Cada corrida de `solicitar` lo repone desde el seguimiento.
 - **`Catch` oculta fallos de la Step.** Si la lambda no se puede invocar (p. ej. falta permiso en el rol de la Step) la
   ejecución termina `SUCCEEDED`. Lo detecta la alarma `corrida-ausente` (9 h sin ninguna corrida).
-- **Índices.** Crear con `indices.mongosh.js` antes de activar la Step (ver [runbook](infraestructura/runbook.md)).
+- **Índices.** Crear los tres índices (runbook, sección A2) antes de activar la Step (ver [runbook](infraestructura/runbook.md)).
 - `$push` con `$slice` (tope de 50 en el historial) debe verificarse en DocumentDB en la primera corrida de producción.

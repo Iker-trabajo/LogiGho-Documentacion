@@ -57,12 +57,12 @@ Un documento por guía. El nombre evita confundirse con `NovedadesLogigho`, que 
 
 Todas las fechas son BSON `Date` en UTC.
 
-### Índices (`indices.mongosh.js`)
+### Índices (comandos en el [runbook](../infraestructura/runbook.md), sección A2)
 
 | Índice | Para qué |
 | ------ | -------- |
 | `{ Numeropreenvio: 1 }` único | Una guía = un seguimiento; evita duplicados por envíos simultáneos |
-| `{ "Solicitud.Ref": 1 }` parcial | Encontrar el seguimiento por la referencia que devuelve ws-inter |
+| `{ "Solicitud.Ref": 1 }` | Encontrar el seguimiento por la referencia que devuelve ws-inter |
 | `{ EstadoSeguimiento: 1 }` | Cerrar los seguimientos activos que salieron de novedad |
 
 ### Escrituras

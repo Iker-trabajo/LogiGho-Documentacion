@@ -22,11 +22,13 @@ Procesa lo que ws-inter devuelve por cada guía solicitada.
   reintento del proveedor vuelve a ver "hubo cambio" y completa lo que faltó.
 - **Errores.** Cuerpo ilegible → `PayloadInvalidoException` (400). Resultado inválido o guía desconocida → se cuenta y
   la llamada sigue en 200 (reintentarlo no lo arreglaría). Falla de Mongo → excepción → 500 para que el proveedor reintente.
+- **Error del proveedor** (`status` distinto de `ok`): la solicitud queda `Fallida` con el texto del error, se cuenta en `ConErrorProveedor` y no se toca
+  el motivo ya guardado ni el pedido. No es lo mismo que `encontrado:false` (`NoEncontrada`).
 
 ## Qué se extrae de la respuesta — `ExtractorMotivoNovedad`
 
 - **Último motivo**: el de fecha más reciente de `motivos`.
-- **Geo**: la del evento del `flujo` que trae ese motivo; si no tiene, la del último evento con geo.
+- **Geo**: solo la del evento del `flujo` que trae ese motivo. Si ese evento no la tiene, el motivo se muestra **sin URL**: nunca se usa la ubicación de otro evento, porque sería la de otro intento de entrega.
 - **Texto** de `MotivoNovedadInter`: `MOTIVO - URL de Google Maps` (solo `MOTIVO` si no hay geo). Si la geo no trae URL se
   construye `https://www.google.com/maps?q=lat,lng` con cultura invariante (punto decimal).
 - Guía `encontrado:false` → solicitud `NoEncontrada`; no se toca el pedido.

@@ -33,7 +33,7 @@ Un documento por guía. El nombre evita confundirse con `NovedadesLogigho`, que 
   "Prioridad": "Alta",                   // Alta | Normal
   "HuellaPedido": "Intento de entrega|No logramos hacer la entrega",   // Estado|Descripcion Asociada al solicitar
   "Solicitud": {
-    "Estado": "Respondida",              // Enviada | Respondida | Fallida | NoEncontrada
+    "Estado": "Respondida",              // Enviada | Respondida | Fallida (sin callback o error del proveedor) | NoEncontrada (encontrado:false)
     "Ref": "…", "JobId": "…", "FechaEnvio": ISODate, "FechaRespuesta": ISODate,
     "Intentos": 0,                       // envíos seguidos sin respuesta
     "UltimoError": null
@@ -49,7 +49,7 @@ Un documento por guía. El nombre evita confundirse con `NovedadesLogigho`, que 
   "HuellaMotivos": "a3f1…",              // hash de TODOS los motivos: si no cambia, el motivo no cambió
   "Historial": [ { "Motivo": { … }, "Huella": "…", "DetectadoEn": ISODate } ],   // solo cambios, tope 50
   "UltimaConsultaEn": ISODate,           // consultado_en de ws-inter: ignora callbacks viejos
-  "UltimaRespuesta": { … },              // respuesta completa de ws-inter, se sobrescribe
+  "UltimaRespuesta": { … },              // solo guia, consultado_en, encontrado, estado_actual, ultimo_motivo, flujo, motivos (+ job_id, ref, status); sin datos personales; se sobrescribe
   "ConsultasTotales": 3, "ConsultasSinCambio": 2,
   "FechaCreacion": ISODate, "FechaActualizacion": ISODate, "FechaCierre": null
 }

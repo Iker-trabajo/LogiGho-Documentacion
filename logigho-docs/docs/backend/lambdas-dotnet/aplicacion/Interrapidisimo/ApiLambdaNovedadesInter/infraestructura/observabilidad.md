@@ -50,7 +50,7 @@ Se publican en formato EMF (una línea por invocación, sin llamadas de red).
 | Operación | Métricas |
 | --------- | -------- |
 | `solicitar` | `GuiasElegibles`, `SolicitudesEnviadas`, `SolicitudesFallidas`, `GuiasSaltadas`, `PendientesPorTope`, `SeguimientosCerrados`, `MotivosReproyectados`, `GuiasMarcadasSinRespuesta`, `WsInterNoDisponible`, `CorridaCortada`, `CredencialInvalida`, `CorridaInterrumpida` |
-| `webhook` | `CallbacksRecibidos`, `CallbacksProcesados`, `MotivosNuevos`, `CallbacksIgnorados`, `CallbacksDesconocidos`, `CallbacksInvalidos`, `WebhookRechazado`, `CallbackErrorInterno` |
+| `webhook` | `CallbacksRecibidos`, `CallbacksProcesados`, `MotivosNuevos`, `CallbacksIgnorados`, `CallbacksDesconocidos`, `CallbacksInvalidos`, `WebhookRechazado`, `CallbackErrorInterno`, `CallbacksConErrorProveedor` |
 
 ## Alarmas de CloudWatch (Terraform, `modules/novedades-inter/alarmas.tf`) → SNS → correo
 

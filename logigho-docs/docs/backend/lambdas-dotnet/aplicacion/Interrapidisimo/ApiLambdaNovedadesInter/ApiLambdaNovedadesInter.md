@@ -51,21 +51,31 @@ Sin parámetros: la Step envía `body: "{}"`.
 
 ### `/webhooks/ws-inter/flujo-guia`
 
-Un objeto `FlujoGuiaResponse` o un arreglo de hasta 100 (contrato **provisional**, ver el documento del webhook):
+Un POST por guía con este sobre (contrato **confirmado** con callbacks reales del proveedor, 2026-10-19). También se aceptan arreglos de hasta 100 sobres:
 
 ```json
 {
+  "job_id": "790e7e46…",
   "guia": "240063616541",
-  "ref": "9f2c1e…",
-  "job_id": "…",
-  "consultado_en": "2026-10-18T17:10:26-05:00",
-  "encontrado": true,
-  "estado_actual": "Envío Admitido",
-  "ultimo_motivo": "REHUSADO / SE NEGO A RECIBIR NOTIFICACION",
-  "flujo": [ { "orden": 10, "motivo": "REHUSADO / …", "geo": { "latitud": 10.868765635, "longitud": -74.78554886, "url": "https://www.google.com/maps?q=…" } } ],
-  "motivos": [ { "fecha": "2026-10-17T12:18:59-05:00", "estado": "En Proceso de Devolución", "motivo": "REHUSADO / …" } ]
+  "ref": "6d638457…",
+  "status": "ok",
+  "result": {
+    "guia": "240063616541",
+    "consultado_en": "2026-10-19T12:04:28-05:00",
+    "encontrado": true,
+    "estado_actual": "Envío Admitido",
+    "ultimo_motivo": "REHUSADO / SE NEGO A RECIBIR NOTIFICACION",
+    "flujo": [ { "orden": 10, "motivo": "REHUSADO / …", "geo": { "latitud": 10.8690702, "longitud": -74.7854415, "url": "http://google.com/maps?q=…" } } ],
+    "motivos": [ { "fecha": "2026-10-17T12:18:59-05:00", "estado": "En Proceso de Devolución", "motivo": "REHUSADO / …" } ],
+    "remitente": { … }, "destinatario": { … }, "envio": { … }, "liquidacion": { … }
+  },
+  "error": null
 }
 ```
+
+- `ref` es la referencia que enviamos en la solicitud; si faltara, se correlaciona por el número de guía.
+- **Si el proveedor no pudo consultar la guía** manda `status` distinto de `ok` (y/o `result: null`) con el motivo en `error`. Eso no es "guía no encontrada": la solicitud queda `Fallida` con el texto del error y se reintenta al vencer el refresco.
+- De `result` solo se guardan `guia`, `consultado_en`, `encontrado`, `estado_actual`, `ultimo_motivo`, `flujo` y `motivos`. Los bloques personales y comerciales (`remitente`, `destinatario`, `envio`, `liquidacion`) **no se copian**: ya viven en `PedidosInter`.
 
 ---
 
@@ -74,16 +84,16 @@ Un objeto `FlujoGuiaResponse` o un arreglo de hasta 100 (contrato **provisional*
 ### `/novedades-inter/solicitar` (200)
 
 ```json
-{ "guiasElegibles": 650, "solicitudesEnviadas": 120, "solicitudesFallidas": 0, "saltadas": 530,
-  "seguimientosCerrados": 4, "motivosReproyectados": 0, "pendientesPorTope": 0,
-  "wsInterNoDisponible": false, "credencialInvalida": false, "corridaCortada": false, "interrumpida": false }
+{ "GuiasElegibles": 650, "SolicitudesEnviadas": 120, "SolicitudesFallidas": 0, "Saltadas": 530,
+  "SeguimientosCerrados": 4, "MotivosReproyectados": 0, "PendientesPorTope": 0,
+  "WsInterNoDisponible": false, "CredencialInvalida": false, "CorridaCortada": false, "Interrumpida": false }
 ```
 
 ### `/webhooks/ws-inter/flujo-guia`
 
 | Código | Cuándo |
 | ------ | ------ |
-| `200`  | Recibido. Cuerpo: `{ recibidos, procesados, motivosNuevos, ignorados, desconocidos, invalidos }`. Un resultado inválido o de una guía que no pedimos **no** hace fallar la llamada |
+| `200`  | Recibido. Cuerpo: `{ Recibidos, Procesados, MotivosNuevos, Ignorados, Desconocidos, Invalidos, ConErrorProveedor }`. Un resultado inválido o de una guía que no pedimos **no** hace fallar la llamada |
 | `400`  | El cuerpo no es JSON, está vacío, no es objeto/arreglo o trae más de 100 resultados. El proveedor **no** debe reintentar |
 | `401`  | La API key no coincide (segunda barrera; la primera es API Gateway, que responde `403` sin clave) |
 | `403`  | (API Gateway) falta o es inválida la API key |
@@ -156,8 +166,9 @@ Los valores sensibles van **cifrados con AES** (`EncripcionAES.EncryptAES256ECB`
 
 ## Observaciones
 
-- **Contrato del callback provisional.** ws-inter no documenta aún la forma del callback. Todo lo que depende de él
-  está aislado en `Aplicacion/DTO/CallbackWsInterParser.cs`; cuando el proveedor lo confirme solo se ajusta ese archivo.
+- **Contrato del callback confirmado.** El proveedor envía un sobre con el resultado dentro de `result` (ver Request). Todo lo que
+  depende de esa forma está aislado en `Aplicacion/DTO/CallbackWsInterParser.cs`. Diagnóstico: el log `callback-con-descartados` incluye una muestra del cuerpo.
+- **`estado_actual` del proveedor no es fiable** (en las muestras llega `Envío Admitido`, el primer estado del flujo, aunque la guía ya esté devuelta). No se usa; solo se usan `motivos` y `flujo`.
 - **La detección de novedad de la lambda legacy no se reutiliza.** `ApiLambdaProcesoAutomaticoInter` usa los hijos de
   `PadreId == 28` del catálogo `EstadoGuiaLogighoNew` (solo "Custodia") y apenas 8 pedidos tienen `Estado Novedad`.
   La regla nueva vive en `ReglaSeleccionNovedad` y se configura por variables.

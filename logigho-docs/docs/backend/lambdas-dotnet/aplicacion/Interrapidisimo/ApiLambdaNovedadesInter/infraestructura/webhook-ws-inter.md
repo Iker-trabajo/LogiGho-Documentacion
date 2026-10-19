@@ -36,21 +36,33 @@ la lambda. La lambda la vuelve a comprobar (comparación en tiempo constante). E
 ven afectados. La clave la genera Terraform (`output -raw` de `novedades_api_key_webhook` en preprod/datos o de
 `api_key_webhook` en prod/novedades) y se entrega al proveedor por un canal seguro.
 
-## Contrato del callback — PROVISIONAL
+## Contrato del callback — CONFIRMADO (2026-10-19)
 
-> ws-inter aún no documenta el callback. Se asume que envía el mismo objeto `FlujoGuiaResponse` de su OpenAPI, más
-> `job_id` y el `ref` que le enviamos, como **un objeto** o un **arreglo de hasta 100**. Todo lo que depende de esto
-> está en `Aplicacion/DTO/CallbackWsInterParser.cs`.
+El proveedor hace **un POST por guía** a nuestra URL, con el header `x-api-key`, a medida que termina cada consulta (no manda un lote).
+El cuerpo es un sobre; el resultado de la guía va dentro de `result`:
 
-Lo que se le pidió al proveedor (pendiente de respuesta):
+```json
+{ "job_id": "…", "guia": "…", "ref": "…", "status": "ok", "result": { "guia": "…", "consultado_en": "…", "encontrado": true, "ultimo_motivo": "…", "flujo": [ … ], "motivos": [ … ], "remitente": { … }, "destinatario": { … } }, "error": null }
+```
 
-1. Forma exacta del callback y una muestra real.
-2. URL de callback fija por entorno (preprod y producción) y header `x-api-key` en cada llamada.
-3. Reintentos con espera creciente ante `5xx`/timeout; sin reintento ante `4xx`.
-4. Límites de tasa, tiempo esperado de procesamiento y si aceptan varias guías en una llamada.
-5. Que `x-api-key` sea **obligatoria** en su `POST /webhook/flujo-guia` (hoy figura como opcional).
-6. Un dominio propio y estable en lugar de `duckdns.org` (DNS dinámico gratuito: riesgo de disponibilidad).
-7. Qué devuelven cuando la guía no existe (`encontrado:false`) o si repetimos el mismo `ref`.
+- `ref` vuelve tal cual lo enviamos. `status` distinto de `ok` indica que **no pudo consultar** la guía (ver abajo).
+- Todo lo que depende de esta forma está en `Aplicacion/DTO/CallbackWsInterParser.cs`.
+- Hecho verificado: la primera versión asumía el resultado plano (sin sobre) y dejó las 10 guías de prueba como `NoEncontrada` sin motivo; se corrigió el 2026-10-19 (pruebas de regresión en `CallbackConSobreTests.cs`). Con las 10 respuestas reales, el motivo extraído coincide en 10 de 10 con el `ultimo_motivo` del proveedor.
+- **Privacidad:** `result` trae datos personales (`remitente`, `destinatario`) y comerciales (`envio`, `liquidacion`). Solo se guardan los campos de una **lista blanca** (`guia`, `consultado_en`, `encontrado`, `estado_actual`, `ultimo_motivo`, `flujo`, `motivos`).
+- `estado_actual` del proveedor no es fiable (llega `Envío Admitido` aunque la guía ya esté devuelta); no se usa.
+
+### Errores del proveedor
+
+Si no pudo consultar la guía: `status` distinto de `ok` y/o `result: null`, con el motivo en `error` (texto u objeto con `message`). La solicitud queda `Fallida` con ese texto,
+se cuenta en la métrica `CallbacksConErrorProveedor` y la guía se reintenta cuando venza el refresco. No se confunde con `encontrado:false`.
+
+### Pendiente de confirmar con el proveedor
+
+1. Reintentos ante `5xx`/timeout de nuestro webhook (pedimos espera creciente; sin reintento ante `4xx`).
+2. Límites de tasa y tiempo esperado de procesamiento (nuestro plan de uso: 20 peticiones/s, ráfaga 40).
+3. Que `x-api-key` sea **obligatoria** en su `POST /webhook/flujo-guia` (en su OpenAPI figura como opcional).
+4. Un dominio propio y estable en lugar de `duckdns.org` (DNS dinámico gratuito: riesgo de disponibilidad).
+5. La forma exacta del campo `error` cuando falla una consulta (hoy se acepta texto u objeto con `message`/`detail`/`mensaje`).
 
 ## Respuestas de nuestro webhook
 

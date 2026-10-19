@@ -54,7 +54,7 @@ Se publican en formato EMF (una línea por invocación, sin llamadas de red).
 
 ## Alarmas de CloudWatch (Terraform, `modules/novedades-inter/alarmas.tf`) → SNS → correo
 
-`ws-inter-no-disponible`, `corrida-cortada`, `api-key-rechazada`, `guias-sin-callback`, `webhook-error-interno` (el webhook respondió 500),
+`ws-inter-no-disponible`, `corrida-cortada`, `api-key-rechazada`, `guias-sin-callback`, `webhook-error-interno` (el webhook respondió 500), `webhook-error-proveedor` (≥3 callbacks de error del proveedor en 5 min),
 `webhook-rechazado` (≥3 en 5 min), `lambda-errores`, `lambda-throttles`, `lambda-cerca-del-timeout` (90 %) y,
 solo en producción, **`corrida-ausente`**: 9 h sin ninguna corrida (la Step está apagada, fallando o sin permiso para
 invocar la lambda — la Step oculta ese error con su `Catch`).

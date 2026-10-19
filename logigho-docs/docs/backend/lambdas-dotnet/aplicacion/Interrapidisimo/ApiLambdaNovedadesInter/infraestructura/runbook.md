@@ -173,7 +173,7 @@ Terraform no lo vuelve a apagar.
 
 ## B. Producción
 
-Todo es **nuevo y aditivo** (el plan de producción es 29 recursos a crear, 0 a cambiar, 0 a destruir; al REST existente solo se le agrega
+Todo es **nuevo y aditivo** (el plan de producción es 30 recursos a crear, 0 a cambiar, 0 a destruir; al REST existente solo se le agrega
 una ruta), salvo el permiso y el estado en la Step. Orden:
 
 1. **Webhook de Slack** del canal `#logigho-alertas-prod` (Slack → Apps → Incoming Webhooks). Cifrarlo (A3).
@@ -194,7 +194,7 @@ una ruta), salvo el permiso y el estado en la Step. Orden:
    terraform -chdir=environments/prod/novedades init
    terraform -chdir=environments/prod/novedades plan "-out=novedades.tfplan"
    ```
-   El plan debe decir **`Plan: 29 to add, 0 to change, 0 to destroy`** (lambda, rol, alarmas, dashboard, SNS, rol OIDC y la
+   El plan debe decir **`Plan: 30 to add, 0 to change, 0 to destroy`** (lambda, rol, alarmas, dashboard, SNS, rol OIDC y la
    ruta `/webhooks/ws-inter/flujo-guia` con su API key). **No debe tocar nada existente del REST `API_LogiGho_Rest`**: solo
    le agrega recursos nuevos. Si es correcto: `terraform -chdir=environments/prod/novedades apply novedades.tfplan` y
    confirma el correo de SNS. La Lambda queda en la VPC/subred/SG de `ApiLambdaProcesoAutomaticoInter` (ya tiene salida a

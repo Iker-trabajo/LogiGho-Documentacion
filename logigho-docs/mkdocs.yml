@@ -254,6 +254,8 @@ nav:
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
+              - Logistica:
+                  - Inventario nuevo (pantallas): frontend/views/logistica/inventario/inventario-front.md
               - Tienda:
                   - Portafolio:
                       - Componente: frontend/views/tienda/Portafolio/portafolio.md

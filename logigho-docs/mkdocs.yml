@@ -207,9 +207,11 @@ nav:
             - Estandarizador de direcciones: frontend/core/estandarizador-direcciones.md
             - Servicio de Cotizacion: frontend/core/cotizacion-service.md
             - Reglas Modalidad de Pago: frontend/core/reglas-modalidad-pago.md
+            - Servicio de Notificaciones: frontend/core/notificaciones-service.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
+              - Campana de Notificaciones: frontend/components/campana-notificaciones.md
               - Paso Cotizacion (Modal Pedidos): frontend/components/paso-cotizacion.md
               - Importacion Pauta: frontend/components/importacion-pauta.md
               - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
@@ -279,6 +281,7 @@ nav:
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
+                  - Directiva ayuda flotante: frontend/views/gestion-datos/export-data/directives/ayuda-flotante-directive.md
               - Tienda:
                   - Portafolio:
                       - Componente: frontend/views/tienda/Portafolio/portafolio.md

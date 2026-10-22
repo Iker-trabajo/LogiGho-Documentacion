@@ -24,6 +24,16 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-21] — Nuevo sistema de Inventario (`ApiLambdaInventario`)
+
+### Nuevas funcionalidades
+- Reemplazo de las lambdas gemelas de inventario por un sistema de 8 funciones con escritura idempotente, un cierre por guía, fórmula v2, filtro de activación, trazabilidad, barrido de cierre y alertas diarias por Slack. Validado en PreProd; producción pendiente. Detalle: [Liberación de Inventario](inventario-2026-10.md).
+
+### Documentación
+- Sección [Inventario](../backend/inventario/index.md): arquitectura, estados y fórmula, llamadores, alertas, tareas futuras; [API](../api/inventario.md), [operación](../guias/inventario-operacion.md) y [7 ADR](../arquitectura/adr/inventario/index.md).
+
+---
+
 ## [2026-10-17] — Propuesta: Sistema de Experiencias y seguridad de accesos
 
 ### Documentación

@@ -21,7 +21,7 @@ Este archivo ayuda a que todo el módulo hable el mismo idioma. Define cómo se 
 |---|---|
 | Guía | Número de guía del envío |
 | Teléfono | Teléfono del cliente |
-| Fecha de carga | Fecha en la que se registró el pedido |
+| Fecha de creación | Fecha en la que se creó el pedido (campo `"Fecha de creación"` del documento). Es la fecha con la que se agrupa todo el tablero |
 | Tienda | Nombre de la tienda |
 | Transportadora | Transportadora asignada |
 | Estado | Estado crudo reportado por la transportadora |
@@ -45,6 +45,25 @@ Este archivo ayuda a que todo el módulo hable el mismo idioma. Define cómo se 
 
 Cuando el usuario hace clic en un mes, un día, una tienda, una transportadora o un pedido específico, el sistema recuerda todas esas selecciones al mismo tiempo (no solo la última). Por ejemplo: si el usuario primero selecciona un día y luego selecciona una tienda, el sistema entiende que quiere ver "los pedidos de esa tienda, en ese día" — no reemplaza una selección por la otra.
 
+Los días se guardan como una **lista** (`dias`), no como un solo día, para poder marcar varios a la vez. Un pedido entra en la selección si es de **alguno** de los días marcados.
+
+---
+
+### La suma de los días marcados
+
+Cuando hay días marcados, el cálculo entrega además una sumatoria (`SumaDias`): cuántos días hay marcados, cuántos pedidos suman por cada transportadora y el total. Es lo que se muestra en la fila "Seleccionados (N días)" de la tabla por mes.
+
+---
+
+### Pedidos por página en el detalle
+
+| Pantalla | Pedidos por página |
+|---|---|
+| Computador (`PAGE_SIZE_DETALLE`) | 50 |
+| Celular, 768 px o menos (`PAGE_SIZE_DETALLE_CELULAR`) | 5 |
+
+En celular cada pedido es una tarjeta, así que se muestran menos por página para no tener que bajar tanto.
+
 ---
 
 ### Normalización de estados: cómo se decide la categoría de cada pedido
@@ -62,6 +81,7 @@ Si un texto de estado no coincide con ninguna de las dos reglas, el pedido se cl
 
 Antes de que un pedido entre a cualquier tabla o indicador del tablero, se descarta si:
 
+- No tiene **fecha de creación**, porque no se puede ubicar en ningún mes ni día.
 - Su estado corresponde a la categoría **Cancelada** (pedidos anulados).
 - Su transportadora está mal escrita — por ejemplo, con espacios de más o en minúsculas cuando debería estar en mayúsculas. Esto evita que aparezcan columnas duplicadas y confusas en la tabla de transportadoras (por ejemplo, "INTERRAPIDISIMO" y "INTERRAPIDISIMO " contando como dos transportadoras distintas).
 
@@ -72,6 +92,7 @@ Antes de que un pedido entre a cualquier tabla o indicador del tablero, se desca
 | Fecha | Cambio |
 |---|---|
 | 2026-07-10 | Creación de los modelos: contrato de pedido crudo y procesado, categorías de Estado Logi con lista exacta + reglas por prefijo, selección combinable entre tablas |
+| 2026-10-22 | La fecha del pedido pasa a ser la de creación; la selección guarda una lista de días; nueva sumatoria de días marcados; tamaño de página del detalle para celular |
 
 ---
 

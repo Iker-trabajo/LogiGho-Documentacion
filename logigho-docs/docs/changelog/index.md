@@ -24,6 +24,38 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-22] — Dashboard Sin Despacho: fecha de creación, varios días y versión para celular
+
+### Nuevas funcionalidades
+- **Varios días a la vez:** en la tabla por mes y transportadora se marcan días con clic, Ctrl + clic y
+  Shift + clic (en celular, cada toque suma o quita). La fila "Seleccionados (N días)" muestra la suma por
+  transportadora, y los indicadores, el ranking, el detalle y los Excel cuentan solo esos días.
+- **Botón Limpiar** al lado de "Actualizar": quita todos los filtros y selecciones.
+- **Versión para celular:** filtros en una hoja que abre el botón "Filtros", indicadores en una fila, tabla
+  por mes con scroll propio, tarjetas compactas en el detalle y 5 pedidos por página.
+
+### Cambios
+- El tablero agrupa y muestra los pedidos por **fecha de creación** (antes, fecha de carga) en la tabla, el
+  filtro, el detalle y el Excel.
+- El resumen de filtros queda plegado en una línea y se despliega con un botón.
+- Las listas de filtros abren más rápido: máximo 150 opciones visibles (buscando se encuentran todas) y las
+  marcadas aparecen primero. El selector no cambia de color al elegir y ocupa una sola línea.
+- Mientras carga, se recalcula como máximo cada 300 ms en vez de con cada página, y los pedidos nuevos se
+  agregan sin copiar la lista completa.
+- Encabezado más compacto en computador e ícono en azul.
+
+### Correcciones
+- Al marcar un día, el mes abierto ya no se cierra solo.
+- Los clics muy seguidos ya no dejan los indicadores con la selección anterior.
+- Dar varios clics en un filtro ya no selecciona el texto de la lista.
+- En celular, el ancho de la vista ya no cambia al aplicar un filtro.
+
+### Documentación
+- **Dashboard Sin Despacho:** filtros, selección de varios días, versión para celular, modelos, store,
+  `data.worker` y `agregacion.worker` al día.
+
+---
+
 ## [2026-10-17] — Propuesta: Sistema de Experiencias y seguridad de accesos
 
 ### Documentación

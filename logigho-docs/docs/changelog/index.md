@@ -93,6 +93,112 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-15] — Estandarización de dirección: tipos de dirección, manzana, barrio o vereda
+
+### Nuevas funcionalidades
+
+- **Dos tarjetas en el Constructor** para elegir cómo es la dirección, cada una con ejemplos:
+  **Dirección numerada** (lleva `#`, ej. `Calle 45 # 7 - 20`) y **Manzana, barrio o vereda**
+  (no lleva `#`, ej. `Mz 8 Lt 2 Casa 4`, `Vereda La Esperanza`). Siguen los dos tipos de la guía
+  del formulario de Base Ventas.
+- **Dirección por lugar:** tipo de lugar (barrio, urbanización, conjunto, sector, vereda,
+  corregimiento, finca, parcelación, batallón), nombre del lugar obligatorio, manzana, lote, casa,
+  km, calle de referencia y referencia. Arma, por ejemplo, `MZ 8 LT 2 CASA 4 BARRIO BELÉN` o
+  `VEREDA LA ESPERANZA CASA 5`, y avisa si falta el lugar o un número.
+- **Tour guiado** (botón **?**) con los pasos de los dos modos y de las dos tarjetas.
+- **Aviso al salir** con datos escritos (X, Cancelar, clic fuera o Escape), con flechas entre
+  "Salir" y "Seguir editando".
+
+### Cambios
+
+- **Manzana en texto libre:** `CL 3 MZ 1 LT 4 CS 6` ya no pide distanciador y sale con confianza
+  alta; `MZ 8 LT 2 CS 4, EL POZON` toma el barrio después de la coma y, sin barrio, avisa que es
+  obligatorio y baja la confianza.
+- Los complementos salen de mayor a menor unidad (`MZ → LT → TO → BL → CS → PI → AP…`); antes la
+  casa podía quedar antes que la manzana.
+- Se quitan los `#` y `-` sueltos que dejaba el formulario viejo (`MZ 05 # LOTE 5 - ETAPA 4` →
+  `MZ 5 LT 5 ETAPA 4`).
+- Escape cierra una ventana a la vez: tour, aviso y por último el modal.
+- Nuevo diseño del modal: fila de la vía con etiquetas encima, letras más grandes, ventana de 880 px
+  y diseño celular (tarjetas una debajo de otra, campos a 16 px, pantalla completa en celulares
+  pequeños).
+
+### Documentación
+
+- **Estandarizacion de direcciones** (componente) y **Estandarizador de direcciones** (servicio)
+  actualizados.
+## [2026-10-09] — Layout: rediseño del menú lateral y la barra superior
+
+### Nuevas funcionalidades
+
+- **Buscador del menú** con atajo **Ctrl + B** (**Cmd + B** en Mac): abre la barra con el cursor
+  en el buscador, los resultados salen agrupados por sección (ej. "Mi Tienda › Pedidos Masivos")
+  y Escape borra y cierra.
+- **Celular:** el menú es un cajón completo (300 px u 85 % de la pantalla) que se cierra al
+  elegir una opción o deslizando el dedo a la izquierda. La barra superior muestra ☰, logo y
+  acciones sin descuadrarse.
+
+### Cambios
+
+- El menú se abre con la clase `abierta` en vez de `:hover`: solo si el mouse se queda encima
+  150 ms, con 120 ms de margen antes de cerrarse. Ya no parpadea.
+- Apertura por capas (logo con máscara, buscador y textos en cascada, flechas al final), barrita
+  azul en la sección actual, opción activa en morado y subgrupos con línea de árbol.
+- Barra superior blanca de 56 px, botones redondos lila y píldora de usuario con avatar.
+- El comportamiento del menú pasó a la nueva directiva `SidebarInteraccionDirective` y los estilos
+  del layout a la carpeta `estilos/` (7 archivos por tema).
+- **Seguridad:** `AuthGuard` solo deja pasar sin sesión la ruta exacta `/export-runner`; antes
+  bastaba con que apareciera en cualquier parte de la URL, incluido el hash.
+
+### Correcciones
+
+- Clics perdidos: si el menú se mueve mientras se hace clic, la opción igual se abre.
+- "Primer clic gastado" al abrir un grupo después de cerrar la barra.
+- En celular había que tocar dos veces para ver el menú completo.
+
+### Documentación
+
+- Nueva sección **Frontend → Layout** con **Menú lateral (Default Layout)** y **Barra superior
+  (Default Header)**.
+- **Rutas y navegación:** nueva sección sobre `AuthGuard` y `/export-runner`.
+- **Estructura de módulos:** enlaces a las páginas del layout.
+
+---
+
+## [2026-10-09] — Header: buscador de guía de transportadora ("Consultar guía")
+
+### Nuevas funcionalidades
+
+- **Botón "Consultar guía"** en el header, antes de los avisos y separado por una línea.
+  Abre el nuevo modal `ConsultaGuiaModalComponent`: el usuario escribe o pega el número
+  de la guía y ve los datos del pedido (transportadora, tienda, estado con color y fecha),
+  el link del PDF con **Abrir** y **Copiar**, y la vista previa del PDF en computador.
+- Búsqueda por `Numeropreenvio` en `PedidosInter` con el índice `Numeropreenvio_1`,
+  pidiendo solo los 8 campos que usa el modal: **113 ms** y **~1 KB** de respuesta.
+- **Solo guías de mis tiendas:** la búsqueda se filtra por `tiendas_asignadas`, como en
+  la pantalla de Pedidos. Si la guía es de otra tienda, una segunda consulta que solo pide
+  el número confirma que existe y se muestra "Esta guía no pertenece a tus tiendas", sin
+  ningún dato de ella. Los usuarios con `Todas` ven cualquier guía.
+- **Recientes:** las últimas 5 guías encontradas, por usuario y solo durante la sesión
+  (`sessionStorage`), con botón Limpiar.
+- Mensajes distintos para guía inexistente, guía sin PDF, guía de otra tienda, búsqueda
+  que tarda (504 / `TimeoutError`) y tiendas todavía sin cargar.
+
+### Cambios
+
+- Enter busca y, con la guía ya mostrada, un segundo Enter abre el PDF.
+- El número se limpia de espacios, saltos de línea y guiones antes de buscar.
+- La vista previa del PDF no se muestra en celular (Chrome de Android no tiene visor) ni en
+  pantallas táctiles angostas; queda el botón Abrir.
+- Accesibilidad: Escape cierra, el foco no se sale del modal con Tab y se respeta
+  `prefers-reduced-motion`.
+
+### Documentación
+
+- Nueva página **Frontend → Componentes → Consultar Guía (modal del header)**, con el
+  flujo, los estados, el filtro por tiendas (y su nota de seguridad), Recientes, la vista
+  previa y las 31 pruebas unitarias.
+- Agregada una referencia al modal en **Logística → Consultar Guía**.
 ## [2026-10-17] — Propuesta: Sistema de Experiencias y seguridad de accesos
 
 ### Documentación

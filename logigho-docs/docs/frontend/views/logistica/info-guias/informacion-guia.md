@@ -1,7 +1,7 @@
 ---
 autor: Adalberto González
 fecha_creacion: 2026-05-04
-ultima_actualizacion: 2026-05-07
+ultima_actualizacion: 2026-10-09
 estado: Desarrollo
 nivel: 2
 ---
@@ -282,6 +282,7 @@ El módulo queda visible en el menú lateral cuando existe un documento activo e
 | 2026-05-07 | Iker Acevedo | **Rendimiento:** debounce reducido de 1200 ms → 500 ms; `searchTimeout` tipado como `ReturnType<typeof setTimeout> \| null` |
 | 2026-05-07 | Iker Acevedo | **Nueva funcionalidad:** tabla de productos del pedido en el recuadro de observaciones — extrae hasta 12 pares `IdStock`/`CantidadStock` vía `extraerPares()`, consulta la colección `Productos` en paralelo con `Promise.all`, calcula `total = precioproveedor × cantidad`, muestra skeleton mientras carga, fila de total general y estado vacío; scroll horizontal en mobile |
 | 2026-05-07 | Iker Acevedo | **UI/UX:** `obs-text` limitado a `max-height: 100px` con scroll interno; grid del resultado cambiado a `align-items: start` para no estirar la columna derecha; añadidos `overflow: hidden` y `word-break: break-word` en `.obs-box` |
+| 2026-10-09 | Yadilton Torres | **Documentación:** referencia al nuevo buscador rápido del header (Consultar Guía, modal) en Observaciones. Sin cambios en esta vista |
 
 ---
 
@@ -290,4 +291,5 @@ El módulo queda visible en el menú lateral cuando existe un documento activo e
 - **Ceros a la izquierda:** El campo `Numeropreenvio` en MongoDB es de tipo `$numberLong`. El componente elimina ceros a la izquierda con `/^0+/` antes de consultar, siguiendo el mismo patrón del módulo `DevolucionInventarioComponent`.
 - **Solo lectura:** Este módulo no realiza inserciones ni actualizaciones. Si en el futuro se requieren acciones (registrar novedad, cambiar estado), se deberá agregar un endpoint PUT y el formulario correspondiente.
 - **Campo `precioproveedor`:** En MongoDB el campo se almacena en minúsculas (`precioproveedor`), no en PascalCase. `extraerPares()` lee exactamente ese nombre para el cálculo de totales.
+- **Buscador rápido en el header:** desde el 2026-10-09 existe también el botón "Consultar guía" en el header, que abre un modal con el link y el PDF de la guía sin salir de la pantalla actual. Busca en la misma colección y campo (`PedidosInter` por `Numeropreenvio`), pero con `mcomp=2` (Zstd), solo los campos que necesita y filtrado por las tiendas del usuario. Ver [Consultar Guía (modal del header)](../../../components/consulta-guia-modal.md).
 - **AudioContext compartido:** `getAudioContext()` sigue el patrón singleton por instancia de componente. Si el componente se destruye y se vuelve a crear, el contexto anterior queda elegible para GC ya que la referencia privada se pierde.

@@ -49,6 +49,51 @@ Objetivo declarado por Iker: *"que funcione un beta del MCP, tampoco completo, p
 - Dentro del REST con prefijo de *stage*, el `resource` del metadato debe coincidir **exactamente** con la URL que se pega en Claude; si más adelante se pone un dominio propio, hay que volver a registrar el conector.
 - Claude Code usa un puerto de *localhost* variable y Cognito exige *callbacks* exactos: queda fuera del beta salvo que se fije el puerto.
 
+## Estado de la implementación (beta 1)
+
+Código en `ServicioPublicoLogigho/Guias/src/ApiLambdaGuiasMcp/` (rama `feature/api-publica-guias`). Qué hay y qué no:
+
+| Pieza | Estado |
+| --- | --- |
+| Servidor MCP *stateless* (Streamable HTTP) con `ModelContextProtocol.AspNetCore` 2.2.0 | Hecho |
+| `401` con `WWW-Authenticate: Bearer resource_metadata="…"` y documento de metadatos (RFC 9728) | Hecho |
+| Validación del access token de Cognito (firma RS256, emisor, vencimiento, `token_use=access`, `client_id` = app client del MCP, scope `logigho/mcp:usar`) y `403 insufficient_scope` | Hecho |
+| Token del cliente delegado (`client_credentials`, cacheado, una sola renovación a la vez) y cliente HTTP de la API (API key, `X-Actua-Como-Usuario`, reintento solo en GET, tope de 8 s) | Hecho |
+| Herramientas `listar_tiendas` y `listar_transportadoras` (solo lectura) | Hecho |
+| Terraform del MCP (rutas sin authorizer en `rl7zt6zak5`, función, *app client*, scope `mcp:usar`) | **Pendiente** |
+| Límite de uso por persona (cuando existan herramientas que gastan cupo) | Pendiente (con `crear_guia`) |
+| `consultar_cupo`, `listar_productos`, `consultar_solicitud`, `obtener_etiqueta`, `crear_guia`, `anular_guia` | Pendiente (a medida que la API tenga el endpoint) |
+
+### Configuración (variables de entorno `Mcp__*`, las pone el pipeline desde el variable group)
+
+La Lambda **no arranca** si falta alguna (el mensaje dice cuál, nunca el valor).
+
+| Variable | Qué es | Secreto |
+| --- | --- | --- |
+| `Mcp__UrlPublica` | URL exacta que se pega en Claude, con *stage* y terminada en `/mcp`; también es el `resource` de los metadatos | No |
+| `Mcp__Emisor` | Emisor del pool de Cognito (`https://cognito-idp.us-east-1.amazonaws.com/us-east-1_6jmSkfK4B`) | No |
+| `Mcp__ClienteIdMcp` | *App client* del MCP (código + PKCE). Es la amarra de audiencia | No |
+| `Mcp__ScopeRequerido` | Por defecto `logigho/mcp:usar` | No |
+| `Mcp__ApiUrlBase` | URL de la API pública con *stage* | No |
+| `Mcp__ApiKey` | API key del plan de uso de la API | **Sí** |
+| `Mcp__TokenEndpointDelegado` | `/oauth2/token` del dominio de Cognito del cliente delegado | No |
+| `Mcp__ClienteIdDelegado` / `Mcp__SecretoDelegado` | Credenciales de `mcp-gateway` | **Secreto** |
+| `Mcp__ScopeDelegado` | Por defecto `logigho/guias:leer` (en el beta solo lectura) | No |
+
+### Decisiones de implementación
+
+- **Audiencia sin `aud`:** Cognito no lo pone en los access tokens, así que se exige `client_id` = el *app client* del MCP. Un token del mismo pool
+  pero de otro *app client* (por ejemplo el de `/pedidos`) se rechaza (hay una prueba que lo demuestra; se comprobó que falla si se quita la regla).
+- **El `sub` sale del token validado**, no de argumentos: las herramientas del beta no tienen ningún parámetro, y hay una prueba que manda
+  argumentos tramposos (`sub`, `actuaComo`) y comprueba qué llegó a la API.
+- **Metadatos servidos dos veces:** API Gateway entrega la ruta *sin* el stage, pero el `401` anuncia la URL pública *con* stage; el esquema del SDK solo
+  responde en esa ruta con stage, así que el mismo documento se sirve también en `/.well-known/oauth-protected-resource`.
+- **Errores:** la API devuelve `codigo` y `traceId`; el MCP los traduce a una frase en español que dice qué hacer ("No reintentes…", "Puedes reintentar en un
+  momento") y lo envía como error de la herramienta. Los códigos de delegación (`ACTUA_COMO_*`, `IP_NO_PERMITIDA`) se muestran como "no está bien
+  configurado", sin detalles internos. No se repite el `detail` de la API.
+- **Sin secretos en logs:** una prueba fuerza fallos de Cognito y de la API y busca el secreto, la API key, el token del delegado y el de la persona en todos los logs.
+- **Entrada del programa:** `ProgramaMcp.Main` (no sentencias de nivel superior) para no chocar con el `Program` de `ApiLambdaGuias` en el proyecto de pruebas.
+
 ## Decisión propuesta (texto original)
 
 ### 1. Un servidor MCP remoto, delgado, en su propia Lambda

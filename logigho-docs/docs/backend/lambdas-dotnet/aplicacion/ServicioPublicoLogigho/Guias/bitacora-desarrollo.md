@@ -842,3 +842,43 @@ las dos Lambdas se empaquetan.
 - Guardar la identidad de tres partes en la solicitud (F1b).
 - Aviso: otro chat cambió la rama del checkout compartido de Lambdas; este trabajo se hace en un *worktree* propio
   (`Lambdas_NET_LogiGho-guias`) sobre `feature/api-publica-guias`.
+
+---
+
+## 2026-10-23 · MCP · paso 2 de 3 del beta: el servidor MCP con login y lectura
+
+**Commit de código:** rama `feature/api-publica-guias` (`feat(guias): servidor MCP beta…`). **Detalle y variables:** sección *Estado de la implementación* del [ADR-006](adr-006-mcp.md).
+
+### Qué se hizo
+
+Nuevo proyecto `ApiLambdaGuiasMcp`: un servidor MCP remoto (Streamable HTTP, sin estado) que valida el token de Cognito de la persona, llama a la API
+pública con el token del cliente delegado y expone dos herramientas de lectura, `listar_tiendas` y `listar_transportadoras`. No toca Mongo.
+
+### Archivos
+
+- `Seguridad/ValidacionTokenCognito.cs`: validación del JWT (RS256, emisor, vencimiento, `token_use`, `client_id`, scope) y `403 insufficient_scope`.
+- `Api/ProveedorTokenDelegado.cs` y `Api/ClienteApiGuias.cs`: token `client_credentials` cacheado y cliente de la API con los tres headers.
+- `Herramientas/HerramientasCatalogo.cs`: las dos herramientas, con anotaciones de solo lectura y descripciones pensadas para el modelo.
+- `Configuracion/OpcionesMcp.cs`: configuración con arranque fallido si falta algo.
+- `Program.cs`, `aws-lambda-tools-defaults.json`; el proyecto entra en `LambdasLogiGho.sln` y en el empaquetado del CI (`guias-ci.yml`).
+- Pruebas (`test/Logigho.Guias.Tests/Mcp/`): 66 nuevas con el **cliente MCP real del SDK** y WireMock para Cognito y la API.
+
+### Decisiones y alternativas
+
+- **Validar con `client_id` en lugar de `aud`** (Cognito no emite `aud`); documentado como desviación consciente de RFC 8707.
+- **Metadatos en dos rutas** por la diferencia de *stage* entre API Gateway y la URL pública (descubierto con una prueba que daba 404).
+- **Reintentos solo en GET** y tope total de 8 s (Claude espera ~10 s): un POST ciego duplicaría guías (ADR-003).
+- **Una sola llamada de calentamiento** en las pruebas: el primer uso del proceso (JIT) superaba el tiempo límite de 4 s en un CI cargado y produjo un fallo intermitente.
+- Alternativa descartada: servir el documento de metadatos solo con el esquema del SDK; no responde sin el *stage* en la ruta.
+
+### Verificación
+
+Release sin advertencias, **543 pruebas** (66 del MCP; cuatro ejecuciones seguidas sin fallos), sin paquetes vulnerables, las tres Lambdas se empaquetan
+(el MCP pesa 4 MB). Se comprobó con una mutación que la prueba del `client_id` falla si se quita la regla.
+
+### Pendiente
+
+- **Terraform del MCP** (siguiente paso): rutas `/mcp` y `/.well-known/oauth-protected-resource` sin authorizer en `rl7zt6zak5`, función, *app client* con PKCE, scope `mcp:usar`.
+- Alta real de `mcp-gateway` (con `PuedeActuarComo`) y de los `Usuarios` en `ApiClientes`, y la API key.
+- Probar con un Claude real (requiere despliegue en PreProd, que no se hace desde aquí).
+- Confirmar contra la documentación actual de Cognito que sigue sin DCR/CIMD/`resource`.

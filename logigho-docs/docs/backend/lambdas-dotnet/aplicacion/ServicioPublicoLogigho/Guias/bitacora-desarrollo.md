@@ -463,3 +463,103 @@ prueba comprueba que esta lista nunca los incluya.
 
 - **F1a-f:** cupo (reserva atómica, ledger `ApiMovimientosCupo`, fail-closed) con pruebas de concurrencia en Mongo local.
 - **F1a-g:** reconciliador (incluye las solicitudes atascadas de arriba).
+
+---
+
+## 2026-10-23 · F1a-f · Cupo por tienda
+
+**Commit de código:** `57800dd` — `feat(guias): cupo por tienda con reserva atomica, libro y conteos diarios (F1a-f)`
+
+### Qué se hizo
+
+Se implementó el motor del cupo descrito en [cupo.md](cupo.md): antes de crear una guía se **aparta** su costo de peor caso
+del cupo de la tienda, y ese monto se ajusta o se libera según lo que pase después. Piezas:
+
+| Pieza | Qué hace |
+| --- | --- |
+| `ApiCupoTiendas` | Un documento por tienda con `Base`, `Reservado`, `Disponible`, modo, aplicación (`OBSERVAR`/`APLICAR`) y suspensión |
+| `ApiMovimientosCupo` | **Libro** de solo inserción: cada reserva, ajuste, liberación o suspensión es una línea con id determinista |
+| `ApiContadoresUso` | Guías por cliente y por tienda por día (límite diario), con TTL de 90 días |
+| `GestorCupo` | Reservar (antes de encolar), ajustar con los valores reales (worker), liberar (fallo) y auditar |
+| Pasos del worker | `CupoAjustado` (último paso de una guía creada) y `CupoLiberado` (tras un fallo definitivo) |
+
+### La reserva es una sola operación atómica
+
+La base decide quién entra, no el código de la API. Una reserva es un `findOneAndUpdate` con esta forma (compatible con
+DocumentDB):
+
+```
+filtro:  { _id: tienda, Modo != BLOQUEADO, Suspension.Activa = false, Disponible >= monto }
+cambio:  { $inc: { Disponible: -monto, Reservado: +monto } }
+```
+
+Si el filtro no cumple, no se toca nada y se explica por qué (tienda sin cupo, bloqueada, suspendida o saldo insuficiente con
+`disponible` y `requerido`). **Pruebas con concurrencia real:** con 100 000 de cupo y 20 solicitudes de 14 250 al mismo tiempo
+entran exactamente **7** (ejemplo 2 de `cupo.md`) y 13 reciben `CUPO_INSUFICIENTE`; con 200 solicitudes simultáneas
+el `Disponible` nunca queda negativo y `Reservado` es exactamente aceptadas × monto.
+
+### Cómo se mantiene cuadrado sin transacciones
+
+DocumentDB no tiene transacciones, así que cupo y libro se actualizan por separado. Regla: lo que **aumenta** lo reservado
+actualiza primero el cupo y luego el libro; lo que lo **reduce**, primero el libro y luego el cupo. Si algo se cae a medias,
+`Reservado` queda **por encima** de la suma del libro (se aparta de más, nunca de menos). La auditoría
+(`AuditarAsync`) lo detecta y, si se pide, lo corrige con una línea `Correccion` — solo si `Reservado` no cambió mientras se
+auditaba, para no pisar una reserva que entró. Ejemplos probados: reservas, ajustes y liberaciones simultáneas terminan
+con libro y cupo iguales; un descuadre fabricado se detecta, se corrige y la segunda auditoría cuadra.
+
+Una misma solicitud **no reserva dos veces**: la línea de `Reserva` tiene id `{solicitudId}:Reserva:1`. Si la API se cae antes
+de guardar la solicitud y reintenta, recupera lo ya reservado en vez de apartarlo otra vez. Lo mismo para el ajuste y la
+liberación (ejecutarlos dos veces, o con la solicitud desactualizada, no mueve el cupo dos veces).
+
+### Reglas de `cupo.md` cubiertas
+
+| Regla | Cómo |
+| --- | --- |
+| RC-005 | Tienda sin documento de cupo → 403 `TIENDA_NO_PERMITIDA` |
+| RC-008 | Modo `BLOQUEADO` rechaza en `OBSERVAR` y en `APLICAR` (403 `TIENDA_BLOQUEADA`); un modo desconocido también bloquea |
+| RC-009 | `Disponible ≤ 0` tras reservar suspende la tienda y deja línea `Suspension` |
+| RC-013/014 | Se reserva antes de encolar; calculadora caída → 503 `CUPO_NO_DISPONIBLE`, sin tarifa → 422 `CUPO_TARIFA_NO_RESUELTA`; **jamás se reserva cero** (el tipo `ReservaCupo` lo impide) |
+| RC-017 | Con los valores reales de Inter el cupo puede quedar negativo (ejemplo 5: +2 750 con 2 000 disponibles): la tienda se suspende, la guía **no** se anula |
+| RC-020 | Ids deterministas en el libro |
+| RC-022/023 | Fallo definitivo → `Liberacion`; `INCIERTA` y "no enviada" conservan la reserva |
+| RC-033 | Límite diario por cliente y por tienda (contador atómico, día de Colombia, se devuelve si la guía no entra) |
+| RC-034 | `OBSERVAR` acepta y marca `HabriaRechazado`; no suspende |
+| RC-041 | En `APLICAR`, un saldo sin recalcular hace más de 60 min rechaza con `CUPO_NO_DISPONIBLE` |
+
+Los ejemplos numéricos 1 (ocho guías y la novena rechazada con `disponible 4 000`, `requerido 14 250`), 2, 5, 12 y 13
+están como pruebas.
+
+### Decisiones y hallazgos
+
+- **Las líneas `Correccion` no suman en la auditoría.** `cupo.md` (RC-031) dice que la suma de las líneas debe igualar
+  `Reservado` y que la corrección mueve `Reservado` en `±delta`. Las dos cosas a la vez son imposibles: corregir `Reservado`
+  hasta el valor del libro y a la vez contar esa corrección en el libro lo vuelve a descuadrar. Se implementó que la
+  suma use `Reserva + AjusteReserva − Liberacion − Consumo` y que `Correccion` documente el ajuste hecho. Quedó anotado en
+  `cupo.md` §8.7. **Confirmar con Iker** que le sirve esa lectura.
+- **La calculadora todavía no existe.** `ICalculadoraCupo` es el puerto; hoy se registra `CalculadoraCupoNoConfigurada`, que
+  falla siempre (503). Eso es seguro (fail-closed) y deja el flujo de guías sin cupo funcionando mientras no haya reserva
+  (las solicitudes sin reserva no ejecutan pasos de cupo). Falta la función Lambda de cálculo y las pruebas doradas contra
+  liquidaciones reales (`cupo.md` §14, paso 0).
+- **Falta el job de saldo** (`SaldoConfiable`, `ExposicionExterna`, liberación al liquidar, `Consumo`). Hasta que exista,
+  ninguna tienda debe pasar a `APLICAR`: con RC-041 el saldo se vería "viejo" y todo se rechazaría con 503. El piloto empieza en
+  `OBSERVAR`, así que no estorba.
+- **Vida del libro y volumen.** Cada guía escribe 2 líneas (reserva y ajuste) más una si se libera; a 50 000 guías/mes son
+  ~100 000 líneas/mes. Los índices del libro son por tienda+fecha, número de guía y cliente+fecha.
+- **Decisión menor:** el día de conteo es el de Colombia (UTC−5), igual que las fechas de `CargaPedido`.
+- **Límite del cliente.** Se recibe como parámetro opcional (`ApiClientes.Limites` aún no está modelado); sin valor, solo
+  rige el límite de la tienda. Pendiente de confirmar el valor inicial (`cupo.md` sugiere 200 por tienda).
+
+### Cómo se verificó
+
+- 405 tests en verde: dominio del cupo (base, utilización, libro, pasos de la solicitud), 47 pruebas del gestor contra el
+  **Mongo local** (reserva, concurrencia, modos, bloqueo, suspensión, calculadora caída, conteos, ajustes, liberación,
+  auditoría, lectura de vuelta de cada documento) y 7 del worker (orden de los pasos de cupo, reintentos, fallos).
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+- Índices nuevos creados desde código: `ix_ApiSolicitudesGuia_Tienda_ReservaViva`, `ix_ApiCupoTiendas_Aplicacion_Suspension`,
+  `ix_ApiMovimientosCupo_*` (3) e `ix_ApiContadoresUso_Fecha_TTL` (90 días).
+
+### Pendiente / siguiente
+
+- **F1a-g:** reconciliador de solicitudes (`INCIERTA`, `CREANDO` atascadas, `RECIBIDA` sin encolar).
+- Función Lambda de cálculo, job de saldo y liberación al liquidar (`Consumo`) — dependen de datos de producción.
+- F1b: `POST /v1/guias` que llama a `ReservarAsync` antes de encolar.

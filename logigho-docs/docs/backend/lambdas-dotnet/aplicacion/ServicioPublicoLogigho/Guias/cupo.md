@@ -518,6 +518,10 @@ En v1 esta exposición **reduce** el `Disponible` de la API pero **no** bloquea 
 
 Para cada tienda: recalcular `Reservado` desde el ledger y compararlo con el documento. Si difiere: línea `Correccion`, ajuste del documento y alarma. También se recalcula `Disponible = Base − Reservado`. Corre de noche, fuera del horario de operación.
 
+> **Precisión de la implementación (F1a-f).** La suma del libro que se compara con `Reservado` es
+> `Σ(Reserva + AjusteReserva) − Σ(Liberacion + Consumo)`. Las líneas `Correccion` **no suman**: documentan el ajuste hecho para volver a
+> ese valor. Si sumaran, una corrección nunca podría cuadrar con su propio libro (RC-031 se lee con esta salvedad).
+
 ### 8.8 Presupuesto de carga sobre DocumentDB
 
 Producción es una sola instancia `t4g.medium` ya cargada y no crece por ahora. El recálculo periódico debe ser liviano: **toda consulta va por índice, con proyección mínima, `maxTimeMS` y sin `$lookup`**. Si una consulta excede su tiempo, el reconciliador conserva el último valor, marca el dato como atrasado y alarma; **nunca** reintenta con un escaneo.

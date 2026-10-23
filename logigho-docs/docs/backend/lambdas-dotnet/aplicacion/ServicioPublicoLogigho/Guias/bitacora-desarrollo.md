@@ -112,3 +112,92 @@ Inter no pierde guías ni las marca como fallidas.
 - Falta conectar el caso de uso para que, tras `Creada`, ejecute los pasos posteriores.
 - **Para Iker:** el nombre de empresa, la sucursal y los catálogos (`CiudadesInter`, `TipoEntregaInter`, `Tienda`)
   los resolverá el endpoint en F1b; por ahora los tests usan datos ficticios.
+
+---
+
+## 2026-10-22 · F1a-b · Escritores de `CargaPedido` y `PedidosInter`
+
+**Commit de código:** `664012a` — `feat(guias): escritores de CargaPedido y PedidosInter con el documento actual (F1a-b)`
+
+### Qué se hizo
+
+Cuando el worker crea una guía, ahora deja las mismas huellas en Mongo que dejan hoy `ApiLambdaCrearGuia` y
+`ApiLambdaCargarGuias`, para que liquidaciones, sincronizadores, inventario y Angular no noten la diferencia:
+
+1. **Antes de llamar a Inter** inserta la fila en `CargaPedido` con `Estado = "Pendiente"` y `Origen = "API"`.
+2. **Si Inter crea la guía**, la fila pasa a `Cargado` con `NumeroPreenvio`, `Total Flete`, `Total Servicio`,
+   `Total Sobreflete`, `Cantidad Total Productos` y `Trayecto` vacío; y se inserta el documento de `PedidosInter`
+   con `Estado = "Creado"`.
+3. **Si Inter la rechaza**, la fila queda `Rechazado` con el campo `ERROR`, como hoy.
+4. **Si la respuesta es incierta** (timeout), la fila se queda en `Pendiente`: todavía no sabemos si la guía existe, así
+   que ni se carga ni se rechaza. Lo resuelve el reconciliador (F1a-g).
+
+### Cómo se garantiza "el mismo documento que hoy"
+
+`DocumentosPedido` (Infraestructura) arma los documentos con el mismo algoritmo de `CargaInterUseCase`
+(`ApiLambdaCrearGuia:186-253`): toma la fila, le cambia estado y costos, le quita `_id` y `ERROR`, pasa las claves por
+`ConvertToPascalCase` (minúsculas → título por palabra → sin espacios) y agrega los campos de seguimiento vacíos
+(`Estado Logigho`, `Fecha Entrega`, `Pago`, …).
+
+La prueba que lo protege **ejecuta una copia literal del algoritmo actual** (con `JToken` de Newtonsoft) sobre la misma
+fila y compara el resultado con el nuestro, campo por campo, tipo por tipo y en el mismo orden, en 10 casos
+(nombres de 1 a 4 palabras, sin seguro, etiqueta mediana, varios productos, sin productos, identificación no
+numérica, medidas decimales, teléfono mayor que int32, acentos y comillas, valor alto) más 4 formas distintas de la
+respuesta de Inter (número como texto, costos nulos, sin costos). Además hay una **foto de referencia** del documento
+de `PedidosInter` completo: si un nombre de campo, un tipo o un valor cambia, la prueba falla y obliga a decidirlo a
+propósito.
+
+### Idempotencia sin índices nuevos
+
+`CargaPedido` y `PedidosInter` las usan otros sistemas; crear un índice único sobre ellas no es algo que se haga de
+pasada (`PedidosInter.Numeropreenvio` tiene tipo mixto y posibles duplicados). En vez de eso, cada solicitud lleva dos
+`_id` (formato ObjectId) generados desde el principio: uno para su fila de `CargaPedido` y otro para su documento de
+`PedidosInter`. Si un reintento repite el insert, Mongo responde "clave duplicada" y se da por hecho que ya estaba.
+Las actualizaciones son `$set` de los mismos valores, repetibles sin efecto.
+
+### Qué pasa si algo falla a mitad de camino
+
+La solicitud recuerda qué pasos ya hizo (`CargaInsertada`, `CargaActualizada`, `PedidoInsertado`, `CargaRechazada`).
+Si el insert en `PedidosInter` falla, el mensaje de SQS falla, vuelve a la cola y el siguiente intento **solo repite ese
+paso**; nunca vuelve a llamar a Inter. Hoy ese caso es el hallazgo "insert en `PedidosInter` fallido solo se registra en
+log": la guía queda creada y el pedido huérfano, sin aviso. Aquí el fallo llega hasta la DLQ, que tiene alarma.
+
+### Decisiones, supuestos y preguntas para Iker
+
+| Tema | Lo que se hizo | Por qué / qué falta confirmar |
+| --- | --- | --- |
+| Fila de `CargaPedido` | Mismos campos y tipos que la fila de una guía manual en Angular (`modal-creacion-pedidos`) | `reglas-negocio.md` aún no existe; si la lista de campos del API cambia, cambia aquí |
+| `Origen` | `"API"` | Lo dice el diseño; el código actual solo distingue `"CRM"` (va a `CargaPedidoCrm`), así que `"API"` va a `CargaPedido` |
+| `IdCarga` | `"-1"` (como la guía manual) | **Confirmar**: ¿las guías de la API deben tener otro `IdCarga`? |
+| `Idtienda` | Entero | **Confirmar con datos reales**: en `PedidosInter` puede haber string o int (hallazgo de `cupo.md`) |
+| `ASESOR` | `"Logigho"` (valor por defecto de Angular) | **Confirmar**: podría ser útil guardar el cliente API, pero cambia el documento |
+| `CODIGO OFICINA`, `CODIGO REGIONAL`, `VALOR BASE PRODUCTO` | `1`, `3`, `10000`: constantes que hoy manda Angular | Se copian tal cual |
+| `Total recaudo` | Queda igual al **valor declarado** aunque no haya contraentrega | **Hallazgo**: así lo hace hoy `CargaInterUseCase` (línea 199). `cupo.md` supone recaudo 0 para guías sin COD; hay que decidir si la liquidación lo lee de `PedidosInter` y cómo lo trata |
+| Fecha | Hora de Colombia (UTC−5) fija entre reintentos | La solicitud guarda `RecibidaEn` y `CreadaEn` para que un reintento escriba la misma fecha |
+| `Cantidad Total Productos` | Suma de todas las cantidades | `ApiLambdaCrearGuia` suma solo hasta 12 productos y `ApiLambdaCargarGuias` hasta 18; la API limitará por regla (F1b) |
+| `UrlGuia` | Se escribe en un paso aparte (etiqueta, F1a-c) | Hoy `CargarGuias` lo inserta con el documento y `CrearGuia` lo actualiza después; el resultado final es igual |
+| Forma de pago | `CREDITO` para Inter; `CONTADO` para Envía (invertida) | Regla de `reglas-modalidad-pago.ts`; sin contraentrega |
+
+### Cómo se verificó
+
+- 146 tests en verde, 10 de ellos de **integración contra el Mongo local** (servicio `mongod` ya instalado en el equipo;
+  cada prueba usa su propia base `LogighoTest_*` que se borra, y solo corre si el servidor es `localhost`):
+  insert idempotente y con 10 llamadas simultáneas, update, `Rechazado` con motivo, `UrlGuia` en el documento correcto,
+  flujo completo con repositorios reales (una sola guía aunque el mensaje llegue dos veces) e ida y vuelta de la
+  solicitud completa.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+- CI (`pipelines/servicio-publico`): ahora levanta `mongo:7` y define `MONGO_TEST_URI`, igual que el CI de novedades.
+  Sin Mongo, localmente, esas pruebas se **omiten** y se ven como omitidas, no como aprobadas.
+- Se encontró y corrigió una prueba intermitente del paso anterior (timeout de 5 s demasiado justo en el primer
+  request en frío); ahora el margen es de 30 s y se probó en 3 compilaciones limpias seguidas.
+- `Newtonsoft.Json` 13.0.4 (16-sep-2025) entra solo en el proyecto de tests, únicamente para ejecutar la copia del
+  algoritmo actual.
+
+### Pendiente / siguiente
+
+- **F1a-c:** etiqueta de Inter a S3 (mismos buckets y claves), aviso a inventario y trazas a S3, como pasos
+  reintentables. Hoy `PasosPendientes` solo incluye los dos de Mongo.
+- Una solicitud que se queda en `Creando` porque la Lambda murió antes de recibir respuesta no avanza sola: la recoge
+  el reconciliador (F1a-g).
+- Docker Desktop no arranca en este equipo (WSL1 no es compatible con la configuración actual); no hizo falta porque ya
+  hay un `mongod` local. Si algún día se necesita Docker, hay que habilitar WSL2.

@@ -99,6 +99,8 @@ Implementar Servientrega con Strategy sin modificar las 3 existentes. Las transp
 - `strategies/transportadoras/servientrega.strategy.ts`
 - `components/importacion-facturas-generico/`
 
+**Actualización 2026-10-02 (Yadilton Torres):** se agregó el campo opcional `columnasOpcionales?: string[]` a `TransportadoraStrategy`. Permite que cada strategy declare qué columnas de su `columnMapping` **no** son obligatorias en el Excel, sin modificar el componente genérico. Si la strategy no lo define (caso D2E), todas sus columnas son obligatorias. `ServientregaStrategy` lo usa para `CODIGOCENTROCOSTO` y `NOMBRECENTROCOSTO`. Ver [Importación Facturas Genérico](../../../components/importacion-facturas-generico.md#validacion-de-encabezados).
+
 ---
 
 ## Estado futuro

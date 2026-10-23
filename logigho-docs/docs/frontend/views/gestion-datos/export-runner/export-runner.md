@@ -54,9 +54,7 @@ Recupera la información solicitada, aplica los filtros configurados por el usua
 ngOnInit()
   -> lee queryParams: coleccion, formato, exportId, orientacion, fechasFiltro, filtros avanzados
   -> guarda _token en sessionStorage
-  -> si params['servidor'] === 'true'
-      -> procesarExportacionServidor(exportId)    // flujo alternativo vía body en localStorage
-  -> flujo normal:
+  -> flujo:
       -> si no hay fechasFiltro → GET ListaColecciones para leer filtroFecha configurado
       -> calcula lote desde localStorage[export_total_registros_<id>]
       -> GET página 1 → obtiene TotalRegistros real
@@ -78,10 +76,13 @@ ngOnInit()
 | --- | --- | --- |
 | 2026-05-13 | Adalberto González | Creación del componente |
 | 2026-06-16 | Adalberto González | Filtro de exclusion de los registros con estados "Impuesto Gobierno" para cuando se exporta por Liquidaciones |
+| 2026-10-21 | Yadilton Torres | Eliminado el flujo de "Exportar Servidor" (`servidor=true`, `procesarExportacionServidor`, `delay`): el backend `exportReportes` respondía 504 a los 29 s aun con pocos registros |
 
 ---
 
 ## Observaciones
 
 - **`window.close()` solo funciona** porque la pestaña fue abierta con `window.open()` desde `export-data`.
+- **La URL lleva toda la configuración** (filtros, tiendas, varias guías y `_token`). Con URLs muy largas el servidor responde HTTP 431; por eso `export-data` limita a 400 valores por filtro.
+- **"Exportar Servidor" ya no existe.** Si algún día vuelve, el código anterior se recupera desde Git (commit anterior a la rama `feature/mejora-modulo-exportacion`).
 - **`FILTROS_EXCLUSION`** es el mecanismo para excluir filas por colección cuando el backend no soporta `$nin`. Se aplica después de descomprimir y antes del filtro de columnas. Para agregar exclusiones a otra colección, solo añadir una entrada al objeto.

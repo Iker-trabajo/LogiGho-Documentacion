@@ -208,6 +208,9 @@ nav:
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
+      - Layout:
+          - Menu lateral (Default Layout): frontend/layout/default-layout.md
+          - Barra superior (Default Header): frontend/layout/default-header.md
       - Sistema de Experiencias (propuesta):
           - Que es: frontend/experiencias/index.md
           - Arquitectura (ADR-001): frontend/experiencias/adr/ADR-001-sistema-experiencias.md
@@ -226,11 +229,15 @@ nav:
             - Estandarizador de direcciones: frontend/core/estandarizador-direcciones.md
             - Servicio de Cotizacion: frontend/core/cotizacion-service.md
             - Reglas Modalidad de Pago: frontend/core/reglas-modalidad-pago.md
+            - Servicio de Notificaciones: frontend/core/notificaciones-service.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
+              - Campana de Notificaciones: frontend/components/campana-notificaciones.md
               - Paso Cotizacion (Modal Pedidos): frontend/components/paso-cotizacion.md
               - Importacion Pauta: frontend/components/importacion-pauta.md
+              - Importacion Facturas Inter: frontend/components/importacion-facturas.md
+              - Importacion Facturas Envia: frontend/components/importacion-facturas-envia.md
               - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md
               - Creacion Productos: frontend/components/creacion-productos.md
@@ -243,6 +250,7 @@ nav:
               - Escaner Camara: frontend/components/escaner-camara.md
               - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
               - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
+              - Consultar Guia (modal del header): frontend/components/consulta-guia-modal.md
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
               - Modal Creacion Pedidos: frontend/components/modal-creacion-pedidos.component.md
               - Menu Acciones: frontend/views/dropshipping/product-hub/components/menu-acciones.md
@@ -300,6 +308,7 @@ nav:
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
               - Logistica:
                   - Inventario nuevo (pantallas): frontend/views/logistica/inventario/inventario-front.md
+                  - Directiva ayuda flotante: frontend/views/gestion-datos/export-data/directives/ayuda-flotante-directive.md
               - Tienda:
                   - Portafolio:
                       - Componente: frontend/views/tienda/Portafolio/portafolio.md

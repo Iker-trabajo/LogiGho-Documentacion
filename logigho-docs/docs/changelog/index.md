@@ -34,6 +34,256 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-15] — Layout: menú lateral con teclado y arreglos del menú
+
+### Nuevas funcionalidades
+
+- **Menú con el teclado:** con el menú abierto (mouse encima o **Ctrl + B**) se recorre con las
+  flechas, empezando desde el buscador. ↓ / ↑ pasan entre las opciones que se ven, ↑ desde la
+  primera vuelve al buscador, **Enter** abre el submenú o va a la página y **Escape** cierra el
+  grupo, el submenú o la barra. No hace falta hacer clic: con la barra abierta ↓ va a la primera
+  opción desde cualquier parte de la página (salvo escribiendo en un campo).
+- La opción con el foco lleva un borde morado; al mover el mouse la marca se quita para que no se
+  vean dos opciones marcadas y, si el mouse está fuera del menú, la barra se cierra.
+
+### Cambios
+
+- La directiva `SidebarInteraccionDirective` pasó a `default-layout/directives/` y los estilos del
+  layout de `estilos/` a `styles/`.
+- El atajo Ctrl + B y las flechas se escuchan con un solo `@HostListener('document:keydown')`.
+
+### Correcciones
+
+- Arrastrar la barrita del scroll del menú lo cerraba si el mouse salía de la barra. Ahora sigue
+  abierto mientras se arrastra y se cierra al soltar afuera.
+- Con la barra cerrada y algo escrito en el buscador solo se veían unas rayitas: ahora se ven los
+  iconos del menú completo y al abrirla vuelven los resultados.
+
+### Documentación
+
+- Nueva sección **Frontend → Layout** con **Menú lateral (Default Layout)**: estructura, directiva,
+  uso con el teclado, buscador, diseño, flujo y las 33 pruebas.
+- **Estructura de módulos:** enlace a la página del menú lateral.
+## [2026-10-21] — Exportación de datos: límites por formato, varias guías, resumen y celular
+
+### Nuevas funcionalidades
+
+- **Límites por formato** en Pedidos (`PedidosInter`) y Liquidaciones (`LiquidacionesLogigho`):
+  CSV 300.000, Excel 130.000, JSON 150.000 y PDF 150.000 registros con máximo 10 columnas.
+  Debajo de cada rango de fecha sale cuántos registros trae y solo se pueden elegir los que caben;
+  en las fechas personalizadas los días que se pasan salen tachados.
+- **Rangos nuevos:** "Este mes" (del día 1 a hoy, por defecto) y "Último mes" (mes anterior completo).
+- **Varias guías en un filtro:** los campos numéricos enteros aceptan valores separados por coma o
+  pegados de una columna de Excel (máximo 400). Buscando por guía se exporta todo el historial y sin
+  límite de registros.
+- **Filtro Ecosistema** en Pedidos y Liquidaciones, con **varios ecosistemas** a la vez: se envía
+  como la lista de tiendas de esos ecosistemas que el usuario tiene asignadas. Solo salen los
+  ecosistemas con tiendas del usuario y se controla que las tiendas quepan en la dirección de la
+  exportación.
+- **Revisión de guías y preenvíos:** al agregarlos se revisa cuáles existen en las tiendas del
+  usuario; si faltan, se puede seguir solo con los que sí existen o corregir. Buscando por preenvío
+  también se exporta todo el historial y sin límite.
+- **Ayudas al pasar el mouse** (directiva `appAyuda`) en lugar del `title` del navegador; los rangos
+  de fecha muestran sus fechas exactas.
+- **Teclado en Filtros avanzados:** flechas y Enter para elegir el campo, Enter en el valor agrega el
+  filtro y Ctrl+Z deshace el pegado de guías.
+- **Permisos por rol** en colecciones (`ListaColecciones.Roles`) y en campos
+  (`ConfiguracionCamposColeccion.Roles`).
+- **Resumen "Así queda tu exportación"** con el panel "Registros a exportar" (número, barra de
+  capacidad verde/naranja/roja, Columnas, Celdas, Aún caben y estado) en todas las colecciones.
+- **Buscador de columnas** (sin mayúsculas, tildes ni espacios, con la coincidencia marcada) y
+  **lista de formatos** con nivel ALTO / MEDIO / BAJO.
+- Accesos **"Ir directo a"** en el encabezado, pastilla **"Ir a exportar"**, aviso **"Primero
+  selecciona una colección"** y pregunta al exportar si quedó un **filtro sin agregar**.
+- **Mensaje al equipo de desarrollo** cuando se necesita más del límite: llega como notificación de
+  la campana con lo que se intentaba exportar, y la respuesta del equipo le llega a quien lo envió.
+- **Campana de notificaciones** en el header (reemplaza la campana fija con el "1"): contador de
+  nuevas, pestañas Pendientes / Historial (últimas 20), detalle con el contexto, respuesta obligatoria
+  al atender una solicitud y "Entendido" para las respuestas. Revisa cada 2 min (rol Desarrollador) o
+  5 min (los demás), solo con la pestaña visible. Colección nueva `NotificacionesPlataforma`.
+- **Aviso de notificaciones** (`AvisoNotificacionService`): tarjeta arriba a la derecha con icono de
+  color, X para cerrar y barra de tiempo.
+- **Celular:** listas como paneles desde abajo, calendario del teléfono, columnas en 2 por fila e
+  información de uso plegable.
+- **Tour guiado** de la pantalla (14 pasos, incluida la campana de notificaciones), con botón que
+  late la primera vez.
+
+### Cambios
+
+- Se quitó **"Exportar Servidor"** (botón y flujo en `export-runner`): el backend `exportReportes`
+  respondía 504 a los 29 segundos aun con pocos registros.
+- Tour guiado (componente compartido): no deja mover la página mientras está abierto, oscurecido de
+  una sola pieza y tarjeta centrada en celular. Afecta también a los tours de Pautas y Bodegas.
+
+### Correcciones
+
+- Buscar por guía daba "No hay datos" porque se aplicaba el rango "Este mes"; ahora se busca en todo
+  el historial.
+- `localStorage` de exportaciones viejas nunca se borraba (no leía bien la hora del `exportId`);
+  ahora se borra a los 30 minutos.
+
+### Documentación
+
+- **Export data** actualizada: partes de la pantalla, límites, rangos, panel de registros, varias
+  guías, Ecosistema, roles, mensaje al equipo, celular, tour y pruebas.
+- **Export runner** sin el flujo de "Exportar Servidor".
+- **Tour guiado:** nueva fila en el historial de cambios.
+- Nuevas páginas: **Core → Servicio de Notificaciones**, **components → Campana de Notificaciones**
+  y **Gestion de datos → Directiva ayuda flotante**.
+
+---
+
+## [2026-10-15] — Estandarización de dirección: tipos de dirección, manzana, barrio o vereda
+
+### Nuevas funcionalidades
+
+- **Dos tarjetas en el Constructor** para elegir cómo es la dirección, cada una con ejemplos:
+  **Dirección numerada** (lleva `#`, ej. `Calle 45 # 7 - 20`) y **Manzana, barrio o vereda**
+  (no lleva `#`, ej. `Mz 8 Lt 2 Casa 4`, `Vereda La Esperanza`). Siguen los dos tipos de la guía
+  del formulario de Base Ventas.
+- **Dirección por lugar:** tipo de lugar (barrio, urbanización, conjunto, sector, vereda,
+  corregimiento, finca, parcelación, batallón), nombre del lugar obligatorio, manzana, lote, casa,
+  km, calle de referencia y referencia. Arma, por ejemplo, `MZ 8 LT 2 CASA 4 BARRIO BELÉN` o
+  `VEREDA LA ESPERANZA CASA 5`, y avisa si falta el lugar o un número.
+- **Tour guiado** (botón **?**) con los pasos de los dos modos y de las dos tarjetas.
+- **Aviso al salir** con datos escritos (X, Cancelar, clic fuera o Escape), con flechas entre
+  "Salir" y "Seguir editando".
+
+### Cambios
+
+- **Manzana en texto libre:** `CL 3 MZ 1 LT 4 CS 6` ya no pide distanciador y sale con confianza
+  alta; `MZ 8 LT 2 CS 4, EL POZON` toma el barrio después de la coma y, sin barrio, avisa que es
+  obligatorio y baja la confianza.
+- Los complementos salen de mayor a menor unidad (`MZ → LT → TO → BL → CS → PI → AP…`); antes la
+  casa podía quedar antes que la manzana.
+- Se quitan los `#` y `-` sueltos que dejaba el formulario viejo (`MZ 05 # LOTE 5 - ETAPA 4` →
+  `MZ 5 LT 5 ETAPA 4`).
+- Escape cierra una ventana a la vez: tour, aviso y por último el modal.
+- Nuevo diseño del modal: fila de la vía con etiquetas encima, letras más grandes, ventana de 880 px
+  y diseño celular (tarjetas una debajo de otra, campos a 16 px, pantalla completa en celulares
+  pequeños).
+
+### Documentación
+
+- **Estandarizacion de direcciones** (componente) y **Estandarizador de direcciones** (servicio)
+  actualizados.
+## [2026-10-09] — Layout: rediseño del menú lateral y la barra superior
+
+### Nuevas funcionalidades
+
+- **Buscador del menú** con atajo **Ctrl + B** (**Cmd + B** en Mac): abre la barra con el cursor
+  en el buscador, los resultados salen agrupados por sección (ej. "Mi Tienda › Pedidos Masivos")
+  y Escape borra y cierra.
+- **Celular:** el menú es un cajón completo (300 px u 85 % de la pantalla) que se cierra al
+  elegir una opción o deslizando el dedo a la izquierda. La barra superior muestra ☰, logo y
+  acciones sin descuadrarse.
+
+### Cambios
+
+- El menú se abre con la clase `abierta` en vez de `:hover`: solo si el mouse se queda encima
+  150 ms, con 120 ms de margen antes de cerrarse. Ya no parpadea.
+- Apertura por capas (logo con máscara, buscador y textos en cascada, flechas al final), barrita
+  azul en la sección actual, opción activa en morado y subgrupos con línea de árbol.
+- Barra superior blanca de 56 px, botones redondos lila y píldora de usuario con avatar.
+- El comportamiento del menú pasó a la nueva directiva `SidebarInteraccionDirective` y los estilos
+  del layout a la carpeta `estilos/` (7 archivos por tema).
+- **Seguridad:** `AuthGuard` solo deja pasar sin sesión la ruta exacta `/export-runner`; antes
+  bastaba con que apareciera en cualquier parte de la URL, incluido el hash.
+
+### Correcciones
+
+- Clics perdidos: si el menú se mueve mientras se hace clic, la opción igual se abre.
+- "Primer clic gastado" al abrir un grupo después de cerrar la barra.
+- En celular había que tocar dos veces para ver el menú completo.
+
+### Documentación
+
+- Nueva sección **Frontend → Layout** con **Menú lateral (Default Layout)** y **Barra superior
+  (Default Header)**.
+- **Rutas y navegación:** nueva sección sobre `AuthGuard` y `/export-runner`.
+- **Estructura de módulos:** enlaces a las páginas del layout.
+
+---
+
+## [2026-10-09] — Header: buscador de guía de transportadora ("Consultar guía")
+
+### Nuevas funcionalidades
+
+- **Botón "Consultar guía"** en el header, antes de los avisos y separado por una línea.
+  Abre el nuevo modal `ConsultaGuiaModalComponent`: el usuario escribe o pega el número
+  de la guía y ve los datos del pedido (transportadora, tienda, estado con color y fecha),
+  el link del PDF con **Abrir** y **Copiar**, y la vista previa del PDF en computador.
+- Búsqueda por `Numeropreenvio` en `PedidosInter` con el índice `Numeropreenvio_1`,
+  pidiendo solo los 8 campos que usa el modal: **113 ms** y **~1 KB** de respuesta.
+- **Solo guías de mis tiendas:** la búsqueda se filtra por `tiendas_asignadas`, como en
+  la pantalla de Pedidos. Si la guía es de otra tienda, una segunda consulta que solo pide
+  el número confirma que existe y se muestra "Esta guía no pertenece a tus tiendas", sin
+  ningún dato de ella. Los usuarios con `Todas` ven cualquier guía.
+- **Recientes:** las últimas 5 guías encontradas, por usuario y solo durante la sesión
+  (`sessionStorage`), con botón Limpiar.
+- Mensajes distintos para guía inexistente, guía sin PDF, guía de otra tienda, búsqueda
+  que tarda (504 / `TimeoutError`) y tiendas todavía sin cargar.
+
+### Cambios
+
+- Enter busca y, con la guía ya mostrada, un segundo Enter abre el PDF.
+- El número se limpia de espacios, saltos de línea y guiones antes de buscar.
+- La vista previa del PDF no se muestra en celular (Chrome de Android no tiene visor) ni en
+  pantallas táctiles angostas; queda el botón Abrir.
+- Accesibilidad: Escape cierra, el foco no se sale del modal con Tab y se respeta
+  `prefers-reduced-motion`.
+
+### Documentación
+
+- Nueva página **Frontend → Componentes → Consultar Guía (modal del header)**, con el
+  flujo, los estados, el filtro por tiendas (y su nota de seguridad), Recientes, la vista
+  previa y las 31 pruebas unitarias.
+- Agregada una referencia al modal en **Logística → Consultar Guía**.
+## [2026-10-02] — Facturas transportadoras: validación de encabezados en la importación
+
+### Nuevas funcionalidades
+
+- **Validación de encabezados** en `uploadFile()` de los tres componentes de importación
+  de facturas (Envía, Inter y genérico — Servientrega y D2E), antes de mapear las
+  columnas. Dos validaciones: (1) la primera fila debe ser de encabezados (texto, sin
+  celdas vacías) → alerta `Archivo sin encabezados`; (2) los encabezados deben existir
+  en el `columnMapping` y venir los obligatorios → alerta `Encabezados incorrectos` con
+  las listas **No reconocidos** y **Faltan obligatorios**. Si falla, no se guarda nada y
+  se deja un `console.warn` para diagnóstico.
+- Nuevo campo opcional `columnasOpcionales?: string[]` en `TransportadoraStrategy`: cada
+  transportadora declara qué columnas no son obligatorias. `ServientregaStrategy` lo usa
+  para `CODIGOCENTROCOSTO` y `NOMBRECENTROCOSTO` (las otras 29 son obligatorias). D2E no
+  lo define, así que sus 9 columnas siguen siendo obligatorias.
+
+### Cambios
+
+- **X-Cargo fuera de servicio** (ya no se usa en la empresa): se comentó, con la nota
+  `FUERA DE SERVICIO POR EL MOMENTO`, el bloque HTML "FACTURACIÓN X-CARGO", el import de
+  `ImportacionFacturasXcargoComponent`, su entrada en `imports` y la llamada a
+  `fetchTableDataXcargo()` en `ngOnInit` (evita una consulta inútil a `FacturacionXcargo`).
+  La carpeta del componente no se tocó.
+- En el componente genérico, la validación anterior (mensaje genérico `Documento no válido`)
+  se reemplazó por la Validación 2 con mensaje detallado. La comparación sigue siendo
+  exacta (distingue mayúsculas).
+- Un archivo con columnas fuera del `columnMapping` ahora se **rechaza**; antes se
+  aceptaba y se guardaba con el nombre que trajera el Excel.
+- Se eliminó un bloque de código comentado de manejo de fechas (`ADM_FechaGrabacion`) en
+  el componente de Envía: estaba copiado de otro módulo y nunca se ejecutaba.
+
+### Correcciones
+
+- Error `toLowerCase is not a function` al importar el Excel de Envía: el archivo no tenía
+  fila de encabezados, la primera fila eran datos con números y el código la trataba como
+  títulos.
+- Agregado `ValorComercial` al `columnMapping` de Inter: existía en la base de datos y
+  faltaba en el mapeo.
+
+### Documentación
+
+- Nuevas páginas **Frontend → Componentes → Importación Facturas Inter** e
+  **Importación Facturas Envía**, con las validaciones y las columnas obligatorias.
+- Actualizadas **Importación Facturas Genérico** (validaciones y `columnasOpcionales`),
+  **Facturas Transportadoras** (X-Cargo fuera de servicio y cómo reactivarlo) y su ADR.
 ## [2026-10-17] — Propuesta: Sistema de Experiencias y seguridad de accesos
 
 ### Documentación

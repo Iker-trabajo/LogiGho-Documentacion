@@ -563,3 +563,92 @@ están como pruebas.
 - **F1a-g:** reconciliador de solicitudes (`INCIERTA`, `CREANDO` atascadas, `RECIBIDA` sin encolar).
 - Función Lambda de cálculo, job de saldo y liberación al liquidar (`Consumo`) — dependen de datos de producción.
 - F1b: `POST /v1/guias` que llama a `ReservarAsync` antes de encolar.
+
+---
+
+## 2026-10-23 · F1a-g · Reconciliador de solicitudes
+
+**Commit de código:** `ce0b876` — `feat(guias): reconciliador de solicitudes, cola SQS, metricas EMF y resolucion de inciertas (F1a-g)`
+
+### Qué se hizo
+
+Un proceso que corre cada 5 minutos y **arregla lo que las fallas dejan a medias**, sin crear nunca una guía. Es la red de
+seguridad de [ADR-003](adr-003-idempotencia.md): cuando algo se cae (la Lambda, SQS, la API), ninguna solicitud se queda
+colgada para siempre.
+
+| Situación | Cuándo | Qué hace |
+| --- | --- | --- |
+| **Creando** atascada | más de 5 min sin cambios | Pasa a **Incierta**: no se sabe si se envió a Inter, así que **jamás se reintenta** (se duplicaría la guía) |
+| **Reservada** que nadie tomó | más de 2 min | Se **vuelve a encolar** (el worker mira el estado: repetir el mensaje es inofensivo) |
+| **Recibida** que no avanzó | más de 10 min | Pasa a **Fallida** con un mensaje accionable ("reintente con una nueva `Idempotency-Key`"). Si la API alcanzó a apartar cupo antes de morir, la reserva se recupera del libro y queda lista para liberarse |
+| Guía creada con **pasos sin completar** (etiqueta, inventario, cupo…) o fallida con cupo por liberar | más de 5 min | Se **vuelve a encolar**; el worker retoma solo lo que falta |
+| **Incierta** | más de 10 min | Se intenta resolver con la transportadora; si no se puede, queda para Operaciones y **suena la alarma** |
+
+Cambios de estado con **guarda**: el reconciliador solo cambia una solicitud si en la base sigue en el estado que él leyó. Así
+nunca pisa al worker que justo la está terminando (una prueba con 15 rondas de carrera real contra Mongo: gana uno solo).
+
+### Lo que NO se puede automatizar: resolver una `Incierta`
+
+El diseño decía "el reconciliador consulta a la transportadora". **No existe** (en el código de las lambdas actuales) una
+consulta de Interrapidísimo que permita saber si una admisión llegó a crear la guía: la admisión no lleva ningún
+identificador nuestro, y el único dato que identifica la guía es el número que justamente se perdió. Por eso:
+
+1. `IResolutorIncierta` es un puerto; el adaptador de Inter devuelve **`NoDeterminada`** y no inventa nada.
+2. La solicitud queda `INCIERTA`, el reconciliador publica la métrica `SolicitudesInciertas` (también en 0, para que la
+   alarma vuelva a verde) y **Operaciones la resuelve a mano** con `IResolverIncierta`:
+   - *Como creada*: con el número de guía y la respuesta (valores de flete, etc.) vistos en el portal de Inter. El worker
+     completa el resto (`CargaPedido`, `PedidosInter`, etiqueta, inventario, ajuste de cupo).
+   - *Como no creada*: queda `FALLIDA` y se libera el cupo.
+3. Esa operación hoy es un caso de uso; falta exponerlo como endpoint de administración (`/admin/v1/...`).
+
+**Pregunta para Iker:** ¿Inter tiene alguna consulta (por fecha, destinatario, referencia del cliente) que nos permita
+resolver inciertas automáticamente? Si existe, se escribe un adaptador nuevo y no cambia nada más.
+
+### Observabilidad
+
+Las métricas salen por el log en formato **EMF** de CloudWatch (una línea JSON por métrica): no hacen llamadas de red ni
+piden permisos extra. Namespace `ApiPublicaGuias`, métricas `SolicitudesInciertas` y `SolicitudesReencoladas`. La alarma
+de `observabilidad.md` ("`INCIERTA` > 0 por más de 10 min") sale de la primera.
+
+### Cola SQS
+
+Se implementó el adaptador que encola (`ColaSolicitudesSqs`): un mensaje por guía con **solo el id de la solicitud**
+(ningún dato personal viaja por SQS). La prueba usa el SDK real contra un SQS simulado. Lo usará también el endpoint de
+crear guías (F1b). Variable nueva: `COLA_SOLICITUDES_URL`.
+
+### Despliegue (para la parte de Terraform)
+
+- El reconciliador es **otra función Lambda con el mismo paquete** del worker, handler
+  `ApiLambdaGuiasWorker::ApiLambdaGuiasWorker.Function::Reconciliar`, invocada por una regla de EventBridge `rate(5 minutes)`.
+- El umbral "Creando → Incierta" (5 min) **debe ser mayor que el timeout de la Lambda worker**; si no, se declararía
+  incierta una guía que el worker aún está creando. Timeout sugerido del worker: ≤ 2 min.
+- Alarma de `SolicitudesInciertas > 0` por más de 10 min; alarma de DLQ > 0 (ya prevista).
+
+### Decisiones
+
+| Tema | Decisión | Por qué |
+| --- | --- | --- |
+| `Recibida` vieja → `Fallida` (no se reintenta) | El integrador debe usar una nueva `Idempotency-Key` | Una `Recibida` vieja nunca llegó a la transportadora, pero no hay datos para reconstruir con certeza qué alcanzó a hacerse |
+| Reserva huérfana | Se recupera del libro por su id determinista y se libera | Evita que el cupo quede apartado para una guía que no existe |
+| Máximo por ciclo | 200 por categoría | Evita que un atasco masivo sature DocumentDB; el ciclo siguiente continúa |
+| Índice nuevo | `ix_ApiSolicitudesGuia_Pendientes_Fecha` sobre `ConPasosPendientes` | Encontrar solicitudes con pasos pendientes sin recorrer las miles ya terminadas |
+
+### Cómo se verificó
+
+- 444 tests en verde: cada regla y cada umbral del reconciliador (también "reciente no se toca"), carrera con el worker,
+  fallo de SQS en una solicitud, máximo por ciclo, resolución como creada / no creada / ya cambiada, consultas por estado y
+  antigüedad contra el Mongo local, ciclo completo con Mongo real, recuperación de una reserva huérfana (cupo y libro reales),
+  SQS simulado con el SDK real (cuerpo, cola, error), formato EMF, y el contenedor del worker con la nueva variable.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+- `AWSSDK.SQS` 4.0.100.15 (30-sep-2026, más de 2 semanas).
+
+### Pendiente / siguiente
+
+**F1a queda completo (a–g).** Lo que sigue:
+
+- **F1b**: `POST /v1/guias` y `GET /v1/solicitudes/{id}`, con las validaciones de `reglas-negocio.md`. **Bloqueado:** ese
+  documento aún no existe (lo escribe otro chat con Iker). El endpoint usa lo ya construido: autorización, idempotencia,
+  permisos por tienda/producto/transportadora, cupo, cola.
+- Calculadora de cupo (función Lambda), job de saldo y liberación al liquidar.
+- Endpoint de administración para resolver inciertas.
+- Terraform (paso 4 del plan) con todo lo anotado en cada entrada.

@@ -1,7 +1,7 @@
 ---
 autor: Iker
 fecha_creacion: 2026-03-23
-ultima_actualizacion: 2026-05-04
+ultima_actualizacion: 2026-10-02
 estado: desarrollo
 nivel: 2
 ---
@@ -51,7 +51,7 @@ facturas-trans/
 
 1. **Facturación Interrapidísimo** — Tabla + búsqueda + importar + exportar (implementación legacy)
 2. **Facturación Envia** — Tabla + búsqueda + importar + exportar (implementación legacy)
-3. **Facturación X-Cargo** — Tabla + búsqueda + importar + exportar (implementación legacy)
+3. **Facturación X-Cargo** — *Fuera de servicio por el momento* (ver [Reactivar X-Cargo](#reactivar-x-cargo))
 4. **Facturación Servientrega** — Tabla + búsqueda + importar + exportar (implementación con Strategy)
 
 ---
@@ -62,7 +62,7 @@ facturas-trans/
 |---|---|---|---|
 | Interrapidísimo | `FacturacionInter` | Legacy | `app-importacion-facturas` |
 | Envia | `FacturacionEnvia` | Legacy | `app-importacion-facturas-envia` |
-| X-Cargo | `FacturacionXcargo` | Legacy | `app-importacion-facturas-xcargo` |
+| X-Cargo | `FacturacionXcargo` | Legacy — **fuera de servicio** | `app-importacion-facturas-xcargo` (comentado) |
 | Servientrega | `FacturacionServientrega` | **Strategy** | `app-importacion-facturas-generico` |
 
 > Las transportadoras legacy funcionan correctamente. La migración al patrón Strategy queda pendiente de evaluación con el equipo, hacer gradualmente e ir probando en produccion para no afectar por completo al sistema.
@@ -102,6 +102,8 @@ facturas-trans/
 
 ### `fetchTableDataXcargo(): void`
 **Descripción:** Mismo proceso que `fetchTableData` pero para la colección `FacturacionXcargo`.
+
+> **Fuera de servicio:** su llamada en `ngOnInit()` está comentada desde 2026-10-02. El método sigue existiendo.
 
 ---
 
@@ -166,7 +168,7 @@ facturas-trans/
 ngOnInit()
   ├── fetchTableData()           → carga Inter (legacy)
   ├── fetchTableDataEnvia()      → carga Envia (legacy)
-  ├── fetchTableDataXcargo()     → carga X-Cargo (legacy)
+  ├── // fetchTableDataXcargo() → X-Cargo fuera de servicio (comentado)
   └── TransportadoraFactory.obtenerTodas().forEach(strategy =>
         fetchTableDataByStrategy(strategy))  → carga Servientrega y futuras
 ```
@@ -194,6 +196,10 @@ export class NuevaTransportadoraStrategy implements TransportadoraStrategy {
     'CAMPO_EXCEL': 'CAMPO_DB',
     // ...
   };
+
+  // Opcional: columnas del columnMapping que NO son obligatorias en el Excel.
+  // Si no se define, todas las columnas del columnMapping son obligatorias.
+  columnasOpcionales: string[] = ['CAMPO_EXCEL_OPCIONAL'];
 
   sanitize(item: any) {
     return {
@@ -227,6 +233,28 @@ closeNuevaModal() { this.isNuevaModalOpen = false; }
 **Paso 4 — Agregar sección en el HTML**
 
 Copiar el bloque de Servientrega en el HTML y reemplazar `servientregaStrategy` por `nuevaStrategy`.
+
+> La validación de encabezados del componente genérico usa el `columnMapping` de la strategy y respeta `columnasOpcionales`. Ver [Importación Facturas Genérico](../../../components/importacion-facturas-generico.md#validacion-de-encabezados).
+
+---
+
+## Reactivar X-Cargo
+
+X-Cargo está **fuera de servicio por el momento** (ya no se usa en la empresa). Se comentó con la nota `FUERA DE SERVICIO POR EL MOMENTO` en dos archivos de este módulo. La carpeta `src/app/components/importacion-facturas-xcargo/` no se tocó.
+
+| Archivo | Qué se comentó |
+|---|---|
+| `facturas-trans.component.html` | El bloque "FACTURACIÓN X-CARGO" (líneas 56 a 82 aprox.) |
+| `facturas-trans.component.ts` | El `import` de `ImportacionFacturasXcargoComponent` |
+| `facturas-trans.component.ts` | Su entrada en la lista `imports` del `@Component` |
+| `facturas-trans.component.ts` | La llamada `this.fetchTableDataXcargo()` en `ngOnInit()` (evita una consulta inútil a la colección `FacturacionXcargo`) |
+
+```typescript
+// FUERA DE SERVICIO POR EL MOMENTO (X-Cargo ya no se usa en la empresa). Descomentar junto con el HTML y ngOnInit si se necesita de nuevo.
+// import { ImportacionFacturasXcargoComponent } from '../../../components/importacion-facturas-xcargo/importacion-facturas-xcargo.component';
+```
+
+> **Para reactivarlo hay que descomentar las cuatro cosas a la vez**, o falla la compilación.
 
 ---
 
@@ -268,10 +296,10 @@ Copiar el bloque de Servientrega en el HTML y reemplazar `servientregaStrategy` 
 
 | Componente | Selector | Descripción |
 |---|---|---|
-| `ImportacionFacturasComponent` | `app-importacion-facturas` | Modal importación Inter (legacy) |
-| `ImportacionFacturasEnviaComponent` | `app-importacion-facturas-envia` | Modal importación Envia (legacy) |
-| `ImportacionFacturasXcargoComponent` | `app-importacion-facturas-xcargo` | Modal importación X-Cargo (legacy) |
-| `ImportacionFacturasGenericoComponent` | `app-importacion-facturas-generico` | Modal importación genérico — recibe `TransportadoraStrategy` como `@Input()` |
+| [`ImportacionFacturasComponent`](../../../components/importacion-facturas.md) | `app-importacion-facturas` | Modal importación Inter (legacy) |
+| [`ImportacionFacturasEnviaComponent`](../../../components/importacion-facturas-envia.md) | `app-importacion-facturas-envia` | Modal importación Envia (legacy) |
+| `ImportacionFacturasXcargoComponent` | `app-importacion-facturas-xcargo` | Modal importación X-Cargo (legacy) — fuera de servicio, comentado |
+| [`ImportacionFacturasGenericoComponent`](../../../components/importacion-facturas-generico.md) | `app-importacion-facturas-generico` | Modal importación genérico — recibe `TransportadoraStrategy` como `@Input()` |
 | `TablesComponent` | `app-tables` | Tabla reutilizable con columnas dinámicas |
 
 ---
@@ -285,11 +313,15 @@ Copiar el bloque de Servientrega en el HTML y reemplazar `servientregaStrategy` 
 | 2026-05-02 | Adalberto | Agregado `transformarValor?(campo, valor)` como método opcional en la interfaz `TransportadoraStrategy`. Permite a cada strategy manejar transformaciones de tipo por campo al importar Excel sin modificar el componente genérico. |
 | 2026-05-02 | Adalberto | Corrección en `exportToExcel`: se excluye el campo `_id` del dataset antes de generar el worksheet para que no aparezca en los archivos Excel exportados. |
 | 2026-05-02 | Adalberto | Corrección de búsqueda con clic repetido en D2E: el input usaba `[ngModel]` unidireccional, por lo que `searchValueD2E` nunca se actualizaba y el botón Buscar pasaba siempre `''`, reseteando el filtro. Corregido a `[(ngModel)]`. |
+| 2026-10-02 | Yadilton Torres | Validación de encabezados en la importación de facturas (Envía, Inter y genérico). Agregado el campo opcional `columnasOpcionales?: string[]` a `TransportadoraStrategy`; `ServientregaStrategy` lo usa para `CODIGOCENTROCOSTO` y `NOMBRECENTROCOSTO`. |
+| 2026-10-02 | Yadilton Torres | X-Cargo fuera de servicio: se comentó el bloque HTML "FACTURACIÓN X-CARGO", el import de `ImportacionFacturasXcargoComponent`, su entrada en `imports` y la llamada a `fetchTableDataXcargo()` en `ngOnInit`. |
 
 ---
 
 ## Observaciones
 
 - Las transportadoras Interrapidisimo, Envia y X-Cargo mantienen su implementación legacy. Migración al patrón Strategy pendiente de evaluación con el equipo.
+- X-Cargo está comentado (fuera de servicio). Ver [Reactivar X-Cargo](#reactivar-x-cargo).
+- Los tres componentes de importación rechazan los archivos sin fila de encabezados o con columnas desconocidas. Un archivo con columnas fuera del `columnMapping` ya no se guarda con el nombre que traiga el Excel.
 - El `tablaEstadoMap` centraliza el estado de todas las transportadoras que usen Strategy. Las legacy tienen variables individuales (`rows`, `rowsEnvia`, `rowsXcargo`).
 - La colección `FacturacionServientrega` define su schema con la primera inserción. Los campos están definidos en `ServientregaStrategy.columnMapping`.

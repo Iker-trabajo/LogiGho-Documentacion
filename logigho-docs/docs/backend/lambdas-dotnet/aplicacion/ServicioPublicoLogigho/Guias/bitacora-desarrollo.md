@@ -920,3 +920,9 @@ El módulo `guias-api` tiene ahora `crear_mcp` (**apagado por defecto**, en los 
 4. Aprobar `plan`/`apply` en PreProd (hoy sin REST público confirmado en PreProd) y publicar el deployment con el CLI.
 5. Probar con Claude real y confirmar que Cognito sigue sin DCR/CIMD/`resource`.
 6. MFA para el *app client* del MCP (sigue siendo una decisión abierta).
+
+---
+
+## 2026-10-23 · Pendientes antes de PreProd (sin cambios de código)
+
+Por pedido de Iker se registró [`pendientes-preprod.md`](pendientes-preprod.md): 10 decisiones (P-01 a P-10) con evidencia, opciones y recomendación. **Ningún comportamiento cambió**: Iker decide al terminar el desarrollo. Verifiqué en el código dos de ellas: P-06 (el reconciliador reencola `Reservada` cada 2 min sin tope de intentos ni de antigüedad) y P-07 (hay alarma de DLQ genérica, pero ni alarma ni runbook propios para "documento ausente").

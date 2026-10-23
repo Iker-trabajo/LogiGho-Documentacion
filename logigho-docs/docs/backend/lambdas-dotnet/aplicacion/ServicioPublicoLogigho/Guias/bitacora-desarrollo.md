@@ -201,3 +201,103 @@ log": la guía queda creada y el pedido huérfano, sin aviso. Aquí el fallo lle
   el reconciliador (F1a-g).
 - Docker Desktop no arranca en este equipo (WSL1 no es compatible con la configuración actual); no hizo falta porque ya
   hay un `mongod` local. Si algún día se necesita Docker, hay que habilitar WSL2.
+
+---
+
+## 2026-10-22 · F1a-c · Etiqueta de Inter en S3, aviso a inventario y trazas
+
+**Commit de código:** `feaaf10` — `feat(guias): etiqueta de Inter a S3, aviso a inventario y trazas en S3 (F1a-c)`
+
+### Qué se hizo
+
+Después de que Inter crea la guía y de que quedan `CargaPedido` y `PedidosInter`, el worker completa tres cosas más,
+cada una como un **paso que se puede repetir sin duplicar nada**:
+
+1. **Etiqueta.** Pide el PDF a Inter (`Admision/ObtenerBase64PdfPreGuiaFormatoPeq/{n}` para sticker,
+   `.../ObtenerBase64PdfPreGuia/{n}` para mediana), lo valida, lo publica en S3 y escribe `UrlGuia` en `PedidosInter`.
+2. **Inventario.** `POST {URL_SERVICIO_AWS}/actualizaInventarioLotes` con `{"Guias":["<número>"]}`.
+3. **Trazas.** Guarda en S3 el request y la response exactos de cada llamada a Inter.
+
+Orden de los pasos de una guía creada: `CargaActualizada → PedidoInsertado → EtiquetaSubida → InventarioAvisado`.
+El inventario va al final porque lee la guía de `PedidosInter`.
+
+### Etiqueta: mismo destino que hoy (ADR-004)
+
+Se verificó contra `ApiLambdaPutObjectAOT` y contra AWS (solo lectura) que los buckets existen
+(`bucket-guias-inter-prod`, `bucket-guias-pdf-prod`) y que el dominio público es el de CloudFront configurado en esa
+lambda (`URL_CLOUDFRONT`). El worker escribe con el SDK de S3, con el mismo formato:
+
+| Archivo | Bucket | Clave | Contenido |
+| --- | --- | --- | --- |
+| Texto | `BUCKET_GUIAS_INTER` | `{numeroGuia}.txt` | El PDF en base64 como texto (igual que hoy) |
+| PDF | `BUCKET_GUIAS_PDF` | `guias-pdf/inter/{id}.pdf` | Bytes del PDF, `application/pdf`, `inline` |
+| `UrlGuia` | — | — | `URL_CLOUDFRONT` + clave del PDF |
+
+La prueba levanta un S3 simulado (WireMock) y usa el **SDK real**, así comprueba rutas, headers y contenido tal como
+saldrían a S3. El `{id}` del PDF es **aleatorio y se guarda en la solicitud antes de subir el archivo**: si el paso se
+repite escribe en la misma clave (no deja archivos huérfanos) y la URL sigue siendo impredecible. Importa porque el PDF
+es público y contiene datos personales: una clave derivada del número de guía se podría adivinar.
+
+### Trazas (ADR-005)
+
+`trazas/{yyyy}/{MM}/{dd}/{numeroGuia}/{solicitudId}-{paso}.json.gz` en el bucket `BUCKET_TRAZAS_GUIAS`, JSON
+comprimido con solicitud, cliente, tienda, request y response. Las credenciales de Inter van como `***`. En Mongo solo se
+anota la clave, el código HTTP y la latencia. Se guardan la admisión (incluso si Inter la rechaza o queda incierta) y la
+petición de etiqueta; esta última **sin el PDF**, que ya está en el bucket. Si S3 falla al guardar una traza, la guía
+sigue su camino y se deja un aviso en el log: la traza sirve a soporte, no al flujo.
+
+### Qué pasa si algo falla
+
+| Falla | Resultado |
+| --- | --- |
+| Inter devuelve PDF vacío, concatenado, con su mensaje de error o cortado | Se reintenta hasta 3 veces; si ninguno es válido, el mensaje de SQS falla y vuelve a la cola. La guía queda `Creada` y **no se rechaza** (hoy la carga masiva marca la fila `Rechazado` aunque la guía ya existe) |
+| S3 rechaza la escritura | Igual: el paso se repite desde la cola |
+| El inventario responde error | Reintento corto con espera (2 veces); si persiste, el mensaje vuelve a la cola y solo se repite ese paso |
+
+### Decisiones y alternativas descartadas
+
+- **No se usa `/putObject`.** Esa ruta no tiene authorizer ni API key (hallazgo de ADR-004) y exige un token de usuario
+  que un cliente de máquina no tiene.
+- **Validación de PDF sin PDFsharp.** El método actual (`PdfUtils.IsValidPdf`) abre el PDF con PDFsharp para contar
+  páginas. PDFsharp 6.2.4 trae `System.Security.Cryptography.Pkcs` 8.0.1 con **dos vulnerabilidades conocidas**
+  (GHSA-846f-f764-76mx, alta; GHSA-2fmv-rv2c-59x7, moderada) y los parches salieron el 13-oct-2026, así que todavía no
+  cumplen la regla de 2 semanas. En su lugar se revisa: base64 decodificable, cabecera `%PDF`, que no haya dos cabeceras
+  (PDFs pegados), que no contenga el mensaje de error de impresión de Inter y que termine con `%%EOF`. Es más ligera
+  que abrir el archivo. Se puede volver a PDFsharp después del 27-oct-2026.
+- **Ocultar al remitente "LOGIGHO" en el sticker: pendiente de decisión.** Consulté la configuración de las lambdas
+  en producción (solo lectura): `ApiLambdaCargarGuias` tiene `OCULTAR_REMITENTE_ETIQUETA=true` con
+  `TEXTOS_OCULTAR_ETIQUETA=LOGIGHO,LOGIGHO S.A.S` y reescribe el PDF con iText; `ApiLambdaCrearGuia` y
+  `ApiLambdaCrearEtiquetaManual` **no** lo hacen. `MODIFICACION_ETIQUETA` está en `false` en las tres. La API publica
+  hoy la etiqueta tal como la entrega Inter (`TransformadorEtiquetaIdentidad`), igual que la creación manual.
+  **Pregunta para Iker:** ¿las etiquetas de la API deben ocultar "LOGIGHO" como la carga masiva? Si sí, hay que portar
+  `EditorContenidoPdf` (iText, ~350 líneas y una dependencia AGPL) detrás de la misma interfaz
+  `ITransformadorEtiqueta`; no cambia nada más del flujo.
+- **Auditoría de direcciones de etiqueta** (`AuditoriaEtiquetasInter`): en producción `AUDITORIA_ETIQUETA` no está
+  definida, o sea apagada. No se porta.
+- **Inventario con `Guias`, no `Idcarga`.** `ApiLambdaInventarioCarga` acepta una lista de guías; es lo que pide el
+  diseño. CargarGuias envía `Idcarga` y sin esperar respuesta (la Lambda puede congelarse antes de que salga la
+  llamada); aquí se espera la respuesta.
+- **Configuración.** Se reusan los nombres de variable de hoy (`BUCKET_GUIAS_PDF`, `URL_CLOUDFRONT`,
+  `URL_SERVICIO_AWS`) y se crean dos nuevas que debe definir Terraform: `BUCKET_GUIAS_INTER` y `BUCKET_TRAZAS_GUIAS`. Hoy
+  el bucket de texto está escrito en el código con el sufijo `-prod` incluso en PreProd (hallazgo de
+  `hallazgos-lambdas-actuales.md`); aquí es configurable por entorno.
+
+### Cómo se verificó
+
+- 191 tests en verde: S3 simulado con el SDK real (rutas, content-type, `inline`, comillas y espacios en el base64,
+  repetir la publicación, base64 inválido, S3 con error 403); trazas gzip (clave, JSON, credenciales ocultas, carpeta
+  `sin-guia`); inventario (cuerpo `{"Guias":[...]}`, sin header `Authorization`, reintento ante 503, error 400 sube);
+  etiqueta de Inter (ruta por tipo, base64 con y sin comillas, primer PDF inválido y segundo bueno, tres inválidos,
+  error HTTP persistente, sin credenciales de usuario ni PDF en la traza); validador de PDF; caso de uso (orden de pasos,
+  el reintento no repite lo ya hecho, fallo de traza no frena la guía); y el **contenedor real del worker** con las
+  variables de entorno cifradas con AES.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan (ahora ~12 MB cada una).
+- Paquete nuevo: `AWSSDK.S3` 4.0.104.1 (1-oct-2026, más de 2 semanas; la 4.0.104.2 salió el 8-oct y se dejó fuera por
+  margen).
+
+### Pendiente / siguiente
+
+- **Terraform** (paso 4 del plan): crear el bucket de trazas con lifecycle de 90 días y definir las dos variables nuevas.
+- Decidir lo de ocultar el remitente (arriba).
+- **F1a-d:** `ApiClientes` y autorización. **F1a-e:** idempotencia en `ApiSolicitudesGuia`. **F1a-f:** cupo.
+  **F1a-g:** reconciliador (también recoge las solicitudes que se quedan en `Creando` o `Incierta`).

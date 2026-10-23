@@ -1,7 +1,7 @@
 ---
 autor: Iker
 fecha_creacion: 2026-03-23
-ultima_actualizacion: 2026-03-23
+ultima_actualizacion: 2026-10-02
 estado: desarrollo
 nivel: 1
 ---
@@ -118,10 +118,12 @@ importacion-facturas-generico/
 1. Valida que existe un archivo seleccionado
 2. Lee el archivo con `FileReader` en modo binario
 3. Parsea el Excel con XLSX y extrae encabezados y filas
-4. Mapea los encabezados del Excel a campos de MongoDB usando `strategy.columnMapping`
-5. Filtra filas vacías
-6. Fuerza a string el campo definido en `strategy.campoGuia` para preservar ceros iniciales (ej: `IDFACTURA: "0005090781"`)
-7. Llama a `procesarInsercionPorLotes()` con los registros mapeados
+4. Ejecuta la [Validación 1](#validacion-de-encabezados) (primera fila de encabezados)
+5. Ejecuta la [Validación 2](#validacion-de-encabezados) (nombres de columnas y obligatorios, según `strategy.columnMapping`)
+6. Mapea los encabezados del Excel a campos de MongoDB usando `strategy.columnMapping`
+7. Filtra filas vacías
+8. Fuerza a string el campo definido en `strategy.campoGuia` para preservar ceros iniciales (ej: `IDFACTURA: "0005090781"`)
+9. Llama a `procesarInsercionPorLotes()` con los registros mapeados
 
 ---
 
@@ -165,6 +167,80 @@ importacion-facturas-generico/
 
 ---
 
+## Validación de encabezados
+
+Se ejecuta en `uploadFile()`, **antes** de mapear las columnas. Si cualquiera de las dos validaciones falla, el componente: quita el spinner (`isLoading = false`), limpia el archivo seleccionado (`resetFileInput()`), muestra una alerta con `Swal` y **detiene el proceso: no se inserta nada en MongoDB**. Además deja un `console.warn` con lo que falló (visible al inspeccionar la consola).
+
+| # | Validación | Qué comprueba | Alerta si falla |
+|---|---|---|---|
+| 1 | Primera fila de encabezados | Todas las celdas de la primera fila deben ser texto y no estar vacías | `Archivo sin encabezados` |
+| 2 | Nombres y obligatorios | Cada encabezado debe existir en `strategy.columnMapping` y deben venir todas las columnas que la strategy no marque como opcionales | `Encabezados incorrectos`, con las listas **No reconocidos** (sin repetidos) y **Faltan obligatorios** |
+
+### Columnas opcionales
+
+La lista de columnas **no está escrita en el componente**: sale de `this.strategy.columnMapping`. Cada transportadora puede declarar en su strategy qué columnas no son obligatorias con el campo opcional `columnasOpcionales`:
+
+| Transportadora | `columnasOpcionales` | Obligatorias |
+|---|---|---|
+| Servientrega | `CODIGOCENTROCOSTO`, `NOMBRECENTROCOSTO` (confirmado con el responsable) | Las otras 29 columnas |
+| D2E | No la define | Sus 9 columnas |
+
+Si la strategy no define `columnasOpcionales`, todas las columnas de su `columnMapping` son obligatorias. Las opcionales no cuentan como faltantes si no vienen; si vienen, se guardan normal.
+
+### Código
+
+```typescript
+/** Validación 2: los encabezados deben coincidir con strategy.columnMapping.
+ * Cada transportadora define sus columnas obligatorias en su strategy.
+ * Si falta alguna o aparece una columna desconocida, se rechaza el archivo. */
+const columnasEsperadas = Object.keys(this.strategy.columnMapping);
+const columnasOpcionales = this.strategy.columnasOpcionales ?? [];
+// Obligatorias que no vinieron en el Excel (las opcionales no cuentan como faltantes)
+const columnasFaltantes = columnasEsperadas.filter(col => !columnasOpcionales.includes(col) && !headers.includes(col));
+// Encabezados del Excel que no están en el columnMapping (sin repetidos)
+const columnasExtra = Array.from(new Set(headers.filter(h => !this.strategy.columnMapping[h])));
+
+if (columnasFaltantes.length > 0 || columnasExtra.length > 0) {
+  console.warn('Validación de encabezados falló. No reconocidos:', columnasExtra, '| Faltantes:', columnasFaltantes);
+  this.isLoading = false;
+  this.resetFileInput();
+  let detalle = 'Los nombres de las columnas no coinciden con la plantilla.';
+  if (columnasExtra.length > 0) {
+    detalle += `<br><br><b>No reconocidos:</b> ${columnasExtra.map(h => `"${h}"`).join(', ')}`;
+  }
+  if (columnasFaltantes.length > 0) {
+    detalle += `<br><br><b>Faltan obligatorios:</b> ${columnasFaltantes.join(', ')}`;
+  }
+  Swal.fire({ title: 'Encabezados incorrectos', html: detalle, icon: 'error' });
+  return;
+}
+```
+
+La Validación 1 es idéntica a la de [Importación Facturas Envía](importacion-facturas-envia.md#codigo).
+
+El campo se declara en la interfaz `transportadora.strategy.ts`:
+
+```typescript
+/**
+ * Opcional: columnas del columnMapping que NO son obligatorias en el Excel.
+ * Si el archivo no las trae, la validacion de encabezados no lo rechaza; si las trae, se guardan normal.
+ * Si la transportadora no define esta lista, todas las columnas del columnMapping son obligatorias.
+ */
+columnasOpcionales?: string[];
+```
+
+Y se usa en `servientrega.strategy.ts`, justo antes de `sanitize`:
+
+```typescript
+/**
+ * Columnas que NO son obligatorias en el Excel de Servientrega (confirmado con el responsable).
+ * El resto de columnas del columnMapping si son obligatorias en la validacion de encabezados.
+ */
+columnasOpcionales: string[] = ['CODIGOCENTROCOSTO', 'NOMBRECENTROCOSTO'];
+```
+
+---
+
 ## Flujo principal
 
 ```
@@ -179,6 +255,8 @@ Usuario hace click en "Cargar"
   → uploadFile()
     → FileReader.readAsBinaryString()
       → XLSX.read()        → parsea el Excel
+      → Validación 1       → ¿primera fila de encabezados?  (si falla: alerta y se detiene)
+      → Validación 2       → ¿nombres válidos y obligatorios? (si falla: alerta y se detiene)
       → mapear columnas    → strategy.columnMapping
       → filtrar vacíos
       → procesarInsercionPorLotes()
@@ -255,11 +333,14 @@ closeModal() { this.isModalOpen = false; }
 | 2026-03-23 | Iker | Creación del componente genérico como parte de la implementación del patrón Strategy para transportadoras |
 | 2026-05-02 | Adalberto | Validación estricta de columnas en `importacion-facturas-generico`: si el archivo Excel tiene columnas faltantes o no reconocidas respecto a `columnMapping`, se muestra `'Documento no válido'` y se aborta la inserción sin tocar MongoDB. |
 | 2026-05-02 | Adalberto | Filtro de fila totales en `importacion-facturas-generico`: se descartan filas donde cualquier celda sea exactamente `'total'` (case-insensitive) antes de insertar. |
+| 2026-10-02 | Yadilton Torres | Agregada la Validación 1 (la primera fila debe ser de encabezados: texto y sin celdas vacías → alerta `Archivo sin encabezados`). La validación anterior (`'Documento no válido'`) se reemplazó por la Validación 2 con mensaje detallado (`Encabezados incorrectos`: no reconocidos sin repetidos y faltantes). |
+| 2026-10-02 | Yadilton Torres | Soporte de columnas opcionales: las columnas listadas en `strategy.columnasOpcionales` no cuentan como faltantes. Si la strategy no define la lista (caso D2E), todas sus columnas son obligatorias. |
 
 ---
 
 ## Observaciones
 
+- **Cambio de comportamiento:** un archivo con columnas fuera de `strategy.columnMapping` se rechaza (ya ocurría desde 2026-05-02); ahora el mensaje indica cuáles columnas no se reconocen y cuáles faltan. Probar con archivos reales de Servientrega y D2E.
 - El componente asume que la plantilla existe en el bucket S3 `logigho-plantillas` con el nombre exacto definido en `strategy.plantillaFileName`. Si no existe, mostrará una advertencia pero no bloqueará el flujo de carga.
 - El tamaño de lote está fijado en 5000 registros (`TAMANO_LOTE = 5000`). Si se necesita ajustar, modificar la constante en `procesarInsercionPorLotes`.
 - `refreshDataEvent` está declarado pero no está siendo emitido actualmente. El componente padre recarga los datos vía el evento `(updated)` del componente `app-tables`. Pendiente evaluar si se necesita.

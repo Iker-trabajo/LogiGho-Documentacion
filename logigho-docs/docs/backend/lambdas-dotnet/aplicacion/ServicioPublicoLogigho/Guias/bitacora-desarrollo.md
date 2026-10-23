@@ -652,3 +652,83 @@ crear guías (F1b). Variable nueva: `COLA_SOLICITUDES_URL`.
 - Calculadora de cupo (función Lambda), job de saldo y liberación al liquidar.
 - Endpoint de administración para resolver inciertas.
 - Terraform (paso 4 del plan) con todo lo anotado en cada entrada.
+
+---
+
+## 2026-10-23 · Terraform · Módulo `guias-api` y entornos `preprod/guias` y `prod/guias`
+
+**Commit (repo `Terraform_Infraestructura_Logigho`, rama local `feature/api-publica-guias`):** `70d8e7a` —
+`feat(guias): modulo guias-api y entornos preprod/prod de la API publica de guias`
+
+> **Alcance:** solo código y `terraform fmt` / `terraform validate` (ambos pasan en los dos entornos). **No se hizo `plan` ni
+> `apply` contra ninguna cuenta**, ni se escribió nada en AWS. La sesión SSO de producción había vencido, así que tampoco se
+> pudo leer el estado real del API Gateway; por eso varios valores son variables obligatorias (ver abajo).
+> El repo de Terraform tenía otra rama en uso (`chore/terraform-inventario`) en su carpeta principal; para no tocarla, el trabajo
+> se hizo en un *worktree* aparte (`Terraform_Infraestructura_Logigho-guias`) sobre `main`.
+
+### Qué crea el módulo
+
+| Pieza | Detalle |
+| --- | --- |
+| 3 funciones .NET 10 | `ApiLambdaGuias` (API), `ApiLambdaGuiasWorker` (cola) y `ApiLambdaGuiasReconciliador` (mismo paquete que el worker, handler `...::Reconciliar`). Un **rol por función** con permisos acotados al recurso exacto |
+| Cola SQS + DLQ | `ApiGuias-Solicitudes-<entorno>`: cifrada, visibilidad = 6 × timeout del worker, 5 entregas antes de la DLQ (14 días de retención), mapeo con `ReportBatchItemFailures` |
+| Bucket de trazas | Privado, cifrado, solo TLS, expira a los 90 días, `prevent_destroy` (ADR-005) |
+| Reconciliador | Regla EventBridge cada 5 min, **apagada** al nacer; una alarma avisa si, estando encendida, deja de ejecutarse |
+| Rutas `/v1/*` | En el REST público `rl7zt6zak5`: cada método pide **token de Cognito con el scope del método + API key**; `GET /v1/salud` es público |
+| Plan de uso | Ritmo, ráfaga y cuota diaria por API key (cada cliente recibe la suya) |
+| WAF regional | Reglas administradas de AWS, límite por IP y lista de IPs bloqueadas, asociado al stage |
+| Cognito | Resource server `logigho` con los 4 scopes (`guias:crear`, `guias:leer`, `guias:anular`, `cupo:leer`) |
+| Alarmas + dashboard | Tasa de error > 2 %, latencia p95 > 8 s, DLQ, mensaje viejo en la cola, solicitudes `INCIERTA` > 10 min, circuito de la transportadora abierto, errores y *throttles* por función → SNS (correo y Slack) |
+
+Permisos por función (mínimo privilegio): la **API** solo puede enviar a la cola; el **worker** consume la cola y solo escribe en
+`{numeroGuia}.txt` del bucket de guías, en `guias-pdf/*` del bucket de PDF y en `trazas/*` del bucket de trazas; el **reconciliador**
+solo envía a la cola. Ninguno tiene acceso a otros buckets ni a otras colas.
+
+### Decisiones
+
+- **Terraform es dueño de la plataforma; el pipeline, del código.** Igual que el dominio de inventario: se ignoran código y variables
+  de entorno. Las cifradas con AES (`CADENA_CONEXION`, `ID_CLIENTE`, `USER_AUTH`, `TOKEN_AUTH`, `SUCURSAL_GENERICA`,
+  `URL_SERVICIO_INTER`) las agrega el pipeline desde su variable group; aquí nacen solo las no sensibles (incluidas las dos nuevas
+  que usa el código: `BUCKET_GUIAS_INTER`, `BUCKET_TRAZAS_GUIAS`, `COLA_SOLICITUDES_URL`).
+- **El timeout del worker debe ser menor que 300 s.** El reconciliador declara incierta toda solicitud en `Creando` pasados 5 minutos;
+  una *precondición* de Terraform lo exige. Valor por defecto: 120 s.
+- **Producción usa concurrencia reservada** (API 20, worker 10, reconciliador 1) y tope en el mapeo de SQS (10): DocumentDB es una sola
+  instancia pequeña y ya cargada (ADR-001). **PreProd no puede reservar** (límite de 10 ejecuciones en toda la cuenta), así que ahí el tope
+  va solo en el mapeo de SQS (2).
+- **WAF: `SizeRestrictions_BODY` solo cuenta, no bloquea.** La regla administrada bloquea cuerpos de más de 8 KB y rechazaría lotes
+  legítimos de hasta 50 guías.
+- **En PreProd las rutas, el WAF y el plan de uso están apagados** (`crear_rutas = false`). Falta decidir cuál es el REST público de PreProd
+  y el authorizer de PreProd apunta hoy al pool de Cognito de producción (hallazgo de `hallazgos-lambdas-actuales.md`). Con eso apagado sí se
+  pueden probar el worker y el reconciliador con mensajes directos a SQS.
+- **Buckets de etiquetas de PreProd propios** (`bucket-guias-inter-preprod`, `bucket-guias-pdf-preprod`): las lambdas actuales llevan los de
+  producción escritos en el código también en PreProd (hallazgo). **Pendiente de verificar que existen.**
+
+### Para Iker: lo que hay que leer o decidir antes del primer `plan`
+
+1. **Valores a leer del AWS real** (variables obligatorias, no se inventaron): en producción `database_name`, `parent_resource_id` (recurso
+   `/` de `rl7zt6zak5`), `authorizer_id` y `stage_name`; en PreProd `database_name` y `url_publica_pdf`.
+2. **Confirmar** que el authorizer de `rl7zt6zak5` es de tipo Cognito, usa el header `Authorization` y apunta al pool `6jmSkfK4B`.
+3. **Convención del repo de Terraform:** su README dice "un solo REST por entorno; no se crean APIs aparte" y nombra `API_LogiGho_Rest`
+   (`7elgyten88`) como el de producción. El diseño aprobado de esta API usa el REST **público ya existente** `rl7zt6zak5`
+   (`ApiIntegracionesExternas`). No se crea ningún REST nuevo, pero conviene que Iker confirme que `rl7zt6zak5` cuenta como "el REST del
+   entorno" para integradores.
+4. **Slack en producción:** `notificador_slack_arn` queda vacío; no se verificó si `ApiLambdaNotificadorEventos` existe en la cuenta de producción.
+5. **Rol de despliegue (CD):** no se creó. El pipeline `cd-preprod`/`cd-prod` del servicio aún no existe (solo hay `ci.yml`); cuando exista
+   se reutiliza `modules/rol-despliegue-codigo-lambdas` como hace inventario.
+6. Los `.terraform.lock.hcl` de los dos entornos nuevos **no se versionaron** (los existentes no incluyen el proveedor `archive`); se generan
+   con `terraform providers lock -platform=linux_amd64 -platform=windows_amd64` en la primera ejecución real.
+7. Después de aplicar en producción hay que **publicar el deployment** del stage con el CLI (el REST no es de Terraform) y se puede revertir
+   con el deployment anterior; el README del repo lo explica.
+
+### Cómo se verificó
+
+- `terraform fmt -check` y `terraform validate` en `environments/preprod/guias` y `environments/prod/guias`: correctos (usando los proveedores
+  ya descargados por otros entornos, sin bajar nada nuevo y sin credenciales).
+- `validate` encontró dos errores reales que se corrigieron: un **ciclo de dependencias** (la cola dependía del timeout del worker y las
+  funciones dependían de la cola; ahora el timeout se calcula aparte) y un tipo inconsistente al armar el dashboard (ahora cada *widget* se
+  codifica a JSON por separado).
+
+### Pendiente / siguiente
+
+- **Paso 5 del plan: ADR-006 del servidor MCP** (se detiene para validación antes de implementar).
+- Cuando haya sesión SSO: leer los valores de arriba, `terraform plan` solo si Iker lo pide, y revisar contra el estado real del REST.

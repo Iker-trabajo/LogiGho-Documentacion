@@ -24,6 +24,40 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-15] — Estandarización de dirección: tipos de dirección, manzana, barrio o vereda
+
+### Nuevas funcionalidades
+
+- **Dos tarjetas en el Constructor** para elegir cómo es la dirección, cada una con ejemplos:
+  **Dirección numerada** (lleva `#`, ej. `Calle 45 # 7 - 20`) y **Manzana, barrio o vereda**
+  (no lleva `#`, ej. `Mz 8 Lt 2 Casa 4`, `Vereda La Esperanza`). Siguen los dos tipos de la guía
+  del formulario de Base Ventas.
+- **Dirección por lugar:** tipo de lugar (barrio, urbanización, conjunto, sector, vereda,
+  corregimiento, finca, parcelación, batallón), nombre del lugar obligatorio, manzana, lote, casa,
+  km, calle de referencia y referencia. Arma, por ejemplo, `MZ 8 LT 2 CASA 4 BARRIO BELÉN` o
+  `VEREDA LA ESPERANZA CASA 5`, y avisa si falta el lugar o un número.
+- **Tour guiado** (botón **?**) con los pasos de los dos modos y de las dos tarjetas.
+- **Aviso al salir** con datos escritos (X, Cancelar, clic fuera o Escape), con flechas entre
+  "Salir" y "Seguir editando".
+
+### Cambios
+
+- **Manzana en texto libre:** `CL 3 MZ 1 LT 4 CS 6` ya no pide distanciador y sale con confianza
+  alta; `MZ 8 LT 2 CS 4, EL POZON` toma el barrio después de la coma y, sin barrio, avisa que es
+  obligatorio y baja la confianza.
+- Los complementos salen de mayor a menor unidad (`MZ → LT → TO → BL → CS → PI → AP…`); antes la
+  casa podía quedar antes que la manzana.
+- Se quitan los `#` y `-` sueltos que dejaba el formulario viejo (`MZ 05 # LOTE 5 - ETAPA 4` →
+  `MZ 5 LT 5 ETAPA 4`).
+- Escape cierra una ventana a la vez: tour, aviso y por último el modal.
+- Nuevo diseño del modal: fila de la vía con etiquetas encima, letras más grandes, ventana de 880 px
+  y diseño celular (tarjetas una debajo de otra, campos a 16 px, pantalla completa en celulares
+  pequeños).
+
+### Documentación
+
+- **Estandarizacion de direcciones** (componente) y **Estandarizador de direcciones** (servicio)
+  actualizados.
 ## [2026-10-09] — Layout: rediseño del menú lateral y la barra superior
 
 ### Nuevas funcionalidades

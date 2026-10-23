@@ -24,8 +24,29 @@ Todas las rutas siguientes viven bajo `/app/analytics` y requieren la sesión au
 
 ---
 
+## AuthGuard y la ruta `/export-runner`
+
+**Ubicación:** `src/app/core/application/services/guards/auth.guard.ts`
+
+`AuthGuard` (`CanMatchFn`) protege las rutas de la aplicación: si no hay sesión válida, no deja entrar. La única excepción es **`/export-runner`** (exportación de datos), que entra sin validar sesión y toma el token que llega en la URL (`_token`) para guardarlo en `sessionStorage.id_token`.
+
+| | Antes | Ahora (2026-10-09) |
+|---|---|---|
+| Cuándo se salta la validación | Si `export-runner` aparecía en **cualquier parte** de la URL: la ruta, el `pathname` o el hash (`#`) | Solo si la ruta es **exactamente** `/export-runner` (un único segmento) |
+| Riesgo | Agregando `#export-runner` a otra ruta protegida (ej. `/app/tienda/wallet#export-runner`) se podía entrar sin sesión | Esa URL ahora manda al login |
+
+```typescript
+// Solo la ruta exacta /export-runner, según los segmentos de la URL que recibe el guard
+const isExportRunner = segments.length === 1 && segments[0].path === 'export-runner';
+```
+
+> Pendiente (decisión del equipo): el token sigue llegando por la URL, donde puede quedar en el historial o en registros. Lo ideal sería un token de un solo uso o de corta duración.
+
+---
+
 ## Historial de cambios
 
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-09-21 | Iker Acevedo Vargas | Se documentaron las rutas completas de Analytics, incluyendo telemetría y sus restricciones de acceso. |
+| 2026-10-09 | Yadilton Torres | `AuthGuard`: solo la ruta exacta `/export-runner` entra sin sesión. Antes bastaba con que "export-runner" apareciera en cualquier parte de la URL, incluido el hash. |

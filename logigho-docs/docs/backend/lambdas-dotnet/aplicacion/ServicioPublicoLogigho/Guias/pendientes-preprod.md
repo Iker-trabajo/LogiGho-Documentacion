@@ -22,6 +22,7 @@ P-10 nacen de replicar el flujo actual de las Lambdas de creación; P-06 a P-09 
 | P-08 | Cupo en `OBSERVAR` | Iker | Abierto |
 | P-09 | WAF sobre todo el stage de `ApiIntegracionesExternas` | Iker | Abierto |
 | P-10 | Inter responde 200 sin `numeroPreenvio` en errores de validación | Iker | Abierto |
+| P-11 | Decisiones de PreProd (REST nuevo, pools propios, MFA opcional, F1b en espera) | Iker | Resuelto |
 
 ---
 
@@ -97,12 +98,25 @@ P-10 nacen de replicar el flujo actual de las Lambdas de creación; P-06 a P-09 
 
 ## P-09 · WAF asociado a todo el stage de `ApiIntegracionesExternas`
 
+> **Actualización 2026-10-23:** en **PreProd** deja de aplicar: el REST es nuevo (`ApiIntegracionesExternas-PreProd`, ver [ADR-006](adr-006-mcp.md)) y no tiene `/pedidos` ni `/token`; el WAF se puede activar sin riesgo para esos usuarios (`crear_waf`, hoy `false`). **Sigue vigente para producción**, donde el stage `rl7zt6zak5` sí lo comparten.
+
 - **Qué pasa:** la asociación del WAF es **a nivel de stage**, así que afecta también a `/pedidos` y `/token` (hoy 3 usuarios). Reglas administradas y límite
   por IP podrían bloquear tráfico legítimo de esos usuarios.
 - **Estado en Terraform:** `crear_waf` existe en el módulo `guias-api`; no se ha aplicado nada contra cuentas reales.
 - **Opciones:** (a) revisar límites contra el tráfico real de esos 3 usuarios antes de asociar; (b) arrancar el WAF en modo solo contar y pasar a bloquear
   después; (c) WAF solo sobre un stage/REST nuevo (rompe la regla de un solo REST).
 - **Recomendación:** (a) + (b).
+
+## P-11 · Decisiones de Iker para PreProd (registro, ya resueltas)
+
+Se anotan aquí para que la lista refleje el estado de PreProd:
+
+- REST público: **uno nuevo creado con Terraform**, regional, espejo de `rl7zt6zak5`.
+- Cognito: **pools propios de PreProd** (integradores M2M y personas del MCP).
+- MFA de las personas del MCP: **opcional**.
+- F1b: no se empieza hasta que exista `reglas-negocio.md`.
+
+Pendiente de Iker que nace de esto: dar valores y altas para encender el MCP (ver la lista de [ADR-006](adr-006-mcp.md#encender-el-mcp-en-preprod-lista-para-iker)).
 
 ## P-10 · Inter responde 200 sin `numeroPreenvio` ante errores de validación
 

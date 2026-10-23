@@ -64,6 +64,42 @@ Código en `ServicioPublicoLogigho/Guias/src/ApiLambdaGuiasMcp/` (rama `feature/
 | Límite de uso por persona (cuando existan herramientas que gastan cupo) | Pendiente (con `crear_guia`) |
 | `consultar_cupo`, `listar_productos`, `consultar_solicitud`, `obtener_etiqueta`, `crear_guia`, `anular_guia` | Pendiente (a medida que la API tenga el endpoint) |
 
+### PreProd: decisiones de Iker (2026-10-23) y cómo quedó el Terraform
+
+| Tema | Decisión | Efecto |
+| --- | --- | --- |
+| REST público de PreProd | **Crear uno nuevo con Terraform**, regional, espejo de `rl7zt6zak5` | `ApiIntegracionesExternas-PreProd`, con su authorizer, deployment y stage (`crear_rest_api`). No se toca el REST de plataforma `8u5isw5u30` |
+| Cognito | **Pools propios de PreProd**: uno M2M para integradores y uno de personas para el MCP | Módulo `guias-identidad`. Ninguna prueba toca identidades de producción. En producción sigue valiendo la decisión 5 (reutilizar `6jmSkfK4B`) |
+| MFA de las personas | **Opcional** | `mfa_configuration = OPTIONAL`, solo por aplicación (TOTP); cada persona decide |
+| F1b | Espera a `reglas-negocio.md` (Iker responde al chat de reglas) | No se empieza |
+
+El emisor que valida el MCP es el del pool de **personas**; el cliente delegado `mcp-gateway` vive en el pool de **integradores** (es una máquina y
+llama a la API con su token). El resource server `logigho` existe en los dos pools con scopes distintos, así que un token de una persona no sirve en la API de
+integradores ni al revés.
+
+### Encender el MCP en PreProd (lista para Iker)
+
+Todo es código ya validado con `fmt`, `validate` y `terraform test` (sin cuenta de AWS). **Nadie ha ejecutado `plan` ni `apply`.**
+
+1. **Renueva el SSO de AWS** de la cuenta PreProd y revisa que el estado remoto (`logigho-tfstate-preprod`) responda.
+2. **`terraform plan` en `environments/preprod/guias`** (lo ejecutas tú o me lo pides): debe crear los dos pools con sus dominios, el REST, el authorizer, las 13 rutas
+   `/v1/*`, el deployment, el stage, el plan de uso, las funciones, la cola y el bucket de trazas. Los prefijos de dominio (`prefijo_dominio_integradores`,
+   `prefijo_dominio_personas`) deben ser únicos en la región; si colisionan, cámbialos.
+3. **`apply`** si el plan es el esperado. Salida `identidad`: ids de pool y URLs de dominio.
+4. **Crea el app client M2M `mcp-gateway`** en el pool de integradores: `client_credentials`, scope `logigho/guias:leer`, con secreto. Su secreto va al variable
+   group, **no** a Terraform. Lo mismo para el app client M2M de cada integrador de prueba.
+5. **Crea la API key** del plan de uso (`ApiPublicaGuias-preprod-estandar`) y asóciala al plan.
+6. **En el variable group del pipeline** (`Lambdas-ServicioPublico-CD`): `Mcp__ApiKey`, `Mcp__SecretoDelegado`, y las variables cifradas de la API (`CADENA_CONEXION`,
+   `ID_CLIENTE`, `USER_AUTH`, `TOKEN_AUTH`, `SUCURSAL_GENERICA`, `URL_SERVICIO_INTER`). Hoy el CI empaqueta las tres Lambdas; hay que comprobar que el CD de PreProd
+   publique también `ApiLambdaGuiasMcp`.
+7. **Enciende el MCP:** en `preprod/guias/main.tf`, `crear_mcp = true` y `mcp_cliente_id_delegado = "<client id de mcp-gateway>"`. Segundo `plan` y `apply`.
+8. **Datos en Atlas de PreProd** (yo no escribo en Mongo de PreProd; puedo dejarte los JSON listos): el documento `mcp-gateway` en `ApiClientes` con
+   `PuedeActuarComo: true` y `Estado: "ACTIVO"`, y los clientes de prueba con sus `Tiendas` y `Usuarios` (`sub` de Cognito). Alta de las personas en el pool de
+   personas (invitación) para obtener su `sub`.
+9. **Conecta Claude:** Configuración, Conectores, «Agregar conector personalizado»; URL = salida `mcp_url_conector`; en configuración avanzada, client id =
+   `mcp_cliente_id_personas` (sin secreto). Prueba: «¿qué tiendas tengo?».
+10. **Pendiente de confirmar:** que Cognito siga sin DCR/CIMD/`resource` (documentación actual) y el WAF (`crear_waf = false` por ahora; el REST es nuevo y nadie más lo usa).
+
 ### Configuración (variables de entorno `Mcp__*`, las pone el pipeline desde el variable group)
 
 La Lambda **no arranca** si falta alguna (el mensaje dice cuál, nunca el valor).

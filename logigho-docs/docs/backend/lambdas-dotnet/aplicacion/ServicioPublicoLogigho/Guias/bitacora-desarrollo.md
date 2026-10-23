@@ -926,3 +926,33 @@ El módulo `guias-api` tiene ahora `crear_mcp` (**apagado por defecto**, en los 
 ## 2026-10-23 · Pendientes antes de PreProd (sin cambios de código)
 
 Por pedido de Iker se registró [`pendientes-preprod.md`](pendientes-preprod.md): 10 decisiones (P-01 a P-10) con evidencia, opciones y recomendación. **Ningún comportamiento cambió**: Iker decide al terminar el desarrollo. Verifiqué en el código dos de ellas: P-06 (el reconciliador reencola `Reservada` cada 2 min sin tope de intentos ni de antigüedad) y P-07 (hay alarma de DLQ genérica, pero ni alarma ni runbook propios para "documento ausente").
+
+---
+
+## 2026-10-23 · PreProd · REST y pools propios, todo en IaC (sin plan ni apply)
+
+**Commit en el repo de Terraform:** rama `feature/api-publica-guias` (`feat(guias): PreProd con REST regional y pools de Cognito propios…`).
+
+### Qué se hizo
+
+Con las decisiones de Iker (REST nuevo con Terraform, pools propios de PreProd, MFA opcional) el stack `preprod/guias` ahora define toda la plataforma:
+
+- **`modules/guias-identidad` (nuevo):** pool de **integradores** (M2M) y pool de **personas** del MCP, solo por invitación, con protección contra borrado y dominio propio cada uno; personas con MFA opcional por aplicación y contraseña de 12+.
+- **`modules/guias-api/rest.tf` (nuevo, `crear_rest_api`):** REST regional `ApiIntegracionesExternas-PreProd`, authorizer sobre el pool de integradores, deployment (espera a todos los métodos) y stage; el plan de uso y el WAF dependen del stage.
+- **MCP:** el emisor y el app client de Claude son del pool de **personas**; el cliente delegado sigue en el de integradores. `crear_mcp` queda apagado.
+- **Producción no cambia:** `crear_rest_api = false` y se indica el REST existente.
+
+### Decisiones
+
+- **`stage_name` sigue siendo variable**, no el atributo del stage: la Lambda del MCP lleva su URL en el entorno y usar el atributo crearía un ciclo (stage → deployment → integraciones → Lambda → stage).
+- **Los app clients M2M no se crean en Terraform** (ni el de cada integrador ni `mcp-gateway`): su secreto quedaría en el estado.
+- **WAF apagado** en PreProd por ahora; el REST es nuevo, así que P-09 deja de aplicar allí.
+- Alternativa descartada: crear el deployment y el stage fuera del módulo; el plan de uso necesita el stage y el deployment necesita los métodos, y entre módulos habría un ciclo.
+
+### Verificación
+
+`terraform fmt`, `validate` (preprod y prod) y `terraform test` con proveedores simulados: **12 pruebas** (8 de `guias-api`, 4 de `guias-identidad`) pasan. Sin `plan` ni `apply`.
+
+### Pendiente
+
+Lista de encendido para Iker actualizada en [ADR-006](adr-006-mcp.md#encender-el-mcp-en-preprod-lista-para-iker). F1b sigue esperando `reglas-negocio.md`.

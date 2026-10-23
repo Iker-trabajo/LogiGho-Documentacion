@@ -301,3 +301,74 @@ sigue su camino y se deja un aviso en el log: la traza sirve a soporte, no al fl
 - Decidir lo de ocultar el remitente (arriba).
 - **F1a-d:** `ApiClientes` y autorización. **F1a-e:** idempotencia en `ApiSolicitudesGuia`. **F1a-f:** cupo.
   **F1a-g:** reconciliador (también recoge las solicitudes que se quedan en `Creando` o `Incierta`).
+
+---
+
+## 2026-10-22 · F1a-d · `ApiClientes` y autorización
+
+**Commit de código:** `6f7debc` — `feat(guias): ApiClientes y autorizacion por claims, scopes e IP (F1a-d)`
+
+### Qué se hizo
+
+Cada llamada a la API ahora pasa por una autorización en dos capas, como pide [ADR-002](adr-002-autenticacion.md):
+
+1. **API Gateway** (aún por configurar en Terraform) valida el token de Cognito y el scope del método.
+2. **El Lambda** vuelve a comprobar, usando solo los *claims* que el gateway ya validó:
+   - `client_id` (qué integrador es) y `scope` (qué permisos trae el token) de `HttpContext.User`;
+   - la IP de origen que ve el gateway;
+   - el perfil del cliente en `ApiClientes` (con caché de 30 s).
+
+Se rechaza, **en este orden**: sin identidad (401 `NO_AUTENTICADO`) → cliente sin perfil (`CLIENTE_NO_REGISTRADO`) →
+cliente no activo (`CLIENTE_BLOQUEADO`) → falta el scope (`SCOPE_INSUFICIENTE`) → IP fuera de la lista
+(`IP_NO_PERMITIDA`). Un cliente bloqueado siempre ve `CLIENTE_BLOQUEADO`, aunque además le falte el scope.
+Todos son `ProblemDetails` con `codigo` y `traceId`. El mensaje nunca revela datos de otros clientes ni la lista de IPs.
+
+El perfil también expone las comprobaciones por **tienda, transportadora y producto** (`PermiteEnvio`), que usará el
+endpoint de crear guías (F1b). Primeros endpoints protegidos, a modo de uso real: `GET /v1/tiendas` y
+`GET /v1/transportadoras` (scope `guias:leer`), que devuelven solo lo que el perfil del cliente permite.
+
+### Por qué por claims y no leyendo el token
+
+En `/pedidos` hoy la lambda lee el header `Token` y decodifica el JWT **sin verificar la firma** mientras el gateway
+valida otro header (`Authorization`): quien mande un JWT inventado en `Token` podría hacerse pasar por otro. La API nueva
+no lee ningún header de token. Dos pruebas lo fijan:
+
+- Un JWT falso con el `client_id` de otro cliente en `Authorization` y `Token` **no** suplanta a nadie (responde 401).
+- Una prueba usa la **librería real** `Amazon.Lambda.AspNetCoreServer` con un evento REST de API Gateway y comprueba que
+  los claims del authorizer llegan a `HttpContext.User` y que la IP (`sourceIp`) llega a la conexión. Si una actualización
+  de la librería cambiara eso, la prueba avisa antes de que la seguridad deje de funcionar.
+
+### Decisiones y supuestos
+
+| Tema | Decisión | Por qué / qué confirmar |
+| --- | --- | --- |
+| Estado desconocido | Se trata como **bloqueado** | Fail-closed: un error de tipeo en `ApiClientes` no abre la puerta |
+| Lista de productos vacía | **Ningún producto permitido**; una guía sin productos no consulta la lista | **Confirmar con Iker**: ¿vacío debería significar "todos los de la tienda"? Se eligió lo más restrictivo |
+| Lista de IPs vacía | Cualquier origen | Así lo dice el diseño ("lista opcional de IPs permitidas") |
+| Entrada de IP ilegible | Se ignora | Con lista llena, lo ilegible no abre la puerta |
+| Scopes | Se comparan por nombre, sin el prefijo del resource server | Cognito entrega `logigho/guias:crear`; así el código no depende del identificador de cada entorno. Riesgo: otro resource server con el mismo nombre de scope. El pool solo tendrá el nuestro |
+| Caché | 30 s, incluida la de clientes inexistentes | Un bloqueo se nota en menos de 30 s; sin esto, un cliente sin perfil provocaría una lectura de Mongo por request |
+| Códigos nuevos | `NO_AUTENTICADO`, `CLIENTE_NO_REGISTRADO`, `SCOPE_INSUFICIENTE`, `IP_NO_PERMITIDA` | Agregados a [Endpoints](endpoints.md) |
+| Forma de `ApiClientes` | Documentada en [Colecciones](colecciones.md) | El código solo lee; la administración (alta, bloqueo, rotación de secreto) es otra fase |
+
+### Un hallazgo de diseño (de las pruebas)
+
+Al registrar los casos de uso en la API, la validación de dependencias de ASP.NET (que corre en las pruebas) falló
+porque la API intentaba construir el caso de uso **del worker**, que necesita la transportadora. Se separó el registro:
+`AddAplicacionGuias` (API) y `AddProcesamientoGuias` (worker). Un error así en producción habría tumbado el arranque
+de la Lambda; las pruebas lo atraparon antes.
+
+### Cómo se verificó
+
+- 269 tests en verde (78 nuevos): permisos por tienda/transportadora/producto, listas de IP (exacta, CIDR, IPv6, IPv4
+  mapeada, entradas ilegibles), lectura de scopes, caso de uso con cada rechazo y su orden, caché con reloj manual
+  (vence a los 30 s, recuerda inexistentes), lectura de `ApiClientes` en el Mongo local (campos extra ignorados, estado
+  y transportadoras desconocidos), la API completa con claims simulados (401, cada 403, listados) y el contrato con la
+  librería de Lambda.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+
+### Pendiente / siguiente
+
+- **F1a-e:** idempotencia en `ApiSolicitudesGuia` e índices desde código (incluye `ux_ApiClientes_ClienteId`).
+- Las rutas de administración de clientes y la rotación de secretos no están (fase de administración).
+- En Terraform (paso 4): authorizer de Cognito con scopes por método y usage plan con API key.

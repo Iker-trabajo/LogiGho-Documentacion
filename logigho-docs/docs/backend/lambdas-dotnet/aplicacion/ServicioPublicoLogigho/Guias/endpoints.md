@@ -65,7 +65,11 @@ Formato ProblemDetails (RFC 9457) con `codigo` estable y `traceId`. Nunca se dev
 | Código | HTTP | Cuándo |
 | --- | --- | --- |
 | `VALIDACION` | 400 | Campo inválido; incluye lista por campo |
+| `NO_AUTENTICADO` | 401 | La llamada llegó sin los claims del authorizer (no debería pasar si el gateway está bien configurado) |
+| `CLIENTE_NO_REGISTRADO` | 403 | Token válido de Cognito pero el cliente no tiene perfil en `ApiClientes` |
 | `CLIENTE_BLOQUEADO` | 403 | Cliente bloqueado o suspendido |
+| `SCOPE_INSUFICIENTE` | 403 | El token no trae el scope que exige el método (el Lambda lo revisa además del authorizer) |
+| `IP_NO_PERMITIDA` | 403 | El cliente tiene lista de IPs y la de origen no está en ella |
 | `TIENDA_NO_PERMITIDA` · `PRODUCTO_NO_PERMITIDO` · `TRANSPORTADORA_NO_PERMITIDA` | 403 | Fuera de los permisos del cliente |
 | `CIUDAD_SIN_COBERTURA` | 422 | La transportadora no cubre el destino |
 | `CUPO_INSUFICIENTE` | 422 | Detalle: disponible vs requerido |

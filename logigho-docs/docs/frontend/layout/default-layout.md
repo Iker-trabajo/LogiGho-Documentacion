@@ -1,5 +1,7 @@
 ---
 autor: Yadilton Torres
+fecha_creacion: 2026-10-15
+ultima_actualizacion: 2026-10-15
 fecha_creacion: 2026-10-09
 ultima_actualizacion: 2026-10-09
 estado: desarrollo
@@ -18,6 +20,7 @@ nivel: 2
 
 ## ¿Qué hace?
 
+Es la estructura que envuelve todas las pantallas internas de LogiGho: el **menú lateral** (sidebar), la barra superior (header), el contenido de la página (`router-outlet`), el botón de WhatsApp, la barra flotante y el footer.
 Es la estructura que envuelve todas las pantallas internas de LogiGho: el **menú lateral** (sidebar), la [barra superior](default-header.md) (header), el contenido de la página (`router-outlet`), el botón de WhatsApp, la barra flotante y el footer.
 
 El menú lateral se arma según los roles del usuario (colección `module`) y tiene:
@@ -26,6 +29,8 @@ El menú lateral se arma según los roles del usuario (colección `module`) y ti
 - **Clics que no se pierden:** si el menú se mueve mientras se hace clic, la opción igual se abre.
 - **Ubicación visible:** barrita azul en la sección abierta o actual, opción activa en morado y subgrupos con pastilla y línea de árbol.
 - **Buscador del menú** con atajo **Ctrl + B** (**Cmd + B** en Mac) y resultados agrupados por sección.
+- **Uso con el teclado:** con el menú abierto se recorre con las flechas, Enter abre submenús o va a la página y Escape cierra.
+- **Barrita del scroll:** arrastrarla no cierra el menú aunque el mouse salga de la barra.
 - **Celular:** el menú es un cajón completo que se cierra al elegir una opción o deslizando el dedo a la izquierda.
 
 ---
@@ -45,6 +50,13 @@ El menú lateral se arma según los roles del usuario (colección `module`) y ti
 default-layout/
 ├── default-layout.component.ts         → Arma el menú, valida acceso a módulos y hace la búsqueda
 ├── default-layout.component.html       → Sidebar, buscador, header, contenido y footer
+├── default-layout.component.scss       → Solo importa los archivos de styles/ (10 líneas)
+├── directives/
+│   ├── sidebar-interaccion.directive.ts      → Mouse, clics, Ctrl + B, flechas, scroll y cajón del celular
+│   └── sidebar-interaccion.directive.spec.ts → 33 pruebas del comportamiento del menú
+├── styles/
+│   ├── _variables.scss                 → Tiempos, curvas de animación y corte de celular
+│   ├── _menu.scss                      → Colores, opciones, iconos, barrita azul, activo, grupos, subgrupos y marca del teclado
 ├── default-layout.component.scss       → Solo importa los archivos de estilos/ (10 líneas)
 ├── sidebar-interaccion.directive.ts    → Mouse, clics, Ctrl + B y cajón del celular
 ├── sidebar-interaccion.directive.spec.ts → 15 pruebas del comportamiento del menú
@@ -56,6 +68,7 @@ default-layout/
 │   ├── _movil.scss                     → Cajón del celular
 │   ├── _animaciones.scss               → Fundidos, cascadas, brillo del activo y "reducir movimiento"
 │   └── _pagina.scss                    → Contenedor, cuerpo y botón de WhatsApp (ya existía)
+└── default-header/                     → Barra superior
 └── default-header/                     → Barra superior (ver su página)
 ```
 
@@ -67,6 +80,11 @@ default-layout/
 |---|---|---|---|
 | `@ViewChild` | `sidebarInteraccion` | `SidebarInteraccionDirective` | Directiva del sidebar. El layout la usa para cerrar la barra cuando terminan de cargar los módulos |
 | Propiedad | `navItems` | `INavData[]` | Menú completo, armado desde la colección `module` según los roles |
+| Propiedad | `visibleNavItems` | `INavData[]` | Resultados del buscador: igual a `navItems` si no hay nada escrito |
+| Propiedad | `searchTerm` | `string` | Texto escrito en el buscador del menú |
+
+El `<c-sidebar-nav>` pinta `navItems` cuando la barra está cerrada (`interaccion.mostrarMenuCompleto`) y `visibleNavItems` cuando está abierta. Ver [Barra cerrada con búsqueda](#barra-cerrada-con-busqueda).
+
 | Propiedad | `visibleNavItems` | `INavData[]` | Lo que se pinta: igual a `navItems`, o los resultados si hay búsqueda |
 | Propiedad | `searchTerm` | `string` | Texto escrito en el buscador del menú |
 

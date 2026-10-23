@@ -18,6 +18,9 @@ Capa de acceso a datos del frontend. Servicios que consumen el API Gateway.
 ## app/layout
 Componentes de estructura visual: navbar, sidebar, footer.
 
+- [Menú lateral (Default Layout)](layout/default-layout.md): menú lateral, buscador del menú, uso con el teclado, cajón del celular y la directiva `SidebarInteraccionDirective`.
+
+> Documentar la barra superior, el footer y los demás elementos del layout a medida que se desarrollen.
 - [Menú lateral (Default Layout)](layout/default-layout.md): menú lateral, buscador del menú, cajón del celular y la directiva `SidebarInteraccionDirective`.
 - [Barra superior (Default Header)](layout/default-header.md): botón ☰, Consultar guía, avisos y píldora del usuario.
 

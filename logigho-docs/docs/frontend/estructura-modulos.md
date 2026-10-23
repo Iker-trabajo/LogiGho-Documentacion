@@ -21,6 +21,10 @@ Componentes de estructura visual: navbar, sidebar, footer.
 - [Menú lateral (Default Layout)](layout/default-layout.md): menú lateral, buscador del menú, uso con el teclado, cajón del celular y la directiva `SidebarInteraccionDirective`.
 
 > Documentar la barra superior, el footer y los demás elementos del layout a medida que se desarrollen.
+- [Menú lateral (Default Layout)](layout/default-layout.md): menú lateral, buscador del menú, cajón del celular y la directiva `SidebarInteraccionDirective`.
+- [Barra superior (Default Header)](layout/default-header.md): botón ☰, Consultar guía, avisos y píldora del usuario.
+
+> Documentar el footer y los demás elementos del layout a medida que se desarrollen.
 
 ## app/views
 Páginas completas de la aplicación. Cada vista corresponde a una ruta.

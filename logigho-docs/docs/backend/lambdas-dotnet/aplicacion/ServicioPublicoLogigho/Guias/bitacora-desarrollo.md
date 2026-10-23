@@ -762,3 +762,35 @@ sin descripción, subtareas ni enlaces). No se modificó ClickUp.
 
 Las **9 decisiones** listadas en el ADR (usuarios del MCP, modelo delegado, camino de autorización, dominio, user pool, `vistaPrevia`,
 `consultar_pedidos`, orden de entrega y contenido de la HU). Sin ellas no se escribe código del MCP.
+
+---
+
+## 2026-10-23 · MCP · decisiones de Iker sobre el ADR-006 (beta de lectura)
+
+**Documento:** [ADR-006](adr-006-mcp.md), sección *Decisiones tomadas* (estado: *aceptada con ajustes*).
+
+### Qué se hizo
+
+Iker revisó las 9 decisiones una por una. Se registraron en el ADR y se completó la HU [MCP pedidos claude](https://app.clickup.com/t/86e3teac0)
+(estaba vacía; ahora tiene objetivo, cómo funciona, alcance por fases y pendientes). Objetivo declarado: *un beta del MCP que funcione, no
+completo, pero armando la estructura*.
+
+### Decisiones y su efecto en el diseño
+
+- **Usuarios:** los de la colección de usuarios API; el login debe coincidir con uno de ellos. La API los resuelve por el `sub` de Cognito.
+- **Delegación:** `mcp-gateway` + header `X-Actua-Como-Usuario: <sub verificado>` (cambió de `X-Actua-Como` con `clienteId`: así el MCP no toca Mongo).
+- **Login:** mismo pool y mismos usuarios; nuevo *app client* con PKCE. Sin pool nuevo.
+- **Alojamiento:** dentro del REST `rl7zt6zak5` (no un HTTP API aparte); `resource_metadata` explícito en el `401`.
+- **`vistaPrevia`:** entra en F1b. **`consultar_pedidos`:** fase 2.
+- **Orden:** beta de lectura primero (`listar_tiendas`, `listar_transportadoras`).
+
+### Qué sigue
+
+1. API: soporte del usuario delegado (`PuedeActuarComo`, usuarios por `sub`, auditoría de tres identidades).
+2. Proyecto `ApiLambdaGuiasMcp` con login, PRM y las dos herramientas de lectura.
+3. Terraform del MCP (ruta sin authorizer, función, *app client*).
+
+### Pendiente / riesgos
+
+Sin MFA en el login del MCP (se puede exigir solo en su *app client*); el `resource` del metadato debe coincidir con la URL pegada en Claude;
+Claude Code (puerto local variable) queda fuera del beta; confirmar que Cognito sigue sin DCR/CIMD/`resource`.

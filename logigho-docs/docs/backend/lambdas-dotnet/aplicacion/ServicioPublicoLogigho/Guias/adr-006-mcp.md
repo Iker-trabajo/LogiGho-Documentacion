@@ -1,13 +1,13 @@
 ---
 autor: Claude (chat de desarrollo) para Iker Acevedo
 fecha_creacion: 2026-10-23
-estado: propuesta — pendiente de validación de Iker y del chat principal
+estado: aceptada con ajustes (decisiones de Iker, 2026-10-23); beta de lectura en construcción
 ---
 
 # ADR-006 — Servidor MCP remoto sobre la API pública de guías
 
 **Fecha:** 2026-10-23
-**Estado:** **Propuesta.** No hay código del MCP. Se detiene aquí hasta que se validen las decisiones de la sección [Decisiones que necesito de Iker](#decisiones-que-necesito-de-iker).
+**Estado:** **Aceptada con ajustes** el 2026-10-23: Iker respondió las 9 decisiones (ver [Decisiones tomadas](#decisiones-tomadas)). El texto de las secciones de abajo es la propuesta original; **cuando una decisión la modifica, manda la sección [Decisiones tomadas](#decisiones-tomadas)**. Se construye primero un **beta de lectura**.
 **HU:** [HU: MCP pedidos claude tanto crear pedidos como revisar pedidos](https://app.clickup.com/t/86e3teac0) (existe, pero **no tiene descripción**: solo el título). Este ADR propone su contenido; no se modificó ClickUp.
 
 ---
@@ -25,7 +25,31 @@ Lo que dicen las especificaciones vigentes (verificado el 2026-10-23):
 
 Piezas ya decididas que este ADR respeta: la API pública autentica con Cognito `client_credentials` + scopes + API key y un perfil `ApiClientes` ([ADR-002](adr-002-autenticacion.md)); el servicio vive en `ServicioPublicoLogigho/Guias`; no hay Secrets Manager (variables cifradas con AES).
 
-## Decisión propuesta
+## Decisiones tomadas
+
+Respuestas de Iker del 2026-10-23, en el orden de las 9 preguntas del ADR:
+
+| # | Tema | Decisión | Qué cambia respecto de la propuesta |
+| --- | --- | --- | --- |
+| 1 | Quién usa el MCP | **Usuarios de la colección de usuarios API** (la que absorbe `ApiUsuariosTiendas` dentro de `ApiClientes`, ADR-002). Para conectarse al MCP, los datos del login **deben coincidir** con un usuario de esa colección | La persona se identifica por su **`sub` de Cognito**, igual que hoy en `/pedidos`; el vínculo persona ↔ cliente sale de la colección, **no** de un atributo de Cognito ni de un trigger |
+| 2 | Salida MCP → API | **Cliente delegado** (`mcp-gateway`) con `client_credentials` + header **`X-Actua-Como-Usuario: <sub>`**; la API busca ese usuario en la colección, carga SU perfil y evalúa todo contra él | El header lleva el **`sub` verificado** (no el `clienteId`), así el MCP sigue sin tocar Mongo: la búsqueda la hace la API. Solo el cliente delegado puede usarlo |
+| 3 | Autorización de la persona | **Camino A** con los **mismos usuarios y contraseñas**: nuevo *app client* en el pool existente (authorization code + PKCE, callback de Claude) y pantalla de login de Cognito. Camino B (fachada DCR/CIMD) para más adelante | Claude no puede llamar a `POST /token` con usuario y contraseña; lo que cambia es **cómo** se hace el login (OAuth), no las credenciales |
+| 4 | Dónde se aloja | **Dentro del REST `rl7zt6zak5`**, no un HTTP API aparte | Sin excepción a "un solo REST". El `401` lleva el `resource_metadata` explícito (Claude lo acepta en cualquier URL HTTPS) y la URL que el usuario pega en Claude incluye el *stage*. Los métodos del MCP **no** usan el authorizer del gateway ni API key (el MCP valida el token y devuelve el `401` que Claude necesita) |
+| 5 | Pool de usuarios | **Sin pool nuevo**: se reutiliza el de `/pedidos` (`6jmSkfK4B`) | Resuelta por la 1 y la 3 |
+| 6 | `vistaPrevia` | **Sí**, parte de F1b | `POST /v1/guias` con `vistaPrevia=true` valida y devuelve costo y reserva **sin** crear ni apartar cupo |
+| 7 | `consultar_pedidos` | **Fase 2.** `/pedidos` tiene que migrar a `ApiClientes`, pero no ahora | Fuera del beta |
+| 8 | Orden de entrega | **Beta de lectura primero** | Beta 1: estructura + login + delegación + `listar_tiendas` y `listar_transportadoras` (las que la API ya tiene). Después, a medida que la API las tenga: `consultar_cupo`, `listar_productos`, `consultar_solicitud`, `obtener_etiqueta`, `crear_guia` (con `vistaPrevia`), `anular_guia` |
+| 9 | HU de ClickUp | **Completarla** con un resumen de este ADR | Hecho el 2026-10-23 |
+
+Objetivo declarado por Iker: *"que funcione un beta del MCP, tampoco completo, pero ir armando la estructura"*.
+
+**Riesgos que traen estas decisiones** (a vigilar):
+
+- Sin MFA: el login del MCP queda con la fortaleza actual del pool. Se puede exigir MFA solo en el *app client* del MCP.
+- Dentro del REST con prefijo de *stage*, el `resource` del metadato debe coincidir **exactamente** con la URL que se pega en Claude; si más adelante se pone un dominio propio, hay que volver a registrar el conector.
+- Claude Code usa un puerto de *localhost* variable y Cognito exige *callbacks* exactos: queda fuera del beta salvo que se fije el puerto.
+
+## Decisión propuesta (texto original)
 
 ### 1. Un servidor MCP remoto, delgado, en su propia Lambda
 
@@ -120,17 +144,9 @@ Pruebas de protocolo con el cliente del propio SDK en memoria; MCP Inspector con
 | **Servicio gestionado de pasarela MCP de AWS (Bedrock AgentCore Gateway u otro)** | **No se evaluó a fondo.** Podría reemplazar la capa de autorización y el alojamiento; vale una investigación corta antes de decidir B (fachada propia) |
 | **Fachada de autorización propia desde el día 1** (camino B) | Mucha superficie de seguridad para un piloto; el camino A cubre a los primeros clientes |
 
-## Decisiones que necesito de Iker
+## Decisiones que se necesitaban de Iker
 
-1. **¿Quién usará el MCP?** Personal de los integradores, personal interno de LogiGho (soporte/operaciones), o ambos. Cambia el user pool, los roles y el alcance de las herramientas (un usuario interno querría ver varios clientes).
-2. **Modelo de salida**: ¿aceptas el *cliente delegado* (`mcp-gateway` + `X-Actua-Como`) con auditoría de tres identidades? Es un cambio pequeño pero **sensible** en la API (un cliente que puede actuar como otros).
-3. **Camino de autorización**: A (cliente pre-registrado, el administrador de cada cliente pega un *client id*) para el piloto y B (fachada con DCR/CIMD) después, o directo a B.
-4. **Excepción a "un solo REST por entorno"**: un HTTP API con dominio propio para el MCP. ¿Qué dominio?
-5. **Pool de usuarios nuevo** con MFA e invitación, ¿o reutilizar uno existente?
-6. **`vistaPrevia`** en `POST /v1/guias`: ¿se agrega a F1b? (Sin ella, la confirmación previa a crear queda solo en el texto de la herramienta.)
-7. **`consultar_pedidos`**: se pospone hasta migrar `/pedidos` a `ApiClientes`. ¿De acuerdo?
-8. **Orden de entrega**: lectura (`listar_*`, `consultar_*`) → `crear_guia` con `vistaPrevia` → `anular_guia`. ¿Se arranca solo con lectura?
-9. **Contenido de la HU de ClickUp**: hoy está vacía; ¿la completo con este ADR cuando lo apruebes?
+Respondidas: ver [Decisiones tomadas](#decisiones-tomadas). La lista original era: usuarios del MCP, modelo delegado, camino de autorización, dominio, pool de usuarios, `vistaPrevia`, `consultar_pedidos`, orden de entrega y contenido de la HU.
 
 ## Consecuencias
 

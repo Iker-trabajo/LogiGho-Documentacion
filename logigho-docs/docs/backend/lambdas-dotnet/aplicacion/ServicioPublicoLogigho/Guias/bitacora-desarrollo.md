@@ -882,3 +882,41 @@ Release sin advertencias, **543 pruebas** (66 del MCP; cuatro ejecuciones seguid
 - Alta real de `mcp-gateway` (con `PuedeActuarComo`) y de los `Usuarios` en `ApiClientes`, y la API key.
 - Probar con un Claude real (requiere despliegue en PreProd, que no se hace desde aquí).
 - Confirmar contra la documentación actual de Cognito que sigue sin DCR/CIMD/`resource`.
+
+---
+
+## 2026-10-23 · MCP · paso 3 de 3 del beta: Terraform (apagado)
+
+**Commit en el repo de Terraform:** rama `feature/api-publica-guias` (`feat(guias): Terraform del servidor MCP…`). Solo código, `fmt`, `validate` y pruebas sin cuenta de AWS; **ningún `plan` ni `apply`**.
+
+### Qué se hizo
+
+El módulo `guias-api` tiene ahora `crear_mcp` (**apagado por defecto**, en los dos entornos). Encendido crea la cuarta función `ApiLambdaGuiasMcp`, el scope
+`logigho/mcp:usar`, el *app client* de las personas y las dos rutas del MCP en el REST público existente (`rl7zt6zak5`).
+
+### Archivos
+
+- `modules/guias-api/mcp.tf` (nuevo): app client, rutas, permiso de invocación, validaciones.
+- `main.tf` (función `Mcp` condicionada), `seguridad.tf` (scope), `variables.tf`, `outputs.tf`; `environments/{preprod,prod}/guias/main.tf`; README.
+- `modules/guias-api/tests/mcp.tftest.hcl`: 3 casos con proveedores simulados (apagado no crea nada; encendido crea lo correcto; sin lo necesario no se puede encender).
+
+### Decisiones
+
+- **Rutas sin authorizer ni API key:** el `401` con `resource_metadata` lo arma la Lambda (Claude lo exige); un authorizer del gateway devolvería su propio `401` sin ese dato.
+- **App client público con PKCE**, sin secreto, solo flujo de código y sin `USER_PASSWORD_AUTH`; access token de 30 minutos; callback exacto de Claude.
+- **El cliente M2M `mcp-gateway` no se crea en Terraform:** su secreto quedaría en el estado. Su *client id* entra por variable y el secreto lo agrega el pipeline.
+- **`ANY /mcp`:** en modo sin estado el servidor responde `405` a GET/DELETE; así lo hace él y no el gateway con un `403` confuso.
+- Alarmas de errores, throttles y duración vienen gratis: el MCP está en el mismo mapa de funciones.
+
+### Verificación
+
+`terraform fmt`, `validate` (preprod y prod) y `terraform test`: 3 pasan; se comprobó con una mutación (`api_key_required = true`) que la prueba falla.
+
+### Pendiente (lo que decide o hace Iker)
+
+1. Valores para encenderlo: dominio de Cognito del pool (`cognito_dominio_url`) y *client id* de `mcp-gateway` (hay que crearlo: `client_credentials`, scope `guias:leer`).
+2. En `ApiClientes`: el documento de `mcp-gateway` con `PuedeActuarComo: true` y los `Usuarios` (`sub` de Cognito) de cada cliente; el usuario también debe existir en el pool.
+3. API key del plan de uso para el MCP y las variables `Mcp__ApiKey` / `Mcp__SecretoDelegado` en el variable group del pipeline.
+4. Aprobar `plan`/`apply` en PreProd (hoy sin REST público confirmado en PreProd) y publicar el deployment con el CLI.
+5. Probar con Claude real y confirmar que Cognito sigue sin DCR/CIMD/`resource`.
+6. MFA para el *app client* del MCP (sigue siendo una decisión abierta).

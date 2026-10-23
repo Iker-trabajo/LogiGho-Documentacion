@@ -60,7 +60,7 @@ Código en `ServicioPublicoLogigho/Guias/src/ApiLambdaGuiasMcp/` (rama `feature/
 | Validación del access token de Cognito (firma RS256, emisor, vencimiento, `token_use=access`, `client_id` = app client del MCP, scope `logigho/mcp:usar`) y `403 insufficient_scope` | Hecho |
 | Token del cliente delegado (`client_credentials`, cacheado, una sola renovación a la vez) y cliente HTTP de la API (API key, `X-Actua-Como-Usuario`, reintento solo en GET, tope de 8 s) | Hecho |
 | Herramientas `listar_tiendas` y `listar_transportadoras` (solo lectura) | Hecho |
-| Terraform del MCP (rutas sin authorizer en `rl7zt6zak5`, función, *app client*, scope `mcp:usar`) | **Pendiente** |
+| Terraform del MCP (`crear_mcp`, **apagado por defecto**): función, rutas sin authorizer en `rl7zt6zak5`, *app client* de las personas y scope `mcp:usar`; con pruebas sin cuenta de AWS | Hecho (código, `validate` y `terraform test`; **sin `plan` ni `apply`**) |
 | Límite de uso por persona (cuando existan herramientas que gastan cupo) | Pendiente (con `crear_guia`) |
 | `consultar_cupo`, `listar_productos`, `consultar_solicitud`, `obtener_etiqueta`, `crear_guia`, `anular_guia` | Pendiente (a medida que la API tenga el endpoint) |
 

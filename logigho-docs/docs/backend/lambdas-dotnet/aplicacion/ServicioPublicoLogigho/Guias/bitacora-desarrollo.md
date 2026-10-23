@@ -732,3 +732,33 @@ solo envía a la cola. Ninguno tiene acceso a otros buckets ni a otras colas.
 
 - **Paso 5 del plan: ADR-006 del servidor MCP** (se detiene para validación antes de implementar).
 - Cuando haya sesión SSO: leer los valores de arriba, `terraform plan` solo si Iker lo pide, y revisar contra el estado real del REST.
+
+---
+
+## 2026-10-23 · MCP · ADR-006 (propuesta, **sin código**)
+
+**Documento:** [ADR-006 — Servidor MCP remoto sobre la API pública](adr-006-mcp.md) (estado: *propuesta*). Aquí **termina** el trabajo
+autónomo: el plan manda detenerse y pedir validación antes de implementar el MCP.
+
+### Qué se hizo
+
+Investigué la especificación vigente de autorización MCP (versión 2026-07-28), los requisitos de Claude como cliente de conectores, las
+limitaciones de Amazon Cognito como servidor de autorización y el SDK oficial de C#, y escribí el ADR con una propuesta de arquitectura,
+herramientas y autenticación. También leí la HU [MCP pedidos claude](https://app.clickup.com/t/86e3teac0): **está vacía** (solo el título,
+sin descripción, subtareas ni enlaces). No se modificó ClickUp.
+
+### Hallazgos que condicionan el diseño
+
+1. **Claude no soporta `client_credentials`**: siempre inicia sesión una persona. La API pública hoy solo conoce clientes máquina. Hace falta un
+   puente (el *cliente delegado* `mcp-gateway` + header `X-Actua-Como`) y un user pool de personas.
+2. **Reenviar el token del usuario a la API está prohibido** por la especificación (*token passthrough*).
+3. **Cognito solo no basta**: no tiene DCR, CIMD ni el parámetro `resource` (dato de fuentes secundarias; confirmar contra su documentación actual).
+   Para el piloto: cliente pre-registrado por el administrador de cada cliente. Más adelante, una fachada de autorización propia.
+4. **El MCP necesita `/.well-known/*` en la raíz del dominio** → un HTTP API con dominio propio, que es una excepción a "un solo REST por entorno".
+5. **En modo *stateless* el servidor no puede pedir confirmación al usuario** → se propone `vistaPrevia` en `crear_guia` y que el modelo confirme.
+6. La versión 2.3.0 del SDK tiene 3 días; se propone la 2.2.0 (2026-08-13) por la regla de 2 semanas.
+
+### Qué se necesita
+
+Las **9 decisiones** listadas en el ADR (usuarios del MCP, modelo delegado, camino de autorización, dominio, user pool, `vistaPrevia`,
+`consultar_pedidos`, orden de entrega y contenido de la HU). Sin ellas no se escribe código del MCP.

@@ -114,7 +114,7 @@ Pipeline: `pipelines/servicio-publico/{ci,cd-preprod,cd-prod}.yml` con las plant
 - [Observabilidad](observabilidad.md)
 - [Hallazgos de las lambdas actuales](hallazgos-lambdas-actuales.md)
 - Reglas de negocio, cupo y alarmas: `reglas-negocio.md`, `cupo.md`, `alarmas-pedidos.md` (en construcción)
-- ADRs: [001 Hosting](adr-001-hosting-lambda.md) · [002 Autenticación](adr-002-autenticacion.md) · [003 Idempotencia](adr-003-idempotencia.md) · [004 Etiquetas](adr-004-etiquetas.md) · [005 Trazas](adr-005-trazas-transportadoras.md)
+- ADRs: [001 Hosting](adr-001-hosting-lambda.md) · [002 Autenticación](adr-002-autenticacion.md) · [003 Idempotencia](adr-003-idempotencia.md) · [004 Etiquetas](adr-004-etiquetas.md) · [005 Trazas](adr-005-trazas-transportadoras.md) · [006 Servidor MCP (propuesta)](adr-006-mcp.md)
 
 ---
 

@@ -189,6 +189,9 @@ nav:
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
+      - Layout:
+          - Menu lateral (Default Layout): frontend/layout/default-layout.md
+          - Barra superior (Default Header): frontend/layout/default-header.md
       - Sistema de Experiencias (propuesta):
           - Que es: frontend/experiencias/index.md
           - Arquitectura (ADR-001): frontend/experiencias/adr/ADR-001-sistema-experiencias.md
@@ -224,6 +227,7 @@ nav:
               - Escaner Camara: frontend/components/escaner-camara.md
               - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
               - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
+              - Consultar Guia (modal del header): frontend/components/consulta-guia-modal.md
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
               - Modal Creacion Pedidos: frontend/components/modal-creacion-pedidos.component.md
               - Menu Acciones: frontend/views/dropshipping/product-hub/components/menu-acciones.md

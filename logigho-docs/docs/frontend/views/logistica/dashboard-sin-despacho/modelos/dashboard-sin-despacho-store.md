@@ -17,8 +17,10 @@ Este archivo funciona como la memoria del módulo. Guarda los pedidos que ya lle
 |---|---|
 | Todos los pedidos descargados | La base de datos completa que ya se trajo del servidor, sin filtrar |
 | Filtros activos | Ciudad, mes, tienda, transportadora, ecosistema, estado logístico y fulfillment seleccionados por el usuario |
-| Selección cruzada | El mes, día, tienda, transportadora o pedido específico en el que el usuario hizo clic |
+| Selección cruzada | El mes, los días marcados (pueden ser varios), la tienda, la transportadora o el pedido específico en el que el usuario hizo clic |
 | Página actual | En qué página está la tabla de detalle |
+| Pedidos por página | 50 en computador y 5 en celular; la pantalla lo ajusta según su ancho |
+| Suma de días | La sumatoria por transportadora de los días marcados, para la fila "Seleccionados (N días)" |
 | Resultados calculados | La tabla de pedidos por mes, el ranking de tiendas, los indicadores y el detalle paginado, listos para mostrarse |
 | Estado de carga | Si todavía se están descargando datos o si ya se calculó todo |
 
@@ -27,6 +29,8 @@ Este archivo funciona como la memoria del módulo. Guarda los pedidos que ya lle
 ### Cómo evita duplicados
 
 Cada vez que llega un lote nuevo de pedidos desde el servidor, el sistema revisa cuáles ya estaban guardados (usando su identificador único) y solo agrega los que son realmente nuevos. Esto evita que un mismo pedido aparezca dos veces si, por alguna razón, el servidor lo vuelve a enviar.
+
+Los pedidos nuevos se agregan al final de la lista que ya existe, en vez de copiar la lista completa con cada página. Con miles de pedidos esto evita mucho trabajo repetido mientras carga.
 
 ---
 
@@ -49,6 +53,13 @@ El usuario cambia un filtro o hace clic en una selección
   └─► setFiltros() / setSeleccion() → se guarda el cambio
         y se reinicia la página a la 1
 
+El usuario marca días en la tabla por mes
+  └─► setDias() → se guarda la lista de días marcados
+
+La pantalla cambia entre computador y celular
+  └─► setPageSize() → 50 o 5 pedidos por página
+        (la pantalla vuelve a la página 1)
+
 Terminó de calcularse una tabla en segundo plano
   └─► setAggResult() → se guardan los resultados listos
         para mostrarse en pantalla
@@ -64,6 +75,7 @@ El usuario sale del módulo o lo recarga
 | Fecha | Cambio |
 |---|---|
 | 2026-07-10 | Creación de la tienda de datos, incluyendo el soporte para selecciones combinables entre tablas |
+| 2026-10-22 | Varios días marcados y su sumatoria; tamaño de página según la pantalla; los lotes nuevos se agregan sin copiar la lista |
 
 ---
 

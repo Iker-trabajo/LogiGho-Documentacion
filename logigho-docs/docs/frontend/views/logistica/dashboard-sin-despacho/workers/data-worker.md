@@ -16,7 +16,7 @@ Este proceso recibe la información del servidor, la descomprime y la deja lista
 1. Recibe el catálogo completo de tiendas y lo guarda internamente, para poder completar los datos de ecosistema y fulfillment de cada pedido.
 2. Recibe cada página de pedidos que llega del servidor, la descomprime y convierte cada documento a un formato limpio y estandarizado.
 3. Por cada pedido, busca su tienda correspondiente en el catálogo ya guardado y le agrega el ecosistema y el fulfillment.
-4. Descarta automáticamente los pedidos anulados y los que tienen la transportadora mal escrita.
+4. Descarta automáticamente los pedidos anulados, los que tienen la transportadora mal escrita y los que no tienen fecha de creación.
 5. Le avisa a la pantalla principal cada vez que termina de procesar un lote, para que las tablas se actualicen con la nueva información.
 
 ---
@@ -39,6 +39,7 @@ Llega una página de pedidos
   └─► por cada pedido:
         - se revisa si su estado corresponde a un pedido anulado (se descarta)
         - se revisa si la transportadora está bien escrita (si no, se descarta)
+        - se lee su "Fecha de creación" (si no tiene, se descarta)
         - se completa con el ecosistema y fulfillment de su tienda
         - se calcula su categoría de Estado Logi
   └─► se entrega la lista de pedidos ya limpios a la pantalla principal
@@ -51,6 +52,7 @@ Llega una página de pedidos
 | Fecha | Cambio |
 |---|---|
 | 2026-07-10 | Creación del proceso de descarga y limpieza de pedidos, con cruce automático contra el catálogo de tiendas |
+| 2026-10-22 | La fecha de cada pedido se toma del campo `"Fecha de creación"`; se descartan los pedidos sin esa fecha |
 
 ---
 

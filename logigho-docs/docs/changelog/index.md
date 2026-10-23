@@ -24,6 +24,75 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-21] — Exportación de datos: límites por formato, varias guías, resumen y celular
+
+### Nuevas funcionalidades
+
+- **Límites por formato** en Pedidos (`PedidosInter`) y Liquidaciones (`LiquidacionesLogigho`):
+  CSV 300.000, Excel 130.000, JSON 150.000 y PDF 150.000 registros con máximo 10 columnas.
+  Debajo de cada rango de fecha sale cuántos registros trae y solo se pueden elegir los que caben;
+  en las fechas personalizadas los días que se pasan salen tachados.
+- **Rangos nuevos:** "Este mes" (del día 1 a hoy, por defecto) y "Último mes" (mes anterior completo).
+- **Varias guías en un filtro:** los campos numéricos enteros aceptan valores separados por coma o
+  pegados de una columna de Excel (máximo 400). Buscando por guía se exporta todo el historial y sin
+  límite de registros.
+- **Filtro Ecosistema** en Pedidos y Liquidaciones, con **varios ecosistemas** a la vez: se envía
+  como la lista de tiendas de esos ecosistemas que el usuario tiene asignadas. Solo salen los
+  ecosistemas con tiendas del usuario y se controla que las tiendas quepan en la dirección de la
+  exportación.
+- **Revisión de guías y preenvíos:** al agregarlos se revisa cuáles existen en las tiendas del
+  usuario; si faltan, se puede seguir solo con los que sí existen o corregir. Buscando por preenvío
+  también se exporta todo el historial y sin límite.
+- **Ayudas al pasar el mouse** (directiva `appAyuda`) en lugar del `title` del navegador; los rangos
+  de fecha muestran sus fechas exactas.
+- **Teclado en Filtros avanzados:** flechas y Enter para elegir el campo, Enter en el valor agrega el
+  filtro y Ctrl+Z deshace el pegado de guías.
+- **Permisos por rol** en colecciones (`ListaColecciones.Roles`) y en campos
+  (`ConfiguracionCamposColeccion.Roles`).
+- **Resumen "Así queda tu exportación"** con el panel "Registros a exportar" (número, barra de
+  capacidad verde/naranja/roja, Columnas, Celdas, Aún caben y estado) en todas las colecciones.
+- **Buscador de columnas** (sin mayúsculas, tildes ni espacios, con la coincidencia marcada) y
+  **lista de formatos** con nivel ALTO / MEDIO / BAJO.
+- Accesos **"Ir directo a"** en el encabezado, pastilla **"Ir a exportar"**, aviso **"Primero
+  selecciona una colección"** y pregunta al exportar si quedó un **filtro sin agregar**.
+- **Mensaje al equipo de desarrollo** cuando se necesita más del límite: llega como notificación de
+  la campana con lo que se intentaba exportar, y la respuesta del equipo le llega a quien lo envió.
+- **Campana de notificaciones** en el header (reemplaza la campana fija con el "1"): contador de
+  nuevas, pestañas Pendientes / Historial (últimas 20), detalle con el contexto, respuesta obligatoria
+  al atender una solicitud y "Entendido" para las respuestas. Revisa cada 2 min (rol Desarrollador) o
+  5 min (los demás), solo con la pestaña visible. Colección nueva `NotificacionesPlataforma`.
+- **Aviso de notificaciones** (`AvisoNotificacionService`): tarjeta arriba a la derecha con icono de
+  color, X para cerrar y barra de tiempo.
+- **Celular:** listas como paneles desde abajo, calendario del teléfono, columnas en 2 por fila e
+  información de uso plegable.
+- **Tour guiado** de la pantalla (14 pasos, incluida la campana de notificaciones), con botón que
+  late la primera vez.
+
+### Cambios
+
+- Se quitó **"Exportar Servidor"** (botón y flujo en `export-runner`): el backend `exportReportes`
+  respondía 504 a los 29 segundos aun con pocos registros.
+- Tour guiado (componente compartido): no deja mover la página mientras está abierto, oscurecido de
+  una sola pieza y tarjeta centrada en celular. Afecta también a los tours de Pautas y Bodegas.
+
+### Correcciones
+
+- Buscar por guía daba "No hay datos" porque se aplicaba el rango "Este mes"; ahora se busca en todo
+  el historial.
+- `localStorage` de exportaciones viejas nunca se borraba (no leía bien la hora del `exportId`);
+  ahora se borra a los 30 minutos.
+
+### Documentación
+
+- **Export data** actualizada: partes de la pantalla, límites, rangos, panel de registros, varias
+  guías, Ecosistema, roles, mensaje al equipo, celular, tour y pruebas.
+- **Export runner** sin el flujo de "Exportar Servidor".
+- **Tour guiado:** nueva fila en el historial de cambios.
+- Nuevas páginas: **Core → Servicio de Notificaciones**, **components → Campana de Notificaciones**
+  y **Gestion de datos → Directiva ayuda flotante**.
+
+---
+
 ## [2026-10-15] — Estandarización de dirección: tipos de dirección, manzana, barrio o vereda
 
 ### Nuevas funcionalidades

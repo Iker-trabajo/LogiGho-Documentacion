@@ -74,6 +74,7 @@ nav:
       - Diagrama del sistema: arquitectura/diagrama-sistema.md
       - Decisiones tecnicas: arquitectura/decisiones.md
       - Flujo API Gateway: arquitectura/api-gateway.md
+      - Seguridad y accesos (propuesta): arquitectura/seguridad-accesos.md
 
   - Backend:
       - Overview: backend/overview.md
@@ -107,6 +108,16 @@ nav:
                   - Envía: backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
               - ApiLambdaProcesoAutomaticoInter:
                   - Lambda: backend/lambdas-dotnet/aplicacion/interrapidismo/ApiLambaProcesoAutomaticoInter/ApiLambaProcesoAutomaticoInter.md
+              - ApiLambdaNovedadesInter:
+                  - Lambda: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInter.md
+                  - Solicitar novedades (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/solicitar-novedades-usecase.md
+                  - Recibir resultado (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/recibir-resultado-usecase.md
+                  - Modelos de Dominio: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/modelos.md
+                  - Webhook y contrato ws-inter: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/webhook-ws-inter.md
+                  - Observabilidad y monitoreo: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/observabilidad.md
+                  - Runbook (puesta en marcha y operación): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/runbook.md
+                  - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-001-una-lambda-paso-en-la-step-y-dos-colecciones.md
+                  - Webhook en el REST del entorno (ADR-002): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-002-webhook-en-el-rest-del-entorno-con-api-key.md
               - ApiLambdaLiquidacionesLogighoAOT:
                   - Vision general: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/overview.md
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/ApiLambdaLiquidacionesLogighoAOT.md
@@ -178,6 +189,22 @@ nav:
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
+      - Layout:
+          - Menu lateral (Default Layout): frontend/layout/default-layout.md
+          - Barra superior (Default Header): frontend/layout/default-header.md
+      - Sistema de Experiencias (propuesta):
+          - Que es: frontend/experiencias/index.md
+          - Arquitectura (ADR-001): frontend/experiencias/adr/ADR-001-sistema-experiencias.md
+          - Estructura del proyecto: frontend/experiencias/estructura-proyecto.md
+          - Crear una vista: frontend/experiencias/crear-vista.md
+          - Crear una experiencia: frontend/experiencias/crear-experiencia.md
+          - Reglas de cambio entre experiencias: frontend/experiencias/reglas-de-cambio.md
+          - Tokens y estilos: frontend/experiencias/tokens-y-estilos.md
+          - Seguridad por diseno: frontend/experiencias/seguridad-por-diseno.md
+          - "Buenas practicas: si y no": frontend/experiencias/buenas-practicas.md
+          - Migracion de vistas: frontend/experiencias/migracion-vistas.md
+          - "Ejemplo: tienda/pedidos": frontend/experiencias/ejemplo-tienda-pedidos.md
+          - Plan de implementacion: frontend/experiencias/plan-implementacion.md
       - Componentes:
           - Core:
             - Estandarizador de direcciones: frontend/core/estandarizador-direcciones.md
@@ -200,6 +227,7 @@ nav:
               - Escaner Camara: frontend/components/escaner-camara.md
               - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
               - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
+              - Consultar Guia (modal del header): frontend/components/consulta-guia-modal.md
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
               - Modal Creacion Pedidos: frontend/components/modal-creacion-pedidos.component.md
               - Menu Acciones: frontend/views/dropshipping/product-hub/components/menu-acciones.md
@@ -341,5 +369,6 @@ nav:
       - Lambda Python: plantillas/PLANTILLA-LAMBDA-PYTHON.md
       - API Endpoint: plantillas/PLANTILLA-API-ENDPOINT.md
       - Decision Tecnica (ADR): plantillas/PLANTILLA-ADR.md
+      - Vista del Sistema de Experiencias: plantillas/PLANTILLA-VISTA-EXPERIENCIAS.md
 
   - Changelog: changelog/index.md

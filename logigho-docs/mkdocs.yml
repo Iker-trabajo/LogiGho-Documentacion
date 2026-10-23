@@ -178,6 +178,7 @@ nav:
                   - ADR-003 Idempotencia: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-003-idempotencia.md
                   - ADR-004 Etiquetas: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-004-etiquetas.md
                   - ADR-005 Trazas: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-005-trazas-transportadoras.md
+                  - Bitácora de desarrollo: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/bitacora-desarrollo.md
           - Servicio Consultar Estadisticas Pagina: backend/pancake/lambdas/ApiLambdaConsultarEstadisticasPagina/ApiLambdaConsultarEstadisticasPagina.md
 
   - Frontend:

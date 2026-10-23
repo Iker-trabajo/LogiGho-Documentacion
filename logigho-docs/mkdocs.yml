@@ -165,6 +165,19 @@ nav:
                   - Repositorio UsuarioTienda: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/usuario-tienda-repository.md
                   - Deuda Técnica (TODO): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/TODO-integracion-usuarios-api-completa.md
                   - Resumen de cambios: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/RESUMEN-CAMBIOS-2026-09-19.md
+              - API pública de guías:
+                  - Visión general: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/ApiPublicaGuias.md
+                  - Endpoints: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/endpoints.md
+                  - Colecciones: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/colecciones.md
+                  - Observabilidad: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/observabilidad.md
+                  - Cupo: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/cupo.md
+                  - Alarmas de pedidos: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/alarmas-pedidos.md
+                  - Hallazgos lambdas actuales: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/hallazgos-lambdas-actuales.md
+                  - ADR-001 Hosting: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-001-hosting-lambda.md
+                  - ADR-002 Autenticación: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-002-autenticacion.md
+                  - ADR-003 Idempotencia: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-003-idempotencia.md
+                  - ADR-004 Etiquetas: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-004-etiquetas.md
+                  - ADR-005 Trazas: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-005-trazas-transportadoras.md
           - Servicio Consultar Estadisticas Pagina: backend/pancake/lambdas/ApiLambdaConsultarEstadisticasPagina/ApiLambdaConsultarEstadisticasPagina.md
 
   - Frontend:

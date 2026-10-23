@@ -372,3 +372,94 @@ de la Lambda; las pruebas lo atraparon antes.
 - **F1a-e:** idempotencia en `ApiSolicitudesGuia` e índices desde código (incluye `ux_ApiClientes_ClienteId`).
 - Las rutas de administración de clientes y la rotación de secretos no están (fase de administración).
 - En Terraform (paso 4): authorizer de Cognito con scopes por método y usage plan con API key.
+
+---
+
+## 2026-10-22 · F1a-e · Idempotencia e índices desde código
+
+**Commit de código:** `49164fe` — `feat(guias): idempotencia por Idempotency-Key e indices creados desde codigo (F1a-e)`
+
+### Qué se hizo
+
+Es la pieza que impide que la misma guía se cree dos veces cuando el integrador reintenta (por ejemplo, porque su
+conexión se cortó justo antes de recibir la respuesta). Cumple el punto 1 de [ADR-003](adr-003-idempotencia.md):
+
+- Cada `POST` trae un header `Idempotency-Key` (el integrador usa, por ejemplo, el id de su pedido).
+- Al llegar, se intenta **insertar** la solicitud en `ApiSolicitudesGuia`. La base tiene un **índice único**
+  `{ClienteId, IdempotencyKey}`: si la clave ya existe para ese cliente, el insert se rechaza.
+- Si ya existía, se compara la **huella del body** (`HashCuerpo`) con la de la solicitud guardada:
+
+| Situación | Resultado | Qué ve el integrador |
+| --- | --- | --- |
+| Primera vez que llega esa key | **Nueva** | Se procesa la solicitud |
+| Misma key, mismo body, ya hay resultado (guía creada, fallo definitivo o incierta) | **Repetida** | Se devuelve lo guardado, sin crear nada |
+| Misma key, mismo body, todavía sin resultado (`RECIBIDA`, `RESERVADA`, `CREANDO`) | **EnCurso** | `409 SOLICITUD_EN_CURSO`: espere y consulte |
+| Misma key, **otro** body | **Conflicto** | `422 IDEMPOTENCY_CONFLICTO` |
+
+La key es **por cliente**: dos integradores distintos pueden usar la misma sin chocar. Una solicitud `INCIERTA` cuenta
+como *resultado* (Repetida) y no como "en curso", para que el integrador vea que está incierta en vez de esperar
+indefinidamente.
+
+### Por qué la garantía está en el índice y no en el código
+
+Si la API revisara "¿ya existe esta key?" y luego insertara, dos requests simultáneos podrían pasar la revisión a la vez
+(más aún con varios contenedores de Lambda). El índice único hace que **la base decida atómicamente** cuál gana. Una
+prueba lo demuestra con 50 requests en paralelo, cada uno con su propio cliente de Mongo (como si fueran contenedores
+distintos): exactamente 1 queda como Nueva, 49 ven "en curso" y en la colección hay un solo documento.
+
+### La huella del body (`HashCuerpo`)
+
+SHA-256 del JSON **canónico**: propiedades ordenadas, sin espacios y con los números normalizados. Así, si la librería
+del integrador reordena campos o escribe `1.0` en lugar de `1` en el reintento, no se confunde con un conflicto. Un
+cambio real (otro valor, un campo de más o de menos, otro orden en un arreglo, mayúsculas, un espacio al final del texto)
+sí cambia la huella. Los vectores de prueba se calcularon con un SHA-256 independiente (Python).
+
+### Índices desde código
+
+`GarantiaIndices` crea los índices de las colecciones `Api*` antes de la primera inserción de cada contenedor, tanto en
+PreProd (Atlas) como en producción (DocumentDB):
+
+| Colección | Índice | Para qué |
+| --- | --- | --- |
+| `ApiSolicitudesGuia` | `ux_ApiSolicitudesGuia_Cliente_Key` (único) | Idempotencia |
+| `ApiSolicitudesGuia` | `ix_ApiSolicitudesGuia_NumeroGuia` | Consultar por número de guía |
+| `ApiSolicitudesGuia` | `ix_ApiSolicitudesGuia_Estado_Fecha` | Reconciliador (buscar solicitudes atascadas) |
+| `ApiClientes` | `ux_ApiClientes_ClienteId` (único) | Un perfil por cliente |
+
+Reglas: si no se pueden crear, **la inserción falla** (sin índice único no hay idempotencia, así que es mejor no seguir);
+crear un índice que ya existe no hace nada, por lo que muchos arranques en frío a la vez no se estorban (también
+probado); solo se usan opciones que DocumentDB soporta (índices simples y compuestos, únicos y TTL; nada parcial ni de
+texto); y **solo colecciones propias** (`Api*`). Los índices de colecciones que usan otros sistemas
+(`PedidosInter`, `LiquidacionesLogigho`…) quedan para crearse aparte, en horario valle, tal como pide `cupo.md` §8.8; una
+prueba comprueba que esta lista nunca los incluya.
+
+### Lo que no cubre este paso (y por qué importa)
+
+- **Solicitud atascada antes de encolar.** Si la API inserta la solicitud (`RECIBIDA`) y se cae antes de reservar cupo o
+  de encolar el mensaje, esa key queda "en curso" para siempre. No es posible resolverlo en el registro; lo resuelve el
+  reconciliador (F1a-g), que debe reencolar o dar por fallidas las solicitudes con más de N minutos sin avanzar. El índice
+  `Estado + FechaActualizacion` existe justamente para eso.
+- **El endpoint** `POST /v1/guias` que usa todo esto llega en F1b (necesita las reglas campo por campo).
+
+### Decisiones y supuestos
+
+| Tema | Decisión | Por qué |
+| --- | --- | --- |
+| `Incierta` | Cuenta como resultado (Repetida) | El integrador debe poder ver "incierta" en lugar de esperar |
+| Body | Se hashea el JSON recibido, canonicalizado | Tolera reordenamientos del cliente sin perder detección de cambios reales |
+| Key | Por cliente, no global | Dos integradores pueden usar el mismo id de pedido |
+| Fallo al crear índices | La inserción falla | Mejor un error visible que perder la garantía en silencio |
+
+### Cómo se verificó
+
+- 314 tests en verde (45 nuevos): huella (vectores, orden, espacios, números, cambios reales, unicode, JSON inválido),
+  caso de uso por cada estado de la solicitud, 20 requests simultáneos sobre el repositorio en memoria, y contra el
+  **Mongo local**: nombres y opciones de los índices, creación repetida y simultánea, insert duplicado, clave por
+  cliente, 50 requests en paralelo con clientes de Mongo distintos, 20 con bodies distintos (1 ganadora, 9 "en curso",
+  10 "conflicto"), solicitud terminada que se devuelve con sus datos, y que guardar no rompa el índice.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+
+### Pendiente / siguiente
+
+- **F1a-f:** cupo (reserva atómica, ledger `ApiMovimientosCupo`, fail-closed) con pruebas de concurrencia en Mongo local.
+- **F1a-g:** reconciliador (incluye las solicitudes atascadas de arriba).

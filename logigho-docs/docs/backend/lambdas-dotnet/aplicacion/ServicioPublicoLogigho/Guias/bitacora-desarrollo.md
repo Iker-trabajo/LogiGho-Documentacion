@@ -794,3 +794,51 @@ completo, pero armando la estructura*.
 
 Sin MFA en el login del MCP (se puede exigir solo en su *app client*); el `resource` del metadato debe coincidir con la URL pegada en Claude;
 Claude Code (puerto local variable) queda fuera del beta; confirmar que Cognito sigue sin DCR/CIMD/`resource`.
+
+---
+
+## 2026-10-23 · MCP · paso 1 de 3 del beta: la API acepta al usuario delegado
+
+**Commit de código:** rama `feature/api-publica-guias` (mensaje `feat(guias): usuario delegado del MCP…`).
+
+### Qué se hizo
+
+La API ahora entiende la delegación del [ADR-006](adr-006-mcp.md): el cliente delegado del MCP llama con su propio token y el header
+`X-Actua-Como-Usuario: <sub de Cognito>`; la API busca a esa persona entre los `Usuarios` de `ApiClientes` y evalúa tiendas, productos
+y cupo contra **el cliente de la persona**. El resultado de la autorización ya no es solo el cliente sino las **tres identidades**
+(cliente, persona, delegado), listas para la auditoría de F1b.
+
+### Archivos
+
+- `Dominio/Clientes/ClienteApi.cs`: `PuedeActuarComo` y `Usuarios` (`UsuarioCliente`: `Sub`, `Activo`). Sin los campos, nadie delega.
+- `Aplicacion/Seguridad/AutorizarLlamada.cs`: flujo de delegación; devuelve `IdentidadLlamada`.
+- `Aplicacion/Puertos/IRepositorioClientes.cs` + `Infraestructura/Persistencia/*`: `BuscarPorUsuarioAsync` (máximo 2 resultados), caché de 30 s,
+  índice `ix_ApiClientes_Usuarios_Sub`.
+- `ApiLambdaGuias/Seguridad/RequiereScope.cs`: lee el header y guarda la identidad; el log lleva `usuarioSub` e `intermediarioClienteId`.
+- Códigos nuevos: `ACTUA_COMO_NO_AUTORIZADO`, `ACTUA_COMO_REQUERIDO`, `USUARIO_NO_REGISTRADO`, `USUARIO_BLOQUEADO`.
+
+### Decisiones
+
+- **Un cliente normal que manda el header se rechaza** (no se ignora): es el intento de suplantación y debe quedar visible.
+- **El delegado no opera por sí mismo**: sin header, `ACTUA_COMO_REQUERIDO`.
+- **Header vacío o repetido no equivale a "sin header"**: se rechaza como usuario inválido. Ignorarlo dejaría pasar la llamada como no delegada.
+- **Una persona en dos clientes se rechaza** en vez de elegir uno; el índice no es único para que la escritura del administrador no falle a
+  medias y la API lo detecte al leer.
+- **Sin cadenas**: el cliente de la persona no puede ser otro delegado.
+- **Scope e IP se comprueban sobre el delegado** (token y origen que ve API Gateway). La IP de la persona no existe en ese tramo; las IPs
+  del cliente de la persona no se aplican a llamadas delegadas.
+- **Mismos mensajes** para "no existe" y "ambiguo": no se revela a qué cliente pertenece una persona.
+- Alternativa descartada: que el MCP mande el `clienteId` en el header. Obligaba al MCP a leer Mongo y la API tendría que fiarse de lo
+  que dice el delegado; con el `sub` la API verifica el vínculo.
+
+### Verificación
+
+Release sin advertencias, **477 pruebas** (33 nuevas: delegación, API de punta a punta, caché, Mongo real), sin paquetes vulnerables,
+las dos Lambdas se empaquetan.
+
+### Pendiente
+
+- Alta real del cliente delegado y de los `Usuarios` en `ApiClientes` (la administración llega con `/admin/v1/clientes-api`).
+- Guardar la identidad de tres partes en la solicitud (F1b).
+- Aviso: otro chat cambió la rama del checkout compartido de Lambdas; este trabajo se hace en un *worktree* propio
+  (`Lambdas_NET_LogiGho-guias`) sobre `feature/api-publica-guias`.

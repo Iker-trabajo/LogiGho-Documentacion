@@ -70,6 +70,10 @@ Formato ProblemDetails (RFC 9457) con `codigo` estable y `traceId`. Nunca se dev
 | `CLIENTE_BLOQUEADO` | 403 | Cliente bloqueado o suspendido |
 | `SCOPE_INSUFICIENTE` | 403 | El token no trae el scope que exige el método (el Lambda lo revisa además del authorizer) |
 | `IP_NO_PERMITIDA` | 403 | El cliente tiene lista de IPs y la de origen no está en ella |
+| `ACTUA_COMO_NO_AUTORIZADO` | 403 | El cliente mandó `X-Actua-Como-Usuario` sin ser el cliente delegado del MCP (o el cliente de la persona también es un delegado) |
+| `ACTUA_COMO_REQUERIDO` | 403 | Es el cliente delegado del MCP y llamó sin `X-Actua-Como-Usuario`: no opera por sí mismo |
+| `USUARIO_NO_REGISTRADO` | 403 | El `sub` del header no pertenece a ningún cliente, es ambiguo (en dos clientes), viene vacío, repetido o mal formado |
+| `USUARIO_BLOQUEADO` | 403 | La persona está dada de baja en `Usuarios` de su cliente |
 | `TIENDA_NO_PERMITIDA` · `PRODUCTO_NO_PERMITIDO` · `TRANSPORTADORA_NO_PERMITIDA` | 403 | Fuera de los permisos del cliente |
 | `CIUDAD_SIN_COBERTURA` | 422 | La transportadora no cubre el destino |
 | `CUPO_INSUFICIENTE` | 422 | Detalle: disponible vs requerido |

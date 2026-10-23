@@ -56,8 +56,15 @@ integrador:
       "Productos": ["P-1", "P-2"]
     }
   ],
-  "IpsPermitidas": ["203.0.113.9", "198.51.100.0/24"]
+  "IpsPermitidas": ["203.0.113.9", "198.51.100.0/24"],
+  "Usuarios": [{ "Sub": "11111111-aaaa-bbbb-cccc-000000000001", "Activo": true }]
 }
+```
+
+El cliente delegado del MCP (ADR-006) es otro documento de la misma colección, sin tiendas propias:
+
+```json
+{ "ClienteId": "app-client-del-mcp", "Nombre": "MCP LogiGho", "Estado": "ACTIVO", "PuedeActuarComo": true, "Tiendas": [] }
 ```
 
 | Campo | Regla |
@@ -66,7 +73,14 @@ integrador:
 | `Estado` | `ACTIVO` deja operar. `BLOQUEADO` y `SUSPENDIDO_CUPO` rechazan con `CLIENTE_BLOQUEADO`. **Cualquier otro valor, o ninguno, se trata como bloqueado** |
 | `Tiendas[].Transportadoras` | Nombres de la plataforma (`INTERRAPIDISIMO`, `ENVIA`, `TCC`, `SERVIENTREGA`, `D2E`). Un nombre desconocido no concede nada |
 | `Tiendas[].Productos` | Ids de producto permitidos en esa tienda. **Lista vacía = ningún producto**; una guía sin productos (solo valor declarado) no consulta esta lista |
+| `Usuarios[].Sub` | Personas que pueden usar el MCP en nombre de este cliente, por `sub` de Cognito (no el correo: el `sub` no cambia). Índice `ix_ApiClientes_Usuarios_Sub`, no único. **Una persona en dos clientes se rechaza** (`USUARIO_NO_REGISTRADO`): no se elige uno |
+| `Usuarios[].Activo` | `false` o ausente = la persona queda fuera (`USUARIO_BLOQUEADO`) sin afectar a los demás usuarios del cliente |
+| `PuedeActuarComo` | Solo el cliente delegado del MCP. Con `true` el cliente **debe** mandar `X-Actua-Como-Usuario` y no opera por sí mismo; ausente o `false` = ningún cliente normal puede suplantar a otro |
 | `IpsPermitidas` | IP sueltas o CIDR, IPv4 o IPv6. **Lista vacía = cualquier origen.** Una entrada ilegible se ignora (con la lista llena, lo ilegible no abre la puerta) |
+
+Con delegación, el scope y la lista de IPs se comprueban sobre el token y el origen del **delegado** (lo único que ve API
+Gateway); tiendas, productos y cupo salen del perfil del cliente de la **persona**. La búsqueda persona → cliente también se
+cachea 30 s, así que dar de baja a una persona se nota en menos de 30 s.
 
 El perfil se lee con caché en memoria de 30 s, también para los clientes que no existen. La IP que se compara es la que ve
 API Gateway (`requestContext.identity.sourceIp`), no un header `X-Forwarded-For`.

@@ -101,7 +101,7 @@ El body de `POST /v1/guias` es un objeto con los campos de esta sección. Un lot
 | RN-030 | `tiendaId` es obligatorio y se valida contra las tiendas del cliente. Si no pertenece al cliente → `403 TIENDA_NO_PERMITIDA`. `TiendaProveedor` **nunca** se acepta del cliente | Decisión Iker | Confirmada |
 | RN-031 | Una tienda puede pertenecer a varios clientes API; el permiso, los productos y la lista de transportadoras se evalúan por cliente | Decisión Iker | Confirmada |
 | RN-032 | La **sucursal remitente** se resuelve en el servidor con la misma regla de hoy, nunca desde el body: si la guía tiene proveedor, se toma la `Sucursal` de la tienda proveedora; si no, la `Sucursal` de la tienda. Si queda vacía (o `N/A`) se usa la sucursal genérica. Solo Inter la usa (`CodigoConvenioRemitente` / `IdSucursal`) | `CR/Function.cs:114-121`; `CR/.../CargaInterUseCase.cs:103,123`; decisión Iker | Confirmada |
-| RN-033 | **Origen del paquete** (ciudad y dirección): se toma de la configuración de la **tienda** (`CodigoDane`, `DireccionOrigen`). Si la tienda no la tiene, se usa la del **proveedor del producto**. Si ninguna existe → error. **Sin default a Medellín** (hoy el front cae a `Calle 43B # 82 - 62`, `Modal:1243-1244`). El integrador no envía origen | Decisión Iker | Confirmada (ver RN-P-04) |
+| RN-033 | **Origen del paquete** (decisión de Iker, 2026-10-24, reemplaza la anterior): en **Dropshipping** el paquete sale del **proveedor** del producto; la dirección de la tienda dropshipper **no importa**. Si el proveedor no tiene bien configurados el DANE y la dirección, **no se generan guías con sus productos** (`422 ORIGEN_NO_CONFIGURADO`). Una tienda **Propia** despacha desde su propia dirección. DANE y dirección salen siempre de la misma tienda y no se mezclan. **Sin default a Medellín.** El integrador no envía origen | Decisión Iker | Confirmada |
 | RN-034 | Todos los proveedores deben tener su origen configurado (acción de Iker antes de salir a producción) | Decisión Iker | Confirmada |
 | RN-035 | **Tienda Dropshipping**: ≥ 1 producto obligatorio; todos del mismo proveedor (si no → error); cada producto debe existir y estar permitido para la tienda y para el cliente (públicos o privados asignados). `TiendaProveedor` y la sucursal se **derivan del producto en el servidor**. Replica el front (`Modal:1014-1058`, `1525-1650`) | Decisión Iker; `Modal` | Confirmada |
 | RN-036 | **Tienda Propia**: los productos son opcionales; si vienen, deben existir y ser permitidos (el front lo valida también para tiendas propias, `Modal:443-449`) | Decisión Iker; `Modal` | Confirmada |
@@ -209,7 +209,7 @@ La operación en otros países queda **fuera de v1**, pero el código y los dato
 | RN-P-01 | **Resuelto 2026-10-24:** mínimo de 45 000 COP para todas las transportadoras, con o sin recaudo (RN-012). Se vuelve a abrir solo si aparecen problemas | Iker |
 | RN-P-02 | Límites de peso y dimensiones, y largos máximos de texto de Inter y de las demás transportadoras (RN-015, RN-019) | Iker |
 | RN-P-03 | Nombres, tipo y largo de los 2–3 campos de `datosAdicionales` de las tiendas propias (RN-024) | Iker |
-| RN-P-04 | Dropshipping: Iker definió "origen de la tienda; si no, el del proveedor del producto" (RN-033). Confirmar que en dropshipping el paquete sale físicamente de la tienda y no del proveedor, porque la sucursal remitente (RN-032) sí sale del proveedor | Iker |
+| RN-P-04 | **Resuelto 2026-10-24:** en Dropshipping el origen es el del proveedor (RN-033) | Iker |
 | RN-P-05 | Lista inicial de estados anulables: solo `Creado` (backend de hoy) o los tres de `cupo.md` RC-024 (RN-072) | Iker |
 | RN-P-06 | Mapeo de `tipoDocumento` a cada transportadora (Inter hoy solo manda `CC`) (RN-017) | Desarrollo, al integrar cada transportadora |
 | RN-P-07 | Valores fijos del servidor: `ASESOR`, `CODIGO OFICINA`, `CODIGO REGIONAL`, `SEGURO`, `TELEFONO REMITENTE` (hoy `3112222222` por defecto en TCC) y `FORMA DE PAGO` (RN-023) | Iker / Desarrollo |
@@ -221,6 +221,7 @@ La operación en otros países queda **fuera de v1**, pero el código y los dato
 | RN-P-13 | `correo`, `diceContener` y `observaciones` (RN-021, RN-022) | Iker |
 | RN-P-14 | Unificar: ¿`referencia` también en `POST /v1/guias`, además de `Idempotency-Key`? (RN-010) | Iker |
 | RN-P-15 | Migrar estas especificaciones a la base de conocimiento cuando exista | Iker / Claude (recordar) |
+| RN-P-16 | **Productos privados y Product HUB.** Hoy el front deja usar un producto privado de OTRA tienda si hay una autorización vigente en `ProductHubAutorizaciones`. Iker dijo (2026-10-24) que un producto privado del proveedor no debe poder usarse. La API lo rechaza y deja las autorizaciones de Product HUB **apagadas** hasta que Iker confirme si deben aplicar. (`ProductHubAutorizaciones` no existe en PreProd.) | Iker |
 
 ### Riesgos aceptados
 

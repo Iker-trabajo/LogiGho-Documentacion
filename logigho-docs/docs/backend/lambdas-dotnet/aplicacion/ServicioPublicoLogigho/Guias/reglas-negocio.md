@@ -22,6 +22,8 @@ Cada regla tiene un id `RN-XXX`, un enunciado, su fuente y su estado.
 | **Confirmada** | Iker la decidió o la aprobó (entrevista 2026-10-23, brief del proyecto o ADR/documento ya aprobado) |
 | **Pendiente** | Falta un dato o una decisión. Hay una recomendación, pero no es regla hasta que Iker la confirme |
 
+**Pendientes:** los ids `RN-P-xx` de este documento se llamaban `P-xx`; se renombraron para no chocar con los de [pendientes-preprod.md](pendientes-preprod.md) (decisiones antes de PreProd).
+
 **Fuentes:** `CR` = `Lambdas_NET_LogiGho/LambdasLogiGho.Aplicacion/Logigho/ApiLambdaCrearGuia`; `CG` = `.../ApiLambdaCargarGuias/src/ApiLambdaCargarGuias`; `AN` = `.../ApiLambdaAnularGuia/src/ApiLambdaAnularGuia`; `Modal` = `Angular SitioLogiGho/SitioLogiGho/src/app/components/modal-creacion-pedidos/modal-creacion-pedidos.component.ts`; **"Decisión Iker"** = entrevista del 2026-10-23.
 
 Los nombres de campo de la API son propuestos (camelCase); la columna "Campo actual" indica el campo del flujo de hoy en `CargaPedido`.
@@ -75,19 +77,19 @@ El body de `POST /v1/guias` es un objeto con los campos de esta sección. Un lot
 | --- | --- | --- | --- |
 | RN-010 | En lotes cada guía trae `referencia` obligatoria (normalmente el id del pedido del integrador), única por cliente. Cumple el rol de idempotency key de esa guía. En `POST /v1/guias` la clave es el header `Idempotency-Key` ([ADR-003](adr-003-idempotencia.md)) | Decisión Iker; `ADR-003` | Confirmada |
 | RN-011 | `valorDeclarado` es obligatorio y entero COP > 0. **No hay default silencioso**: hoy Inter cae a 10 000 si el valor no parsea (`CR/.../CargaInterUseCase.cs:92`) y Envia usa un `VALOR BASE PRODUCTO` fijo de 10 000 (`CR/.../CargaEnviaUseCase.cs:173`) | Decisión Iker | Confirmada |
-| RN-012 | El valor declarado **mínimo se parametriza por transportadora** en la colección de reglas (RN-004). La configuración deja espacio para distinguir con/sin recaudo cuando entre COD. Valores iniciales: **Interrapidísimo 45 000; las demás 0** (provisional, Iker los verificará: Inter exige un mínimo de 45 000 con recaudo y Envia no tiene restricción) | Decisión Iker | Confirmada (valores: ver P-01) |
+| RN-012 | El valor declarado **mínimo se parametriza por transportadora** en la colección de reglas (RN-004). La configuración deja espacio para distinguir con/sin recaudo cuando entre COD. Valores iniciales: **Interrapidísimo 45 000; las demás 0** (provisional, Iker los verificará: Inter exige un mínimo de 45 000 con recaudo y Envia no tiene restricción) | Decisión Iker | Confirmada (valores: ver RN-P-01) |
 | RN-013 | `peso`, `largo`, `ancho` y `alto` son obligatorios, sin default. Hoy los use cases parsean a 0 si el valor es inválido (`CR/.../CargaInterUseCase.cs:98-101`) y el front manda 1 kg y 10×10×10 cm por defecto (`Modal:1227-1230`). Valor ausente, no numérico o ≤ 0 → error de campo | Decisión Iker | Confirmada |
 | RN-014 | El peso acepta decimal (máx. 2 decimales). Si la transportadora exige entero se **redondea hacia arriba**, y la respuesta devuelve el peso facturable ya redondeado. Hoy Envia/D2E hacen `int.TryParse` (un peso `1.5` queda en 0), Servientrega hace `Floor` (`CargaServientregaUseCase.cs:161`) e Inter/TCC aceptan decimal | Decisión Iker | Confirmada |
-| RN-015 | Límites mínimos y máximos de peso y de dimensiones (lado máximo, suma de lados) por transportadora, configurables en la colección de reglas. Hoy el código no valida máximos (Inter siempre crea `PAQUETE PEQUEÑO`, `IdTipoEnvio = 3`; TCC pasa a paquetería si el peso > 5 kg). Mientras no haya valores, la API devuelve el error de la transportadora | Decisión Iker | Confirmada (valores: ver P-02) |
+| RN-015 | Límites mínimos y máximos de peso y de dimensiones (lado máximo, suma de lados) por transportadora, configurables en la colección de reglas. Hoy el código no valida máximos (Inter siempre crea `PAQUETE PEQUEÑO`, `IdTipoEnvio = 3`; TCC pasa a paquetería si el peso > 5 kg). Mientras no haya valores, la API devuelve el error de la transportadora | Decisión Iker | Confirmada (valores: ver RN-P-02) |
 | RN-016 | El destinatario se envía con `nombres` y `apellidos` separados, ambos obligatorios. La API arma el nombre completo internamente. Elimina el parseo frágil por espacios (con una sola palabra Inter duplica nombre y apellidos, `CR/.../CargaInterUseCase.cs:151-153`) | Decisión Iker | Confirmada |
-| RN-017 | El documento es opcional. `tipoDocumento` es un enum (`CC`, `CE`, `NIT`, `PAS`, `TI`) con default `CC`; si viene número sin tipo se asume `CC`. Hoy el tipo está fijo en `"CC"` (`CR/.../CargaInterUseCase.cs:130`). El mapeo del tipo a lo que acepta cada transportadora se define al integrar cada una (ver P-06) | Decisión Iker | Confirmada |
+| RN-017 | El documento es opcional. `tipoDocumento` es un enum (`CC`, `CE`, `NIT`, `PAS`, `TI`) con default `CC`; si viene número sin tipo se asume `CC`. Hoy el tipo está fijo en `"CC"` (`CR/.../CargaInterUseCase.cs:130`). El mapeo del tipo a lo que acepta cada transportadora se define al integrar cada una (ver RN-P-06) | Decisión Iker | Confirmada |
 | RN-018 | El teléfono se valida y normaliza según el país de la tienda: acepta `+57`, espacios y guiones y guarda solo los dígitos nacionales. Colombia: celular de 10 dígitos (`3XXXXXXXXX`) o fijo de 7/10 dígitos. Inválido → error de campo, nunca `0` (hoy `long.TryParse` cae a `0`, `CR/.../CargaInterUseCase.cs:156`). Las reglas por país están en el catálogo de RN-101 | Decisión Iker | Confirmada |
-| RN-019 | Los largos máximos de texto (dirección, observaciones, "dice contener", nombres) son **por transportadora** en la colección de reglas. Si se exceden, la API **rechaza** indicando el máximo; no trunca. Hoy TCC trunca en silencio (dirección 50, observaciones 250, nombre 60; `CargaTccUseCase.cs:124-152`) | Decisión Iker | Confirmada (valores de Inter: ver P-02) |
+| RN-019 | Los largos máximos de texto (dirección, observaciones, "dice contener", nombres) son **por transportadora** en la colección de reglas. Si se exceden, la API **rechaza** indicando el máximo; no trunca. Hoy TCC trunca en silencio (dirección 50, observaciones 250, nombre 60; `CargaTccUseCase.cs:124-152`) | Decisión Iker | Confirmada (valores de Inter: ver RN-P-02) |
 | RN-020 | `tipoEtiqueta` es opcional, enum `Sticker` \| `Mediana`, default `Sticker`. La respuesta de creación no espera el PDF: la etiqueta se genera de forma asíncrona (RN-001) y se obtiene con `GET /v1/guias/{numero}/etiqueta` | Decisión Iker; `endpoints.md` | Confirmada |
 | RN-021 | `correo` es opcional; si viene debe tener formato de correo válido | Recomendación | Pendiente |
 | RN-022 | `diceContener` obligatorio (el flujo actual lo manda siempre y alimenta `Productos` en `PedidosInter`, `CR/.../CargaInterUseCase.cs:230`); `observaciones` opcional con default `Pedido generado desde Logigho`, que es el valor del front (`Modal:1239`) | Recomendación | Pendiente |
-| RN-023 | Los siguientes campos los fija el servidor y el cliente **no puede enviarlos**: `Estado` (`Pendiente` al ingresar, luego el flujo), `Origen` (`API`), `IdCarga`, `Tienda` (nombre), `TiendaProveedor`, sucursal remitente, `CIUDAD ORIGEN`, `DIRECCION ORIGEN`, `Total Flete`, `Total Servicio`, `Total Sobreflete`, `Total recaudo`, `NumeroPreenvio`, `APLICA CONTRA PAGO` y `FORMA DE PAGO` (esta última según `reglas-modalidad-pago.ts`). Los defaults del front (`ASESOR`, `CODIGO OFICINA = 1`, `CODIGO REGIONAL = 3`, `SEGURO`, `TELEFONO REMITENTE`) se definen al implementar cada transportadora (ver P-07) | Decisión Iker; `Modal:1210-1251` | Confirmada (valores fijos: ver P-07) |
-| RN-024 | Esquema **estricto**: un campo no definido o prohibido → `400 CAMPO_NO_PERMITIDO` con el nombre del campo. Excepción: `datosAdicionales`, un objeto cuyas claves permitidas, tipo y largo máximo se configuran **por cliente API**. Un cliente normal no tiene ninguna; las tiendas propias de LogiGho, que también usarán la API y el MCP, tienen sus 2–3 campos extra (datos de venta, etc.). Los valores se guardan en `CargaPedido`/`PedidosInter` con el mismo nombre que usan hoy | Decisión Iker | Confirmada (nombres de los campos: ver P-03) |
+| RN-023 | Los siguientes campos los fija el servidor y el cliente **no puede enviarlos**: `Estado` (`Pendiente` al ingresar, luego el flujo), `Origen` (`API`), `IdCarga`, `Tienda` (nombre), `TiendaProveedor`, sucursal remitente, `CIUDAD ORIGEN`, `DIRECCION ORIGEN`, `Total Flete`, `Total Servicio`, `Total Sobreflete`, `Total recaudo`, `NumeroPreenvio`, `APLICA CONTRA PAGO` y `FORMA DE PAGO` (esta última según `reglas-modalidad-pago.ts`). Los defaults del front (`ASESOR`, `CODIGO OFICINA = 1`, `CODIGO REGIONAL = 3`, `SEGURO`, `TELEFONO REMITENTE`) se definen al implementar cada transportadora (ver RN-P-07) | Decisión Iker; `Modal:1210-1251` | Confirmada (valores fijos: ver RN-P-07) |
+| RN-024 | Esquema **estricto**: un campo no definido o prohibido → `400 CAMPO_NO_PERMITIDO` con el nombre del campo. Excepción: `datosAdicionales`, un objeto cuyas claves permitidas, tipo y largo máximo se configuran **por cliente API**. Un cliente normal no tiene ninguna; las tiendas propias de LogiGho, que también usarán la API y el MCP, tienen sus 2–3 campos extra (datos de venta, etc.). Los valores se guardan en `CargaPedido`/`PedidosInter` con el mismo nombre que usan hoy | Decisión Iker | Confirmada (nombres de los campos: ver RN-P-03) |
 | RN-025 | `transportadora` fuera del enum → `400`; no permitida al cliente → `403 TRANSPORTADORA_NO_PERMITIDA`. Nunca cae a Envia (hoy el `switch` usa Envia como default, `CR/Function.cs:151`, `CG/Function.cs:130-135`) | Decisión Iker; `hallazgos-lambdas-actuales.md` | Confirmada |
 
 ---
@@ -99,7 +101,7 @@ El body de `POST /v1/guias` es un objeto con los campos de esta sección. Un lot
 | RN-030 | `tiendaId` es obligatorio y se valida contra las tiendas del cliente. Si no pertenece al cliente → `403 TIENDA_NO_PERMITIDA`. `TiendaProveedor` **nunca** se acepta del cliente | Decisión Iker | Confirmada |
 | RN-031 | Una tienda puede pertenecer a varios clientes API; el permiso, los productos y la lista de transportadoras se evalúan por cliente | Decisión Iker | Confirmada |
 | RN-032 | La **sucursal remitente** se resuelve en el servidor con la misma regla de hoy, nunca desde el body: si la guía tiene proveedor, se toma la `Sucursal` de la tienda proveedora; si no, la `Sucursal` de la tienda. Si queda vacía (o `N/A`) se usa la sucursal genérica. Solo Inter la usa (`CodigoConvenioRemitente` / `IdSucursal`) | `CR/Function.cs:114-121`; `CR/.../CargaInterUseCase.cs:103,123`; decisión Iker | Confirmada |
-| RN-033 | **Origen del paquete** (ciudad y dirección): se toma de la configuración de la **tienda** (`CodigoDane`, `DireccionOrigen`). Si la tienda no la tiene, se usa la del **proveedor del producto**. Si ninguna existe → error. **Sin default a Medellín** (hoy el front cae a `Calle 43B # 82 - 62`, `Modal:1243-1244`). El integrador no envía origen | Decisión Iker | Confirmada (ver P-04) |
+| RN-033 | **Origen del paquete** (ciudad y dirección): se toma de la configuración de la **tienda** (`CodigoDane`, `DireccionOrigen`). Si la tienda no la tiene, se usa la del **proveedor del producto**. Si ninguna existe → error. **Sin default a Medellín** (hoy el front cae a `Calle 43B # 82 - 62`, `Modal:1243-1244`). El integrador no envía origen | Decisión Iker | Confirmada (ver RN-P-04) |
 | RN-034 | Todos los proveedores deben tener su origen configurado (acción de Iker antes de salir a producción) | Decisión Iker | Confirmada |
 | RN-035 | **Tienda Dropshipping**: ≥ 1 producto obligatorio; todos del mismo proveedor (si no → error); cada producto debe existir y estar permitido para la tienda y para el cliente (públicos o privados asignados). `TiendaProveedor` y la sucursal se **derivan del producto en el servidor**. Replica el front (`Modal:1014-1058`, `1525-1650`) | Decisión Iker; `Modal` | Confirmada |
 | RN-036 | **Tienda Propia**: los productos son opcionales; si vienen, deben existir y ser permitidos (el front lo valida también para tiendas propias, `Modal:443-449`) | Decisión Iker; `Modal` | Confirmada |
@@ -128,7 +130,7 @@ El body de `POST /v1/guias` es un objeto con los campos de esta sección. Un lot
 | --- | --- | --- | --- |
 | RN-060 | Los errores usan ProblemDetails (RFC 9457) con `codigo` estable y `traceId`; nunca stack ni mensaje interno. Catálogo de códigos en [endpoints.md](endpoints.md#errores) | `endpoints.md` | Confirmada |
 | RN-061 | Si la transportadora rechaza la guía → `422 TRANSPORTADORA_RECHAZO` con `transportadora`, código y mensaje **originales** y un **mensaje normalizado** en español. Hoy el error vuelve como texto `"Error {mensaje}"` dentro de `Resultado[i]` con HTTP 200 y el front debe detectar `startsWith('ERROR')` (`Modal:1337-1338`). La API no usa ese formato | `endpoints.md`; `Modal:1337-1356` | Confirmada |
-| RN-062 | Catálogo de mensajes normalizados: mapear los errores frecuentes de Inter a un código y un texto accionable para el integrador | Recomendación | Pendiente (P-08) |
+| RN-062 | Catálogo de mensajes normalizados: mapear los errores frecuentes de Inter a un código y un texto accionable para el integrador | Recomendación | Pendiente (RN-P-08) |
 | RN-063 | Transportadora caída o circuito abierto → `503 TRANSPORTADORA_NO_DISPONIBLE`. Timeout o 5xx ambiguo tras enviar el POST → solicitud `INCIERTA`: **nunca se reintenta a ciegas el POST de creación**; solo se reintenta si el error ocurrió antes de enviar. Un reconciliador la resuelve y no se crea otra guía para esa solicitud hasta entonces | `ADR-003` | Confirmada |
 | RN-064 | Compatibilidad con los destinos actuales: una guía rechazada deja en `CargaPedido` `Estado = "Rechazado"` y el mensaje en `ERROR`, como hoy (`CR/.../CargaInterUseCase.cs:264-270`). Estado de la solicitud en la API: `FALLIDA` | `CR/.../CargaInterUseCase.cs:264-270`; `ADR-003` | Confirmada |
 | RN-065 | Los pasos posteriores a la creación (insert en `PedidosInter`, etiqueta, inventario) son idempotentes por número de guía; si fallan, la solicitud queda marcada y se reintenta desde la cola. **No se tragan** los errores como hoy (`CR/.../CargaInterUseCase.cs:257-260`), para no dejar pedidos huérfanos | `ADR-003` | Confirmada |
@@ -143,12 +145,12 @@ El body de `POST /v1/guias` es un objeto con los campos de esta sección. Un lot
 | --- | --- | --- | --- |
 | RN-070 | La anulación **solo marca la guía como `Anulada` internamente**, igual que `ApiLambdaAnularGuia` hoy (`AN/.../AnularGuiaUseCase.cs:64-67`). **No llama a la transportadora.** Riesgo conocido: la guía sigue viva en la transportadora (ver R-01) | Decisión Iker | Confirmada |
 | RN-071 | La matriz de capacidades (RN-054) incluye `anulacionExterna` (`false` para todas en v1). Si más adelante una transportadora la soporta, se activa en la matriz | Decisión Iker | Confirmada |
-| RN-072 | Solo se puede anular en **estados iniciales**, una lista configurable. El backend de hoy exige `Estado == "Creado"` (`AN/.../AnularGuiaUseCase.cs:52`); el front también admite "generada en…" y "en alistamiento del cliente" (`anular-guias.component.ts:267`, citado en `cupo.md`). Una guía despachada no se anula | Decisión Iker; `cupo.md` RC-024 | Confirmada (lista inicial: ver P-05) |
+| RN-072 | Solo se puede anular en **estados iniciales**, una lista configurable. El backend de hoy exige `Estado == "Creado"` (`AN/.../AnularGuiaUseCase.cs:52`); el front también admite "generada en…" y "en alistamiento del cliente" (`anular-guias.component.ts:267`, citado en `cupo.md`). Una guía despachada no se anula | Decisión Iker; `cupo.md` RC-024 | Confirmada (lista inicial: ver RN-P-05) |
 | RN-073 | **Sin plazo en horas**: el estado ya limita la ventana | Decisión Iker | Confirmada |
 | RN-074 | El cliente solo puede anular guías **creadas por él mediante la API** (`ApiSolicitudesGuia`), no cualquier guía de la tienda (ej. creadas por Angular o carga masiva) | Decisión Iker | Confirmada |
 | RN-075 | Anular una guía ya anulada es idempotente: responde `200` con el estado actual (hoy `AN` responde error "ya se encuentra anulado", `AnularGuiaUseCase.cs:40-49`) | Decisión Iker | Confirmada |
 | RN-076 | La anulación es gratis y libera la reserva de cupo por el monto vigente | `cupo.md` RC-024 | Confirmada |
-| RN-077 | Efecto en inventario: se marca `Anulada` en `PedidosInter` y se avisa a `/actualizaInventarioLotes { Guias: [numero] }`. El reconciliador de `ApiLambdaInventario` ya reconoce `Estado = Anulada` y registra el movimiento `Anulacion`, que devuelve el stock (`CalculadoraResumen.cs`, `ClasificadorEstado.cs:26`) | `ApiLambdaInventario`; propuesta | Pendiente (P-09) |
+| RN-077 | Efecto en inventario: se marca `Anulada` en `PedidosInter` y se avisa a `/actualizaInventarioLotes { Guias: [numero] }`. El reconciliador de `ApiLambdaInventario` ya reconoce `Estado = Anulada` y registra el movimiento `Anulacion`, que devuelve el stock (`CalculadoraResumen.cs`, `ClasificadorEstado.cs:26`) | `ApiLambdaInventario`; propuesta | Pendiente (RN-P-09) |
 
 ---
 
@@ -165,7 +167,7 @@ El body de `POST /v1/guias` es un objeto con los campos de esta sección. Un lot
 | RN-084 | Una guía rechazada en la validación (campo inválido, ciudad sin cobertura, producto o tienda no permitidos, cupo) **no consume cupo, no crea registros ni consume la referencia** | Decisión Iker | Confirmada |
 | RN-085 | Reuso de `referencia`: libre si la guía fue `RECHAZADA` o `FALLIDA`; bloqueada si está `CREADA` (devuelve el resultado guardado) o `INCIERTA` (`409` hasta que el reconciliador la resuelva) | Decisión Iker; `ADR-003` | Confirmada |
 | RN-086 | Aceptado el lote, cada guía es independiente: una rechazada por la transportadora queda `FALLIDA`, libera su cupo y no afecta a las demás. Un mensaje SQS por guía (idempotente por id de solicitud) | `ADR-003`; `ApiPublicaGuias.md` | Confirmada |
-| RN-087 | Cupo en un lote: se evalúa guía a guía en el orden del lote; las que ya no caben se rechazan con `CUPO_INSUFICIENTE` y las anteriores siguen aceptadas | Recomendación; definir con el chat de cupo | Pendiente (P-10) |
+| RN-087 | Cupo en un lote: se evalúa guía a guía en el orden del lote; las que ya no caben se rechazan con `CUPO_INSUFICIENTE` y las anteriores siguen aceptadas | Recomendación; definir con el chat de cupo | Pendiente (RN-P-10) |
 | RN-088 | `GET /v1/lotes/{id}` devuelve el progreso y el estado final por guía (`CREADA`, `FALLIDA`, `INCIERTA`) con su número de guía | `endpoints.md` | Confirmada |
 
 ---
@@ -181,7 +183,7 @@ El body de `POST /v1/guias` es un objeto con los campos de esta sección. Un lot
 | RN-094 | **Productos**: el cliente hereda lo que la tienda puede usar hoy (públicos + privados asignados). El administrador puede definir una **lista explícita opcional** que restringe a esos productos. Una tienda en varios clientes puede tener listas distintas por cliente | Decisión Iker | Confirmada |
 | RN-095 | **IP**: lista de IPs permitidas opcional por cliente (`403 IP_NO_PERMITIDA`); el WAF mantiene además el bloqueo global y el límite por IP | `ApiPublicaGuias.md`; `endpoints.md` | Confirmada |
 | RN-096 | Las tiendas propias de LogiGho usan la misma API (y el MCP) como clientes API normales, con `datosAdicionales` (RN-024) | Decisión Iker | Confirmada |
-| RN-097 | Qué pasa con las guías ya encoladas cuando un cliente se bloquea: ¿se terminan, se cancelan antes de llamar a la transportadora? | Recomendación: no llamar a la transportadora si el cliente quedó bloqueado antes de `CREANDO` | Pendiente (P-11) |
+| RN-097 | Qué pasa con las guías ya encoladas cuando un cliente se bloquea: ¿se terminan, se cancelan antes de llamar a la transportadora? | Recomendación: no llamar a la transportadora si el cliente quedó bloqueado antes de `CREANDO` | Pendiente (RN-P-11) |
 
 ---
 
@@ -194,7 +196,7 @@ La operación en otros países queda **fuera de v1**, pero el código y los dato
 | RN-100 | El **país** y la **moneda** los define la **tienda** (v1: `CO` / `COP`); el request no los envía. La guía guarda `codigoPais` (ISO 3166) y `moneda` (ISO 4217) y la respuesta los devuelve. Valor declarado, flete y cupo siempre en la moneda de la tienda, sin conversión | Decisión Iker | Confirmada |
 | RN-101 | Las reglas que cambian por país (formato de ciudad, formato de teléfono, tipos de documento) viven en un **catálogo por país en BD**. v1 solo tiene las de Colombia: ciudad DANE8, teléfono 10 dígitos, documentos `CC/CE/NIT/PAS/TI`. Otro país = agregar un registro (regex + catálogo de ciudades), sin cambiar código | Decisión Iker | Confirmada |
 | RN-102 | La ciudad se guarda como `{ pais, sistema, codigo }` (ej. `{ "CO", "DANE", "05001000" }`) | Decisión Iker | Confirmada |
-| RN-103 | Zona horaria: hoy las fechas se escriben restando 5 horas a UTC (`CR/.../CargaInterUseCase.cs:216-218`). Debe pasar a ser una propiedad del país de la tienda | Recomendación | Pendiente (P-12) |
+| RN-103 | Zona horaria: hoy las fechas se escriben restando 5 horas a UTC (`CR/.../CargaInterUseCase.cs:216-218`). Debe pasar a ser una propiedad del país de la tienda | Recomendación | Pendiente (RN-P-12) |
 
 ---
 
@@ -204,21 +206,21 @@ La operación en otros países queda **fuera de v1**, pero el código y los dato
 
 | Id | Pendiente | Responsable |
 | --- | --- | --- |
-| P-01 | Verificar el valor declarado mínimo por transportadora. Provisional: Inter 45 000, las demás 0. Confirmar si los 45 000 de Inter aplican también **sin** recaudo y que "45" significa 45 000 COP (RN-012) | Iker |
-| P-02 | Límites de peso y dimensiones, y largos máximos de texto de Inter y de las demás transportadoras (RN-015, RN-019) | Iker |
-| P-03 | Nombres, tipo y largo de los 2–3 campos de `datosAdicionales` de las tiendas propias (RN-024) | Iker |
-| P-04 | Dropshipping: Iker definió "origen de la tienda; si no, el del proveedor del producto" (RN-033). Confirmar que en dropshipping el paquete sale físicamente de la tienda y no del proveedor, porque la sucursal remitente (RN-032) sí sale del proveedor | Iker |
-| P-05 | Lista inicial de estados anulables: solo `Creado` (backend de hoy) o los tres de `cupo.md` RC-024 (RN-072) | Iker |
-| P-06 | Mapeo de `tipoDocumento` a cada transportadora (Inter hoy solo manda `CC`) (RN-017) | Desarrollo, al integrar cada transportadora |
-| P-07 | Valores fijos del servidor: `ASESOR`, `CODIGO OFICINA`, `CODIGO REGIONAL`, `SEGURO`, `TELEFONO REMITENTE` (hoy `3112222222` por defecto en TCC) y `FORMA DE PAGO` (RN-023) | Iker / Desarrollo |
-| P-08 | Catálogo de mensajes normalizados de errores de Inter (RN-062) | Desarrollo |
-| P-09 | Confirmar el efecto de la anulación en inventario (RN-077) | Iker |
-| P-10 | Comportamiento del cupo dentro de un lote (RN-087) | Chat de cupo |
-| P-11 | Guías encoladas cuando se bloquea un cliente (RN-097) | Iker |
-| P-12 | Zona horaria por país (RN-103) | Desarrollo |
-| P-13 | `correo`, `diceContener` y `observaciones` (RN-021, RN-022) | Iker |
-| P-14 | Unificar: ¿`referencia` también en `POST /v1/guias`, además de `Idempotency-Key`? (RN-010) | Iker |
-| P-15 | Migrar estas especificaciones a la base de conocimiento cuando exista | Iker / Claude (recordar) |
+| RN-P-01 | Verificar el valor declarado mínimo por transportadora. Provisional: Inter 45 000, las demás 0. Confirmar si los 45 000 de Inter aplican también **sin** recaudo y que "45" significa 45 000 COP (RN-012) | Iker |
+| RN-P-02 | Límites de peso y dimensiones, y largos máximos de texto de Inter y de las demás transportadoras (RN-015, RN-019) | Iker |
+| RN-P-03 | Nombres, tipo y largo de los 2–3 campos de `datosAdicionales` de las tiendas propias (RN-024) | Iker |
+| RN-P-04 | Dropshipping: Iker definió "origen de la tienda; si no, el del proveedor del producto" (RN-033). Confirmar que en dropshipping el paquete sale físicamente de la tienda y no del proveedor, porque la sucursal remitente (RN-032) sí sale del proveedor | Iker |
+| RN-P-05 | Lista inicial de estados anulables: solo `Creado` (backend de hoy) o los tres de `cupo.md` RC-024 (RN-072) | Iker |
+| RN-P-06 | Mapeo de `tipoDocumento` a cada transportadora (Inter hoy solo manda `CC`) (RN-017) | Desarrollo, al integrar cada transportadora |
+| RN-P-07 | Valores fijos del servidor: `ASESOR`, `CODIGO OFICINA`, `CODIGO REGIONAL`, `SEGURO`, `TELEFONO REMITENTE` (hoy `3112222222` por defecto en TCC) y `FORMA DE PAGO` (RN-023) | Iker / Desarrollo |
+| RN-P-08 | Catálogo de mensajes normalizados de errores de Inter (RN-062) | Desarrollo |
+| RN-P-09 | Confirmar el efecto de la anulación en inventario (RN-077) | Iker |
+| RN-P-10 | Comportamiento del cupo dentro de un lote (RN-087) | Chat de cupo |
+| RN-P-11 | Guías encoladas cuando se bloquea un cliente (RN-097) | Iker |
+| RN-P-12 | Zona horaria por país (RN-103) | Desarrollo |
+| RN-P-13 | `correo`, `diceContener` y `observaciones` (RN-021, RN-022) | Iker |
+| RN-P-14 | Unificar: ¿`referencia` también en `POST /v1/guias`, además de `Idempotency-Key`? (RN-010) | Iker |
+| RN-P-15 | Migrar estas especificaciones a la base de conocimiento cuando exista | Iker / Claude (recordar) |
 
 ### Riesgos aceptados
 

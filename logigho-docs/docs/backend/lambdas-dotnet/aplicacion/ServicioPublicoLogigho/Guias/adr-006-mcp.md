@@ -77,6 +77,13 @@ El emisor que valida el MCP es el del pool de **personas**; el cliente delegado 
 llama a la API con su token). El resource server `logigho` existe en los dos pools con scopes distintos, así que un token de una persona no sirve en la API de
 integradores ni al revés.
 
+### Hallazgo: API Gateway renombra `WWW-Authenticate` (2026-10-24)
+
+Probado en PreProd: el `401` que devuelve la Lambda llega con el header renombrado a `x-amzn-Remapped-WWW-Authenticate` (API Gateway y las Function URL lo hacen).
+Claude necesita `WWW-Authenticate: Bearer resource_metadata="…"` para iniciar sesión. **Cambio de diseño:** `/mcp` lleva un authorizer de Cognito del gateway
+(pool de personas, scope `logigho/mcp:usar`) y la Gateway Response `UNAUTHORIZED` agrega el header; el `401` lo genera el gateway. La Lambda sigue validando el
+token (firma, emisor, `client_id`). Donde este ADR dice «rutas sin authorizer», aplica solo a `/.well-known/oauth-protected-resource`.
+
 ### Encender el MCP en PreProd (lista para Iker)
 
 Todo es código ya validado con `fmt`, `validate` y `terraform test` (sin cuenta de AWS). **Nadie ha ejecutado `plan` ni `apply`.**

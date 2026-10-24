@@ -956,3 +956,28 @@ Con las decisiones de Iker (REST nuevo con Terraform, pools propios de PreProd, 
 ### Pendiente
 
 Lista de encendido para Iker actualizada en [ADR-006](adr-006-mcp.md#encender-el-mcp-en-preprod-lista-para-iker). F1b sigue esperando `reglas-negocio.md`.
+
+---
+
+## 2026-10-24 · PreProd · MCP encendido; hallazgo del header `WWW-Authenticate`
+
+### Qué pasó
+
+Iker aplicó en PreProd el stack completo (REST propio, dos pools de Cognito, las funciones y el MCP) y se publicó el código a las 4 Lambdas con un script que copia las variables ya cifradas de `ApiLambdaCargarGuias`. Se crearon con la CLI (solo PreProd) los app clients M2M `mcp-gateway` e `integrador-prueba` y la API key; los secretos quedaron solo en archivos locales de Iker. En producción esas altas se harán por la consola web de AWS. Estado y ids no secretos: memoria del proyecto.
+
+### Hallazgo (probado en PreProd)
+
+`GET /.well-known/oauth-protected-resource` responde bien, `GET /v1/salud` responde 200 y `POST /mcp` sin token responde 401, **pero el header `WWW-Authenticate` llega renombrado a `x-amzn-Remapped-WWW-Authenticate`**. API Gateway (y las Function URL) lo hacen con el 401 que devuelve una Lambda. Claude necesita ese header (con `resource_metadata`) para saber dónde iniciar sesión: sin él, el conector no puede autenticarse.
+
+### Corrección
+
+El 401 que genera el **propio gateway** sí se puede personalizar. Ahora `/mcp` lleva un authorizer de Cognito sobre el pool de **personas** con el scope `logigho/mcp:usar`, y la Gateway Response `UNAUTHORIZED` agrega `WWW-Authenticate: Bearer resource_metadata="…"`. La Lambda sigue validando firma, emisor y `client_id` (el amarre de audiencia). Se actualizaron las pruebas del módulo; el plan real (solo lectura) da 3 por crear, 2 por cambiar y 1 por destruir, todo en API Gateway.
+
+Efecto colateral aceptado: la Gateway Response es del REST completo, así que los 401 del authorizer de `/v1/*` también llevan el header; es inocuo (apunta a un documento público de metadatos).
+
+### Pendiente
+
+- Aplicar el plan guardado y volver a probar con `curl`: el 401 de `/mcp` debe traer `WWW-Authenticate` sin renombrar.
+- Documentos `ApiClientes` en Atlas PreProd: `mcp-gateway` y el cliente de la persona. El de prueba quedó con `IdTienda: 0`: falta una tienda real de PreProd.
+- Probar el conector desde Claude.
+- F1b (`POST /v1/guias`) desbloqueado por `reglas-negocio.md`; sin empezar.

@@ -179,6 +179,7 @@ nav:
                   - ADR-004 Etiquetas: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-004-etiquetas.md
                   - ADR-005 Trazas: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-005-trazas-transportadoras.md
                   - ADR-006 Servidor MCP (propuesta): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/adr-006-mcp.md
+                  - Reglas de negocio: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/reglas-negocio.md
                   - Decisiones pendientes antes de PreProd: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/pendientes-preprod.md
                   - Bitácora de desarrollo: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/bitacora-desarrollo.md
           - Servicio Consultar Estadisticas Pagina: backend/pancake/lambdas/ApiLambdaConsultarEstadisticasPagina/ApiLambdaConsultarEstadisticasPagina.md

@@ -32,7 +32,7 @@ Base: `ApiIntegracionesExternas` (`rl7zt6zak5`), versión `/v1`.
 | `GET` | `/v1/solicitudes/{id}` | `guias:leer` | Estado de una solicitud (`RECIBIDA`, `CREANDO`, `CREADA`, `FALLIDA`, `INCIERTA`, `ANULADA`) |
 | `GET` | `/v1/guias/{numero}/etiqueta` | `guias:leer` | URL temporal del PDF (`formato=sticker|mediana`) |
 | `POST` | `/v1/guias/{numero}/anulacion` | `guias:anular` | Anula la guía en la transportadora y libera cupo |
-| `POST` | `/v1/lotes` | `guias:crear` | Varias guías en una sola llamada. Valida todo antes; `202` con `loteId` |
+| `POST` | `/v1/lotes` | `guias:crear` | Varias guías en una sola llamada, **lote parcial** (RN-081): `202` con `loteId` y, por guía, `ACEPTADA` o `RECHAZADA` con `rechazoId`, código, campo y mensaje. Body: `{ "guias": [ { "idempotencyKey": "…", …campos de una guía… } ] }` |
 | `GET` | `/v1/lotes/{id}` | `guias:leer` | Progreso y resultado por guía del lote |
 | `GET` | `/v1/cupo` | `cupo:leer` | Disponible, usado y límite por tienda |
 | `GET` | `/v1/tiendas`, `/v1/productos`, `/v1/transportadoras` | `guias:leer` | Catálogos permitidos al cliente |

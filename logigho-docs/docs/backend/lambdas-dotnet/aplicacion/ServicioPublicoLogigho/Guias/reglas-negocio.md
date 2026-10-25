@@ -164,15 +164,17 @@ El body de `POST /v1/guias` es un objeto con los campos de esta sección. Un lot
 
 | Id | Regla | Fuente | Estado |
 | --- | --- | --- | --- |
-| RN-080 | Máximo **50 guías por lote**, configurable en BD | Decisión Iker | Confirmada |
+| RN-080 | Máximo **50 guías por lote**, configurable en BD **por cliente** (`ApiClientes.TopeLote`; sin el campo, 50). Pasarse es `422 LOTE_DEMASIADO_GRANDE` y no se procesa ninguna | Decisión Iker | Implementada (2026-10-25) |
 | RN-081 | **Lote parcial, no "todo o nada"**: se crean las guías válidas y las inválidas vuelven rechazadas en la misma respuesta. Una guía mala no tumba las otras 99. **Reemplaza** el borrador "valida todo antes" de `endpoints.md` | Decisión Iker | Confirmada |
 | RN-082 | Respuesta `202`: `loteId` y, por guía, `{ indice, referencia, estado (ACEPTADA \| RECHAZADA), rechazoId, codigo, campo, mensaje }` | Decisión Iker | Confirmada |
 | RN-083 | `rechazoId` es un identificador **único y no repetible** que genera la API por cada rechazo, para que el integrador y soporte lo citen | Decisión Iker | Confirmada |
-| RN-084 | Una guía rechazada en la validación (campo inválido, ciudad sin cobertura, producto o tienda no permitidos, cupo) **no consume cupo, no crea registros ni consume la referencia** | Decisión Iker | Confirmada |
+| RN-084 | Una guía rechazada en la validación (campo inválido, ciudad sin cobertura, producto o tienda no permitidos) **no consume cupo, no crea registros ni consume la clave**. **Excepción posterior (2026-10-24, RN-068):** la guía rechazada por falta de cupo SÍ queda registrada (`FALLIDA` con el motivo en `ERROR`); en un lote vuelve `RECHAZADA` y trae su `solicitudId` | Decisión Iker | Confirmada, con la excepción |
 | RN-085 | Reuso de `referencia`: libre si la guía fue `RECHAZADA` o `FALLIDA`; bloqueada si está `CREADA` (devuelve el resultado guardado) o `INCIERTA` (`409` hasta que el reconciliador la resuelva) | Decisión Iker; `ADR-003` | Confirmada |
 | RN-086 | Aceptado el lote, cada guía es independiente: una rechazada por la transportadora queda `FALLIDA`, libera su cupo y no afecta a las demás. Un mensaje SQS por guía (idempotente por id de solicitud) | `ADR-003`; `ApiPublicaGuias.md` | Confirmada |
 | RN-087 | Cupo en un lote: se evalúa guía a guía en el orden del lote; las que ya no caben se rechazan con `CUPO_INSUFICIENTE` y las anteriores siguen aceptadas | Recomendación; definir con el chat de cupo | Pendiente (RN-P-10) |
-| RN-088 | `GET /v1/lotes/{id}` devuelve el progreso y el estado final por guía (`CREADA`, `FALLIDA`, `INCIERTA`) con su número de guía | `endpoints.md` | Confirmada |
+| RN-088 | `GET /v1/lotes/{id}` devuelve el progreso y el estado final por guía (`CREADA`, `FALLIDA`, `INCIERTA`) con su número de guía | `endpoints.md` | Implementada (2026-10-25) |
+| RN-089 | **Decisión 2026-10-24:** el lote se identifica con un identificador único generado por la API (un `ObjectId`, el `_id` del documento del lote en `ApiLotesGuia`), sin números negativos ni contador. Cada guía del lote lo lleva en el campo **`LoteApi`** de `CargaPedido` y `PedidosInter`. **`CargaPedido.IdCarga` se queda en `"-1"`** (como las guías individuales): Angular calcula la siguiente carga como `Math.max(...IdCarga) + 1` en `importacion-pedidos.component.ts`, y un `IdCarga` no numérico daría `NaN` en la próxima carga masiva y dejaría la carga sin número para `modal-generar-guias` y `exportacion-pedidos` | Decisión Iker; verificado en el front | Implementada (2026-10-25) |
+| RN-090 | Cada guía de un lote lleva su propia `idempotencyKey` (RN-010); el cuerpo de la guía es el mismo que el de `POST /v1/guias`, sin la clave. Una clave repetida dentro del lote rechaza la segunda (`IDEMPOTENCY_REPETIDA_EN_LOTE`); reenviar el lote devuelve las mismas solicitudes; una clave con otro body es `IDEMPOTENCY_CONFLICTO`. Un fallo inesperado deja esa guía `NO_PROCESADA` y se reenvía el lote | Decisión Iker; `ADR-003` | Implementada (2026-10-25) |
 
 ---
 

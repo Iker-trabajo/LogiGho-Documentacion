@@ -1044,3 +1044,29 @@ Respuestas de Iker a las cuatro preguntas de F1b-c, ya implementadas.
 5. **`IdCarga` de los lotes (F2):** Iker prefiere un identificador único (uuid o el `_id` de Mongo) en lugar de un número negativo. Riesgo: `importacion-pedidos.component.ts` calcula la siguiente carga con `Math.max(...IdCarga) + 1`; un valor no numérico en `CargaPedido.IdCarga` daría `NaN` en la próxima carga masiva de esa tienda. Propuesta: `IdCarga` se queda en `"-1"` (como las guías individuales) y el identificador único del lote va en un campo nuevo `LoteApi` (el `_id` del documento del lote, sin contador).
 
 **Pendiente:** desplegar la función en PreProd y probar de punta a punta (el despliegue lo hace Iker); repetir las pruebas doradas con liquidaciones de producción; documentos `ApiCupoTiendas` de la tienda de prueba.
+
+---
+
+## 2026-10-25 · Todo lo pendiente de F1b-c, lotes y preparación de la prueba en PreProd
+
+Iker pidió hacer todo lo que quedaba y probar en PreProd. Respuesta a su cambio sobre `IdCarga`: sin negativos y con un identificador único; ver «Decisión de `IdCarga`» abajo.
+
+**Código** (`feature/api-publica-guias`, 949 → 1 038 pruebas):
+
+- **Asesor opcional** (`asesor` en el body, hasta 100 caracteres; sin él, «Logigho»), **sin límite diario por defecto** (`GuiasPorDiaTienda` nulo = sin límite y sin contador) y **estados anulables por transportadora** (`ReglasTransportadora.EstadosAnulables`, por defecto solo «Creado»; la anulación de F2 usará `PermiteAnular`).
+- **Worker:** documento ausente (P-07: métrica, revisión manual, cupo conservado), cinco intentos antes de `Fallida` (P-06) y **espera de cliente bloqueado** (la guía queda reservada, sin gastar intentos, y el reconciliador la reencola).
+- **Sticker sin remitente LOGIGHO** (`TransformadorEtiquetaPdf`, iText 9.7.0 como la carga masiva, de mejor esfuerzo; métrica `EtiquetaSinTransformar`).
+- **Lotes:** `POST /v1/lotes` (parcial, una `idempotencyKey` por guía, `rechazoId` por rechazo, tope por cliente) y `GET /v1/lotes/{id}`; colección `ApiLotesGuia`.
+- **Terraform:** alarmas de P-06 y P-07, WAF en modo `count` con registros (producción), ocultar remitente, calculadora de cupo con concurrencia reservada en producción.
+- **Scripts de PreProd** (`pipelines/servicio-publico/scripts`): `desplegar-preprod.ps1` y `probar-preprod.ps1`. Guía completa en [prueba-preprod.md](prueba-preprod.md).
+
+**Decisión de `IdCarga` (lotes).** Iker no quiere números negativos: prefiere un uuid o el `_id` de un documento de Mongo. Verifiqué en el front que `importacion-pedidos.component.ts` calcula la siguiente carga con `Math.max(...IdCarga) + 1` sobre `CargaPedido` y que `modal-generar-guias` y `exportacion-pedidos` filtran por `IdCarga`; un valor no numérico daría `NaN`. Iker pidió que se explicara el costo antes de decidir y luego dijo «dejemos el id carga como dices y lo del UUID o _id»: **`IdCarga` se queda en `"-1"` y el identificador único del lote (el `_id` del documento en `ApiLotesGuia`) va en el campo nuevo `LoteApi`** (RN-089).
+
+**Hallazgos de datos en PreProd (solo lectura):**
+
+- `ApiCupoTiendas` está vacía y el cliente `integrador-prueba` no tiene aún la tienda `156783`: hay que insertarlos (JSON en la guía de la prueba).
+- El único producto de la tienda de prueba (`1371`) está `Inactivo`.
+- `TarifasInter`, `AdministracionCostos` y `Marketing` están vacías; `CostosTransporteTienda` sí tiene las filas de entrega y devolución de la tienda.
+- La licencia de iText es AGPL: ya la usa `ApiLambdaCargarGuias`; Iker debe confirmar que LogiGho tiene la licencia comercial antes de producción.
+
+**Pendiente:** aplicar Terraform, publicar el código y probar de punta a punta en PreProd (Iker); los endpoints de F2 que quedan (anulación, etiqueta, costos, administración de clientes); `referencia` obligatoria, antigüedad máxima de pendientes y respuestas reales de Inter sin número (sin respuesta de Iker); repetir las pruebas doradas con liquidaciones de producción.

@@ -17,10 +17,10 @@ P-10 nacen de replicar el flujo actual de las Lambdas de creación; P-06 a P-09 
 | P-03 | `IdCarga = "-1"` | Iker | Abierto |
 | P-04 | `ASESOR = "Logigho"` fijo | Iker | Abierto |
 | P-05 | `Cantidad Total Productos` sin tope | Iker (con `reglas-negocio.md`) | Abierto |
-| P-06 | `Reservada` que se reencola sin fin | Iker | Parcial: **5 reintentos** antes de `Fallida` (2026-10-24); falta la antigüedad máxima |
-| P-07 | `SetAsync` falla si el documento no existe → DLQ | Iker | Aprobado montar alarma y runbook (2026-10-24); propuesta abajo |
+| P-06 | `Reservada` que se reencola sin fin | Iker | Parcial: **5 reintentos** antes de `Fallida`, implementado (2026-10-25: alarma `fallida-por-reintentos`); falta la antigüedad máxima |
+| P-07 | `SetAsync` falla si el documento no existe → DLQ | Iker | **Implementado (2026-10-25):** `DocumentoAusenteException`, métrica, alarma `documento-ausente` y [runbook](runbook-documento-ausente.md) |
 | P-08 | Cupo en `OBSERVAR` | Iker | Abierto |
-| P-09 | WAF sobre todo el stage de `ApiIntegracionesExternas` | Iker | Parcial: en producción primero en modo **solo contar** y luego bloquear; en PreProd apagado (2026-10-24) |
+| P-09 | WAF sobre todo el stage de `ApiIntegracionesExternas` | Iker | **Implementado en Terraform (2026-10-25):** `waf_modo = "count"` en producción (registros completos, `Authorization` redactada), `block` después; PreProd sin WAF. Falta aplicarlo en producción |
 | P-10 | Inter responde 200 sin `numeroPreenvio` en errores de validación | Iker | Abierto |
 | P-11 | Decisiones de PreProd (REST nuevo, pools propios, MFA opcional, F1b en espera) | Iker | Resuelto |
 

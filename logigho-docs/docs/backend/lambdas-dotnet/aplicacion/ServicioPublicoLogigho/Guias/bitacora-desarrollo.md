@@ -981,3 +981,15 @@ Efecto colateral aceptado: la Gateway Response es del REST completo, así que lo
 - Documentos `ApiClientes` en Atlas PreProd: `mcp-gateway` y el cliente de la persona. El de prueba quedó con `IdTienda: 0`: falta una tienda real de PreProd.
 - Probar el conector desde Claude.
 - F1b (`POST /v1/guias`) desbloqueado por `reglas-negocio.md`; sin empezar.
+
+---
+
+## 2026-10-24 · Decisiones y hechos del chat de bitácora para el MVP (sin código nuevo)
+
+Se registraron en los documentos (sin implementar todavía):
+
+- **Inventario (hecho verificado en solo lectura):** en producción `POST /actualizaInventarioLotes` (REST `7elgyten88`) integra con `ApiLambdaInventarioPorCarga`, no con la legacy; corregido en `hallazgos-lambdas-actuales.md`. En PreProd la ruta no existe en `8u5isw5u30`. Propuesta: la URL **completa** del aviso en una variable de entorno `URL_AVISO_INVENTARIO` por entorno, obligatoria en producción y vacía en PreProd hasta que Iker confirme (el paso se omite con registro y métrica en vez de reintentarse para siempre). No se toca el dominio de inventario.
+- **Idempotencia por guía:** `Idempotency-Key` en `POST /v1/guias` y en cada guía de un lote (RN-010). `referencia` queda pendiente (RN-P-14).
+- **P-06:** 5 reintentos antes de `Fallida`; falta la antigüedad máxima. **P-09:** WAF en producción primero solo contando.
+- **Tienda de prueba:** IdTienda 156783 (BTK MAN, Dropshipping). Solo el id; nada más de esa fila en la documentación.
+- **Pendiente de Iker, sin implementar:** si `Total recaudo` sin contraentrega es 0 con valor declarado ≥ 45 000 (propuesta: campo `totalRecaudo` opcional, 0 por defecto, mayor que 0 se rechaza con `CONTRAENTREGA_NO_DISPONIBLE`), y la regla de `referencia`.

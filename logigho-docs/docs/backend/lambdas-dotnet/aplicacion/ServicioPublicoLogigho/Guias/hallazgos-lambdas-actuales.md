@@ -55,4 +55,4 @@ Rutas relativas a `Lambdas_NET_LogiGho/LambdasLogiGho.Aplicacion/Logigho/`.
 
 - DocumentDB: una instancia `db.t4g.medium`, CPU máx. 99%, 495 conexiones pico, sin réplica, backup 1 día. HU: [BD: Escalamiento y endurecimiento de DocumentDB producción](https://app.clickup.com/t/86e3v5ctj).
 - Lambdas en VPC en una sola subnet (`us-east-1a`) y un NAT.
-- En prod, `/actualizaInventarioLotes` todavía apunta a `ApiLambdaInventarioCarga` (legacy), no a `ApiLambdaInventario`.
+- ~~En prod, `/actualizaInventarioLotes` apunta a `ApiLambdaInventarioCarga` (legacy)~~ **Corregido el 2026-10-24** (verificado en solo lectura por el chat de bitácora): en producción `POST /actualizaInventarioLotes` (REST `7elgyten88`, recurso `nc8dn1`) integra con `ApiLambdaInventarioPorCarga` (dominio nuevo de inventario, modificada el 2026-10-23). La función legacy `ApiLambdaInventarioCarga` sigue existiendo. En PreProd existe `ApiLambdaInventarioPorCargaPreProd`, pero el REST de plataforma `8u5isw5u30` **no tiene** la ruta `/actualizaInventarioLotes`.

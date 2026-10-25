@@ -17,10 +17,10 @@ P-10 nacen de replicar el flujo actual de las Lambdas de creación; P-06 a P-09 
 | P-03 | `IdCarga = "-1"` | Iker | Abierto |
 | P-04 | `ASESOR = "Logigho"` fijo | Iker | Abierto |
 | P-05 | `Cantidad Total Productos` sin tope | Iker (con `reglas-negocio.md`) | Abierto |
-| P-06 | `Reservada` que se reencola sin fin | Iker | Abierto |
+| P-06 | `Reservada` que se reencola sin fin | Iker | Parcial: **5 reintentos** antes de `Fallida` (2026-10-24); falta la antigüedad máxima |
 | P-07 | `SetAsync` falla si el documento no existe → DLQ | Iker | Abierto |
 | P-08 | Cupo en `OBSERVAR` | Iker | Abierto |
-| P-09 | WAF sobre todo el stage de `ApiIntegracionesExternas` | Iker | Abierto |
+| P-09 | WAF sobre todo el stage de `ApiIntegracionesExternas` | Iker | Parcial: en producción primero en modo **solo contar** y luego bloquear; en PreProd apagado (2026-10-24) |
 | P-10 | Inter responde 200 sin `numeroPreenvio` en errores de validación | Iker | Abierto |
 | P-11 | Decisiones de PreProd (REST nuevo, pools propios, MFA opcional, F1b en espera) | Iker | Resuelto |
 

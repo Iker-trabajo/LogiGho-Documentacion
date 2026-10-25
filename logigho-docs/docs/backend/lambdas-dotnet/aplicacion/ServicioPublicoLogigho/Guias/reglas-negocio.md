@@ -75,7 +75,7 @@ El body de `POST /v1/guias` es un objeto con los campos de esta sección. Un lot
 
 | Id | Regla | Fuente | Estado |
 | --- | --- | --- | --- |
-| RN-010 | En lotes cada guía trae `referencia` obligatoria (normalmente el id del pedido del integrador), única por cliente. Cumple el rol de idempotency key de esa guía. En `POST /v1/guias` la clave es el header `Idempotency-Key` ([ADR-003](adr-003-idempotencia.md)) | Decisión Iker; `ADR-003` | Confirmada |
+| RN-010 | **Decisión 2026-10-24:** la clave de idempotencia **por guía** es `Idempotency-Key`, tanto en `POST /v1/guias` como en cada guía de un lote ([ADR-003](adr-003-idempotencia.md)). La `referencia` (id del pedido del integrador) se acepta como dato de la guía; si es obligatoria en lotes y si va además de la clave sigue pendiente (RN-P-14) | Decisión Iker; `ADR-003` | Confirmada (clave); `referencia` pendiente |
 | RN-011 | `valorDeclarado` es obligatorio y entero COP > 0. **No hay default silencioso**: hoy Inter cae a 10 000 si el valor no parsea (`CR/.../CargaInterUseCase.cs:92`) y Envia usa un `VALOR BASE PRODUCTO` fijo de 10 000 (`CR/.../CargaEnviaUseCase.cs:173`) | Decisión Iker | Confirmada |
 | RN-012 | El valor declarado **mínimo se parametriza por transportadora** en la colección de reglas (RN-004). La configuración deja espacio para distinguir con/sin recaudo cuando entre COD. **Valor inicial (decisión de Iker, 2026-10-24): 45 000 COP para TODAS las transportadoras, con o sin recaudo.** Lo que distingue con y sin recaudo es el campo `AplicaContraPago` (en v1 siempre `NO`); se revisa si aparecen problemas | Decisión Iker | Confirmada |
 | RN-013 | `peso`, `largo`, `ancho` y `alto` son obligatorios, sin default. Hoy los use cases parsean a 0 si el valor es inválido (`CR/.../CargaInterUseCase.cs:98-101`) y el front manda 1 kg y 10×10×10 cm por defecto (`Modal:1227-1230`). Valor ausente, no numérico o ≤ 0 → error de campo | Decisión Iker | Confirmada |
@@ -219,7 +219,7 @@ La operación en otros países queda **fuera de v1**, pero el código y los dato
 | RN-P-11 | Guías encoladas cuando se bloquea un cliente (RN-097) | Iker |
 | RN-P-12 | Zona horaria por país (RN-103) | Desarrollo |
 | RN-P-13 | `correo`, `diceContener` y `observaciones` (RN-021, RN-022) | Iker |
-| RN-P-14 | Unificar: ¿`referencia` también en `POST /v1/guias`, además de `Idempotency-Key`? (RN-010) | Iker |
+| RN-P-14 | `referencia`: Iker dijo «sí» a tener referencias en las guías. **Falta saber** si es obligatoria en lotes y opcional en la guía unitaria, y si va además de `Idempotency-Key`. La clave de idempotencia por guía es `Idempotency-Key` en `POST /v1/guias` y en cada guía de un lote (decisión 2026-10-24) | Iker |
 | RN-P-15 | Migrar estas especificaciones a la base de conocimiento cuando exista | Iker / Claude (recordar) |
 | RN-P-16 | **Productos privados y Product HUB.** Hoy el front deja usar un producto privado de OTRA tienda si hay una autorización vigente en `ProductHubAutorizaciones`. Iker dijo (2026-10-24) que un producto privado del proveedor no debe poder usarse. La API lo rechaza y deja las autorizaciones de Product HUB **apagadas** hasta que Iker confirme si deben aplicar. (`ProductHubAutorizaciones` no existe en PreProd.) | Iker |
 

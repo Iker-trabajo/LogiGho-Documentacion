@@ -352,12 +352,11 @@ Reserva exacta = 17 000   (ajuste +2 750 respecto de la estimación)
 
 ### 7.5 Dónde vive la calculadora
 
-**Decisión:** una sola implementación de las fórmulas, en el repo de Lambdas, como clase pura en un proyecto compartido. La usan:
+**Decisión (ajustada el 2026-10-24):** una sola implementación de las fórmulas, como clase pura en el proyecto `Logigho.Guias.Liquidacion` (carpeta `Guias/`; sin Mongo, AWS ni reloj). La usa la función Lambda **`ApiLambdaGuiasCalculadora`**, que `ApiLambdaGuias`, el worker y el reconciliador invocan con `Lambda.Invoke` (sin API Gateway público; permiso IAM `lambda:InvokeFunction` acotado a esa función, en Terraform).
 
-- el job de liquidación (`LiquidarAsync` la llama sin cambiar su comportamiento), y
-- una **función Lambda nueva de cálculo**, invocada con `Lambda.Invoke` desde `ApiLambdaGuias` (sin API Gateway público; permiso IAM).
+`ApiLambdaGuias` **no copia fórmulas**. La función de cálculo es dueña de las tarifas: lee de solo lectura `CostosTransporteTienda` (solo Interrapidísimo), `AdministracionCostos`, `Marketing` y `TarifasInter`, y las guarda 60 s en memoria (el job actual carga 9 colecciones completas; no sirve por guía).
 
-`Servicios_Guias` / `ApiLambdaGuias` **no copia fórmulas**. La función de cálculo es dueña de las tarifas y de su acceso a datos, con caché en memoria y TTL (el job actual carga 9 colecciones completas; no sirve por guía).
+> **Divergencia deliberada con el diseño inicial:** el diseño decía que `LiquidarAsync` también llamaría a esta clase. No se tocó `ApiLambdaLiquidacionesLogighoAOT` (regla: no se cambia la liquidación para sacar la API). La clase **replica** `DepurarLiquidacionUseCase`, y lo que impide que se desincronicen son las pruebas doradas de §7.6. Si algún día se quiere una sola fuente de verdad, el job pasaría a usar este proyecto; es un cambio aparte que decide Iker.
 
 | Alternativa | Por qué no |
 | --- | --- |
@@ -370,18 +369,18 @@ Reserva exacta = 17 000   (ajuste +2 750 respecto de la estimación)
 **Contrato:**
 
 ```json
-// Request
+// Request (nombres tal como los usa el código: camelCase)
 {
-  "idTienda": 1234,
   "tienda": "Tienda Ejemplo",
   "transportadora": "INTERRAPIDISIMO",
-  "peso": 1.5,
-  "trayecto": null,
+  "peso": 1.0,
   "valorDeclarado": 100000,
-  "seguro": "SI",
-  "aplicaContraPago": "NO",
+  "seguro": true,
+  "aplicaContraPago": false,
   "totalRecaudo": 0,
-  "valoresCarrier": null
+  "margenEstimacionPct": 25,
+  "valoresCarrier": null,
+  "valorDropshipper": null
 }
 
 // Response
@@ -396,11 +395,19 @@ Reserva exacta = 17 000   (ajuste +2 750 respecto de la estimación)
 }
 ```
 
-`valoresCarrier` = `{ "totalFlete": 5530, "totalServicio": 0, "totalSobreflete": 2577 }` cambia `origen` a `REAL`.
+`valoresCarrier` = `{ "totalFlete": 5530, "totalServicio": 0, "totalSobreflete": 2577 }` cambia `origen` a `REAL`. El `trayecto` ya no viaja en la petición: la función lo busca en `TarifasInter` por el flete cobrado (si no hay coincidencia, `advertencias` trae `TRAYECTO_NO_RESUELTO` y se usa la columna de flete más cara). `valorDropshipper` solo se envía si el pedido llevará `Tiendaproveedor`. Los errores vuelven como datos en `error` (`TARIFA_NO_RESUELTA`, `SOLICITUD_INVALIDA`), no como caída de la función; una caída de la función es `503 CUPO_NO_DISPONIBLE`.
+
+**Notas de lo implementado (2026-10-24):**
+
+- Los ejemplos de §7.4 son de un paquete de **hasta 1 kg**. Con más de 1 kg la liquidación calcula `Flete = TotalFlete × (1 + %KiloAdicional/100)` y no usa las columnas por trayecto; el ejemplo de la petición ya no lleva 1,5 kg por eso.
+- En la **estimación**, «el mayor de las columnas» son urbano, regional, nacional/metropolitano y municipal. **`FleteReexpedido` no cuenta**: es un trayecto que aparece después de crear la guía (al reenviar el paquete); incluirlo multiplicaría la reserva de toda guía (en una tienda real: 32 500 contra 13 820 de las demás columnas). Decisión pendiente de Iker.
+- La reserva se redondea **hacia arriba** al peso (RC-019) y nunca es cero; si la liquidación de peor caso no es un costo, o la tienda no tiene ningún flete configurado, es `TARIFA_NO_RESUELTA`.
+- Sin fila propia de la tienda en `CostosTransporteTienda` se usa la fila `Generico Interrapidisimo …`; como en la liquidación, entonces el seguro depende solo del recaudo (0 en una guía prepagada). Si falta también la genérica, `TARIFA_NO_RESUELTA`.
+- Se incluyen `AdministracionCostos` (PicyPac, otros, confirmación, adelanto, descuentos de flete), `Marketing` y, si se envía, el valor del proveedor (`ValorDropshipper`, que la liquidación descuenta en la entrega). La API hoy **no** escribe `Tiendaproveedor` en `PedidosInter`, así que no lo envía; si se agrega, la reserva de una guía de dropshipping crece en el valor de los productos del proveedor.
 
 ### 7.6 Pruebas y calibración
 
-1. **Pruebas doradas:** correr la función pura sobre guías de Inter ya liquidadas (con sus `Total*`, `Trayecto` y fechas reales) y comparar contra `LiquidacionesLogigho.Liquidacion`. La diferencia esperada es 0.
+1. **Pruebas doradas (hechas el 2026-10-24):** la función pura corre sobre liquidaciones reales ya guardadas en `LiquidacionesLogigho` de PreProd y reproduce todos los campos (flete, seguro, comisión de recaudo, total de la tienda, flete final, otros servicios y liquidación) con **diferencia 0 en 92 de 92 guías** (Interrapidísimo 22, Envía 48, Servientrega 22; las 33 filas restantes del volcado son las liquidaciones del proveedor, que no son de la guía). El fixture (`test/.../Datos/golden-liquidaciones-preprod.json`) está anonimizado: tiendas y guías con alias. Limitación: esas liquidaciones no guardan el peso ni el trayecto ni el valor declarado, así que la herramienta que arma el fixture busca los datos de entrada legítimos con los que se reproducen todos los campos; ninguna fórmula se ajustó para que cuadre. `AdministracionCostos` y `Marketing` están vacías en PreProd: sus valores salen de lo que cada liquidación guardó. Falta repetir la corrida con las liquidaciones de producción (solo lectura) cuando Iker lo autorice.
 2. **Contraverificación** con `LogighoPricingService.CalcularTarifaInterEnMemoriaAsync`, que usa el mismo modelo de tarifas.
 3. **Margen:** durante `OBSERVAR` se mide `LiquidacionReal − Provisional` por transportadora; el margen se calibra con el percentil 95.
 4. **Regresión del motor dinámico** al extraer el método puro (TCC): mismas salidas que hoy.
@@ -742,7 +749,7 @@ Se integra con [Observabilidad](observabilidad.md); los logs no incluyen datos p
 
 | Paso | Contenido | Salida |
 | --- | --- | --- |
-| 0 | Extraer el método puro del motor dinámico; escribir la función pura legacy de Inter; pruebas doradas contra liquidaciones reales de Inter; confirmar en `ConfiguracionLiquidacionTransportadora` qué carrier está en qué motor | Diferencia 0 contra el histórico |
+| 0 | **Hecho el 2026-10-24 (pendiente de desplegar):** función pura legacy de Inter y pruebas doradas contra liquidaciones reales (92/92). Queda la extracción del método puro del motor dinámico (TCC, fuera del piloto); confirmar en `ConfiguracionLiquidacionTransportadora` qué carrier está en qué motor | Diferencia 0 contra el histórico |
 | 1 | Crear `ApiCupoTiendas`, `ApiMovimientosCupo` e índices en preprod (Atlas) y prod (DocumentDB, en horario valle); verificar con `explain` los índices de §8.8 sobre las colecciones existentes (`PedidosInter`, `LiquidacionesLogigho`, `TransaccionesWalletLogigho`, `NovedadesLogigho`) | Colecciones e índices listos |
 | 2 | Calculadora desplegada en preprod; `ApiLambdaGuias` reserva y el Worker ajusta | Flujo end-to-end con Inter |
 | 3 | Piloto en `OBSERVAR` con 1 a 3 tiendas de la lista blanca | Reporte de `HabriaRechazado`, error de estimación, margen calibrado |

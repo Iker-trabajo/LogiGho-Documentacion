@@ -1020,3 +1020,27 @@ Respuestas de Iker a las cuatro preguntas de F1b-c, ya implementadas.
 **Terraform:** `url_servicio_aws` pasa a `url_aviso_inventario` (opcional, vacía por defecto); en el entorno `prod` es obligatoria (validación) y lleva la URL completa del REST de producción; PreProd la deja vacía a propósito. Se corrigió además una prueba de `preprod` desactualizada (esperaba tres funciones y el MCP está encendido desde el 2026-10-24: son cuatro).
 
 **Pendiente:** la calculadora de cupo real (el `POST` sigue terminando en error de cupo hasta entonces), `IdCarga`, `DocumentoAusenteException`, la métrica/alarma de P-07 y el resto de F1b-c.
+
+---
+
+## 2026-10-24 · Calculadora de cupo real (función de cálculo + fórmulas validadas contra liquidaciones reales)
+
+**Código** (`feature/api-publica-guias`):
+
+- **`Logigho.Guias.Liquidacion`** (nuevo, funciones puras): réplica fiel de `DepurarLiquidacionUseCase` para una guía: mismas búsquedas de tarifas (fila de la tienda, sin estado, genérica), mismas fórmulas, redondeos y orden de operaciones; entrega y devolución. `CalculadoraReserva` hace la estimación (sin los valores de Inter: flete máximo configurado + margen del cupo de la tienda, sin piso) y la exacta (con `valorFlete`, `valorServicioContraPago`, `valorSobreFlete`). La reserva es `max(−entrega, −devolución)` redondeada hacia arriba y nunca cero.
+- **Validación con datos reales (PreProd, solo lectura):** 92 de 92 liquidaciones de guías reproducidas con diferencia 0; las otras 33 filas del volcado son liquidaciones del proveedor. Fixture anonimizado en las pruebas. El volcado se hizo con la cadena de Atlas leída en memoria (no se copió ni se imprimió).
+- **`ApiLambdaGuiasCalculadora`** (nueva Lambda): `FunctionHandler(SolicitudCalculo) → RespuestaCalculo`. Lee `CostosTransporteTienda` (Interrapidísimo), `AdministracionCostos`, `Marketing` y `TarifasInter` con caché de 60 s (`LectorConfiguracionLiquidacion`); si recargar falla y hay datos, sigue con los anteriores. Comprobado de extremo a extremo contra PreProd con la tienda de prueba: lectura de configuración 631 ms en frío y 0 ms con caché; estimaciones de 20 200 a 25 900 según peso y valor declarado.
+- **Adaptador `CalculadoraCupoLambda`** (reemplaza al marcador que fallaba siempre cuando existe `FUNCION_CALCULADORA_CUPO`): `Lambda.Invoke` con timeout de 10 s y un reintento. Función caída, error de la función, respuesta ilegible o reserva en cero ⇒ `CalculadoraNoDisponibleException` (503 `CUPO_NO_DISPONIBLE`, no se reserva); tarifa que falta ⇒ `TarifaNoResueltaException` (422). `ICalculadoraCupo.EstimarAsync` ahora recibe el margen de estimación del cupo de la tienda.
+- **CI:** el empaquetado de `pipelines/servicio-publico` incluye la cuarta Lambda.
+
+**Terraform:** función `ApiLambdaGuiasCalculadora` (512 MB, 15 s, solo variables `DATABASE_NAME` y `ENTORNO`), sin permisos de AWS aparte de sus logs. La API, el worker y el reconciliador reciben `FUNCION_CALCULADORA_CUPO` y un permiso `lambda:InvokeFunction` acotado a esa función (se arma el ARN con el nombre para no crear un ciclo). Se elimina la variable `calculadora_cupo_arn`, que nunca se usó. Pruebas offline: 12 en el módulo y 1 en PreProd.
+
+**Decisiones y hallazgos para Iker:**
+
+1. **`FleteReexpedido` fuera de la estimación.** En una tienda real vale 32 500 y las demás columnas rondan 14 000; contarlo triplicaría la reserva de todas las guías. Reexpedido solo aparece después de crear la guía.
+2. **Valor del proveedor.** La liquidación descuenta `ValorDropshipper` en la entrega solo si el pedido trae `Tiendaproveedor`. La API no lo escribe hoy en `PedidosInter`, así que no entra en la reserva. Si se agrega (para que el proveedor liquide), la reserva de las guías de dropshipping debe incluirlo; la función ya lo soporta.
+3. **`TarifasInter`, `AdministracionCostos` y `Marketing` están vacías en PreProd.** Con valores reales de Inter y sin trayecto conocido la reserva toma la columna de flete más cara (conservador) y la respuesta avisa `TRAYECTO_NO_RESUELTO`. Hay que confirmar en producción (solo lectura) que `TarifasInter` existe.
+4. **Cuando el pedido no tiene fila propia** de la tienda en `CostosTransporteTienda` se usa la genérica y el seguro de una guía prepagada queda en 0, como hace la liquidación hoy.
+5. **`IdCarga` de los lotes (F2):** Iker prefiere un identificador único (uuid o el `_id` de Mongo) en lugar de un número negativo. Riesgo: `importacion-pedidos.component.ts` calcula la siguiente carga con `Math.max(...IdCarga) + 1`; un valor no numérico en `CargaPedido.IdCarga` daría `NaN` en la próxima carga masiva de esa tienda. Propuesta: `IdCarga` se queda en `"-1"` (como las guías individuales) y el identificador único del lote va en un campo nuevo `LoteApi` (el `_id` del documento del lote, sin contador).
+
+**Pendiente:** desplegar la función en PreProd y probar de punta a punta (el despliegue lo hace Iker); repetir las pruebas doradas con liquidaciones de producción; documentos `ApiCupoTiendas` de la tienda de prueba.

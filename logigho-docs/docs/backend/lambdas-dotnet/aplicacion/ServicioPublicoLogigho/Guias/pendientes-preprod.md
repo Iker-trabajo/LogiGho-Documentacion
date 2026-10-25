@@ -99,7 +99,7 @@ P-10 nacen de replicar el flujo actual de las Lambdas de creación; P-06 a P-09 
 ## P-08 · Cupo en `OBSERVAR`
 
 - **Qué hace el código:** hasta que existan la **calculadora de cupo** y el **job de saldo**, la aplicación del cupo está en `OBSERVAR` (calcula y registra, no
-  rechaza; ver [`cupo.md`](cupo.md)). Hoy el sustituto de la calculadora falla cerrado.
+  rechaza; ver [`cupo.md`](cupo.md)). La calculadora ya existe en código (`ApiLambdaGuiasCalculadora`, 2026-10-24) pero falta desplegarla y probarla de punta a punta en PreProd; sin la variable `FUNCION_CALCULADORA_CUPO` el sustituto sigue fallando cerrado.
 - **Requisito para salir a clientes externos:** `APLICAR`.
 - **Opciones:** construir calculadora y job antes de PreProd con clientes reales, o limitar PreProd a pruebas internas en `OBSERVAR`.
 - **Recomendación:** lo segundo para las primeras pruebas; ningún cliente externo sin `APLICAR`.

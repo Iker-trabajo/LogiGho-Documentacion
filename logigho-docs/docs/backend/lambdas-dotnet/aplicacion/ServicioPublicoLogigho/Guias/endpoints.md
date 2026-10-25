@@ -28,7 +28,7 @@ Base: `ApiIntegracionesExternas` (`rl7zt6zak5`), versión `/v1`.
 
 | Método | Ruta | Scope | Descripción |
 | --- | --- | --- | --- |
-| `POST` | `/v1/guias` | `guias:crear` | Crea una guía. `201` si la transportadora responde a tiempo; `202` con `solicitudId` si tarda más |
+| `POST` | `/v1/guias` | `guias:crear` | Crea una guía. `201` si la guía queda creada dentro de la espera (20 s por defecto, RN-066); `422 TRANSPORTADORA_RECHAZO` si la rechazan en ese lapso; `202` con `solicitudId` si el worker tarda más (consultar `GET /v1/solicitudes/{id}`) |
 | `GET` | `/v1/solicitudes/{id}` | `guias:leer` | Estado de una solicitud (`RECIBIDA`, `CREANDO`, `CREADA`, `FALLIDA`, `INCIERTA`, `ANULADA`) |
 | `GET` | `/v1/guias/{numero}/etiqueta` | `guias:leer` | URL temporal del PDF (`formato=sticker|mediana`) |
 | `POST` | `/v1/guias/{numero}/anulacion` | `guias:anular` | Anula la guía en la transportadora y libera cupo |

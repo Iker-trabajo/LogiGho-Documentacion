@@ -1003,3 +1003,20 @@ Se registraron en los documentos (sin implementar todavía):
 **Docs:** RN-003 y la tabla de campos (`totalRecaudo`), RN-072/RN-P-05 (estados anulables por transportadora, configurables; MVP solo «Creado»), P-01 resuelto, y en `pendientes-preprod.md` la propuesta de métrica, alarma y runbook de P-07 (documento ausente) y la de observabilidad máxima con el WAF de producción en modo contar (P-09).
 
 **Pendiente de implementar** (F1b-c): excepción `DocumentoAusenteException` con la métrica y la alarma, el runbook, la lista de estados anulables por transportadora en la base, y el resto de la lista de archivos ya enviada.
+
+---
+
+## 2026-10-24 · POST espera al worker, clave liberada tras Fallida, rechazo por cupo y `URL_AVISO_INVENTARIO`
+
+Respuestas de Iker a las cuatro preguntas de F1b-c, ya implementadas.
+
+**Código** (`feature/api-publica-guias`):
+
+- **Espera (RN-066).** `CrearGuia` sondea la solicitud cada 500 ms hasta `ESPERA_RESPUESTA_SEGUNDOS` (20 por defecto, tope 25). El endpoint responde `201` con el número de guía, `422 TRANSPORTADORA_RECHAZO` si la rechazaron, o `202` si el worker no terminó; `GET /v1/solicitudes/{id}` sirve siempre. Si el cliente cancela, la cancelación se propaga.
+- **Fallida libera la clave (RN-067).** `SolicitudGuia.LiberarClave()` la renombra a `clave~id`; solo una Fallida puede hacerlo. La misma clave crea una guía nueva. Probado también contra el índice único de Mongo.
+- **Sin cupo (RN-068).** Además de `ApiSolicitudesGuia` en `FALLIDA`, la guía se inserta en `CargaPedido` y se marca `Rechazado` con `ERROR = "Sin cupo disponible para la cuenta: …"`.
+- **Inventario.** `URL_SERVICIO_AWS` se reemplaza por `URL_AVISO_INVENTARIO`, la URL **completa** de `/actualizaInventarioLotes`. Vacía en PreProd: el paso se omite con un aviso en el log y la métrica `InventarioOmitido`. Con `ENTORNO=prod` y sin la variable, el worker no arranca (el error nombra la variable).
+
+**Terraform:** `url_servicio_aws` pasa a `url_aviso_inventario` (opcional, vacía por defecto); en el entorno `prod` es obligatoria (validación) y lleva la URL completa del REST de producción; PreProd la deja vacía a propósito. Se corrigió además una prueba de `preprod` desactualizada (esperaba tres funciones y el MCP está encendido desde el 2026-10-24: son cuatro).
+
+**Pendiente:** la calculadora de cupo real (el `POST` sigue terminando en error de cupo hasta entonces), `IdCarga`, `DocumentoAusenteException`, la métrica/alarma de P-07 y el resto de F1b-c.

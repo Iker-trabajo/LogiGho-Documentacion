@@ -102,7 +102,7 @@ Las demás (`DATABASE_NAME`, `COLA_SOLICITUDES_URL`, `BUCKET_*`, `URL_CLOUDFRONT
 
 ### 4.3 Comprobar
 
-Lambda → **Probar** con un evento vacío `{}` sobre `ApiLambdaGuiasCalculadoraPreProd`: debe responder un JSON con `error.codigo = "SOLICITUD_INVALIDA"` (rechaza el evento vacío) y **no** una excepción. Eso demuestra que arrancó y que lee `CADENA_CONEXION`. Si falla con «CADENA_CONEXION no está configurada», falta la variable.
+Lambda → **Probar** con un evento vacío `{}` sobre `ApiLambdaGuiasCalculadoraPreProd`: debería responder un JSON con `error.codigo = "SOLICITUD_INVALIDA"` (rechaza el evento vacío) y **no** una excepción. Eso demuestra que arrancó y que lee `CADENA_CONEXION`. Si falla con «CADENA_CONEXION no está configurada», falta la variable.
 
 ---
 
@@ -262,7 +262,7 @@ Esperado: solicitud `Creada` con `Reserva.Origen = "Real"`; `Reservado` igual a 
 
 ## 8. Pruebas de reglas cambiando datos
 
-Cada una se prepara en Atlas, se prueba y se **deja como estaba**.
+Cada una se prepara en Atlas, se prueba y se **deja como estaba**. El caso de «documento ausente» no se puede provocar a mano con fiabilidad (la fila de `CargaPedido` la inserta el propio worker segundos antes de usarla); está cubierto por las pruebas automáticas contra Mongo.
 
 | Prueba | Preparar | Hacer | Esperado |
 | --- | --- | --- | --- |
@@ -270,7 +270,6 @@ Cada una se prepara en Atlas, se prueba y se **deja como estaba**.
 | **Límite diario** | `db.ApiCupoTiendas.updateOne({_id:156783},{$set:{"Parametros.GuiasPorDiaTienda":1}})` | Dos guías válidas seguidas con claves distintas | La segunda: `429 LIMITE_DIARIO_ALCANZADO`. Volver a dejarlo sin el campo: `$unset:{"Parametros.GuiasPorDiaTienda":""}` |
 | **Cliente bloqueado** | `db.ApiClientes.updateOne({ClienteId:"54s6t64cb84b8np5p5cc63sfjj"},{$set:{Estado:"BLOQUEADO"}})` | Cualquier petición | `403 CLIENTE_BLOQUEADO` (la caché es de 30 s: esperar medio minuto). Una guía ya aceptada y encolada espera sin crearse; al volver a `ACTIVO` se crea |
 | **Cinco intentos** | En el worker, cambiar `URL_SERVICIO_INTER` a `http://127.0.0.1:1` | Crear una guía válida | El worker la reintenta (intentos 1 a 4) y al quinto queda `Fallida` con `TRANSPORTADORA_NO_DISPONIBLE`, libera el cupo y salta la alarma `fallida-por-reintentos`. **Restaurar el valor original** |
-| **Documento ausente** | — | Con el worker detenido (concurrencia reservada 0) crear una guía, borrar a mano su documento de `CargaPedido`, reactivar el worker | `MotivoRevisionManual` en la solicitud, métrica `DocumentoAusente`, alarma; seguir [runbook-documento-ausente.md](runbook-documento-ausente.md) |
 | **Tope de lote** | `TopeLote` del cliente en 10 (ya está) | Lote de 11 | `422 LOTE_DEMASIADO_GRANDE` |
 
 ---

@@ -12,13 +12,13 @@ P-10 nacen de replicar el flujo actual de las Lambdas de creación; P-06 a P-09 
 
 | Id | Tema | Decide | Estado |
 | --- | --- | --- | --- |
-| P-01 | `Total recaudo` igual al valor declarado sin contraentrega | Iker | Abierto |
+| P-01 | `Total recaudo` igual al valor declarado sin contraentrega | Iker | **Resuelto 2026-10-24:** campos separados; sin contraentrega vale 0 y el valor declarado es >= 45 000 |
 | P-02 | `Origen = "API"` | Iker | Abierto |
 | P-03 | `IdCarga = "-1"` | Iker | Abierto |
 | P-04 | `ASESOR = "Logigho"` fijo | Iker | Abierto |
 | P-05 | `Cantidad Total Productos` sin tope | Iker (con `reglas-negocio.md`) | Abierto |
 | P-06 | `Reservada` que se reencola sin fin | Iker | Parcial: **5 reintentos** antes de `Fallida` (2026-10-24); falta la antigüedad máxima |
-| P-07 | `SetAsync` falla si el documento no existe → DLQ | Iker | Abierto |
+| P-07 | `SetAsync` falla si el documento no existe → DLQ | Iker | Aprobado montar alarma y runbook (2026-10-24); propuesta abajo |
 | P-08 | Cupo en `OBSERVAR` | Iker | Abierto |
 | P-09 | WAF sobre todo el stage de `ApiIntegracionesExternas` | Iker | Parcial: en producción primero en modo **solo contar** y luego bloquear; en PreProd apagado (2026-10-24) |
 | P-10 | Inter responde 200 sin `numeroPreenvio` en errores de validación | Iker | Abierto |
@@ -88,6 +88,14 @@ P-10 nacen de replicar el flujo actual de las Lambdas de creación; P-06 a P-09 
 - **Opciones:** (a) dejarlo así y escribir el runbook; (b) alarma/métrica propia para "documento ausente"; (c) ambos.
 - **Recomendación:** (c): un documento ausente indica borrado manual o carrera con otro proceso y conviene verlo con nombre propio.
 
+### P-07 · Propuesta de métrica, alarma y runbook (aprobado montar, 2026-10-24)
+
+- **Cuándo ocurre:** el worker intenta actualizar `CargaPedido` o `PedidosInter` y el documento ya no existe. Hoy `SetAsync` lanza, el mensaje se reintenta 5 veces y termina en la DLQ sin distinguir este caso de cualquier otro.
+- **Detección:** una excepción propia `DocumentoAusenteException` (colección, id del documento, id de la solicitud; sin datos personales). El worker la captura, **no reintenta a ciegas** (el documento no va a aparecer solo y la guía ya pudo crearse en la transportadora), marca la solicitud como `RequiereRevisionManual`, mantiene la reserva de cupo y registra el hecho.
+- **Métrica:** `DocumentoAusente` (EMF, Sum) con dimensiones `Coleccion` (`CargaPedido`|`PedidosInter`) y `Transportadora`.
+- **Alarma:** `ApiGuias-<entorno>-documento-ausente`, Sum ≥ 1 en 5 minutos, datos faltantes = no incumple, al mismo SNS de las demás alarmas (correo y Slack). Un solo caso ya es relevante: significa dinero y cupo reservados sin pedido.
+- **Runbook** (`runbook-documento-ausente.md`, a crear con la alarma): (1) abrir la solicitud en `ApiSolicitudesGuia` por el `solicitudId` del log y mirar `PasosCompletados` y `NumeroGuia`; (2) comprobar si el documento existe por otro `_id` (borrado manual, reinserción o carrera con un proceso de depuración); (3) **si la guía ya existe en la transportadora, no volver a crearla**: reconstruir el documento desde la solicitud y completar los pasos; (4) si no existe, decidir con Iker entre marcarla `Fallida` (libera cupo) o reintentar; (5) reencolar desde la DLQ solo después de arreglar la causa; (6) anotar la causa en la bitácora.
+
 ## P-08 · Cupo en `OBSERVAR`
 
 - **Qué hace el código:** hasta que existan la **calculadora de cupo** y el **job de saldo**, la aplicación del cupo está en `OBSERVAR` (calcula y registra, no
@@ -97,6 +105,8 @@ P-10 nacen de replicar el flujo actual de las Lambdas de creación; P-06 a P-09 
 - **Recomendación:** lo segundo para las primeras pruebas; ningún cliente externo sin `APLICAR`.
 
 ## P-09 · WAF asociado a todo el stage de `ApiIntegracionesExternas`
+
+> **Decisión 2026-10-24:** en **producción** el WAF se activa primero en modo **solo contar** (`count`) para monitorear y después se decide el bloqueo; en PreProd sigue apagado. Iker pide el **máximo monitoreo posible** en producción: ver la propuesta de observabilidad al final de esta sección.
 
 > **Actualización 2026-10-23:** en **PreProd** deja de aplicar: el REST es nuevo (`ApiIntegracionesExternas-PreProd`, ver [ADR-006](adr-006-mcp.md)) y no tiene `/pedidos` ni `/token`; el WAF se puede activar sin riesgo para esos usuarios (`crear_waf`, hoy `false`). **Sigue vigente para producción**, donde el stage `rl7zt6zak5` sí lo comparten.
 
@@ -117,6 +127,14 @@ Se anotan aquí para que la lista refleje el estado de PreProd:
 - F1b: no se empieza hasta que exista `reglas-negocio.md`.
 
 Pendiente de Iker que nace de esto: dar valores y altas para encender el MCP (ver la lista de [ADR-006](adr-006-mcp.md#encender-el-mcp-en-preprod-lista-para-iker)).
+
+### P-09 · Propuesta de observabilidad en producción (WAF en modo contar)
+
+- **WAF:** las cuatro reglas administradas y el límite por IP con acción `count` (en los grupos administrados `override_action { count {} }`); registro completo del WAF a CloudWatch Logs con el header `Authorization` y las cookies **redactados**; métricas por regla (`CountedRequests`) y muestreo de solicitudes habilitados.
+- **Alarmas nuevas:** pico de solicitudes contadas por regla (cada regla, comparado con una línea base), solicitudes contadas por el límite por IP (indica quién se bloquearía) y cualquier solicitud contada por `AWSManagedRulesKnownBadInputsRuleSet` o por la lista de reputación de IP.
+- **API Gateway:** registro de acceso en JSON (id de petición, ruta, estado, latencia, `clientId` del authorizer, IP de origen; sin cuerpo ni datos personales), métricas detalladas por método y registro de ejecución solo en nivel ERROR.
+- **Dashboard:** widgets de solicitudes contadas por regla, 4XX/5XX por cliente, latencia p95/p99, throttling por plan de uso, DLQ y mensajes antiguos (los de `observabilidad.md`).
+- **Revisión:** semanal durante el periodo de conteo; el paso a bloquear se decide con los falsos positivos observados (en especial sobre `/pedidos` y `/token`).
 
 ## P-10 · Inter responde 200 sin `numeroPreenvio` ante errores de validación
 

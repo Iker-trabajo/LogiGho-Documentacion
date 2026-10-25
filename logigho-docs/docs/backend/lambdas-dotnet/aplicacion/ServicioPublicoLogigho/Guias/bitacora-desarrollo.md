@@ -993,3 +993,13 @@ Se registraron en los documentos (sin implementar todavía):
 - **P-06:** 5 reintentos antes de `Fallida`; falta la antigüedad máxima. **P-09:** WAF en producción primero solo contando.
 - **Tienda de prueba:** IdTienda 156783 (BTK MAN, Dropshipping). Solo el id; nada más de esa fila en la documentación.
 - **Pendiente de Iker, sin implementar:** si `Total recaudo` sin contraentrega es 0 con valor declarado ≥ 45 000 (propuesta: campo `totalRecaudo` opcional, 0 por defecto, mayor que 0 se rechaza con `CONTRAENTREGA_NO_DISPONIBLE`), y la regla de `referencia`.
+
+---
+
+## 2026-10-24 · Total recaudo separado, anulación por transportadora, P-07 y observabilidad del WAF
+
+**Código** (rama `feature/api-publica-guias`): `totalRecaudo` es un campo propio del body, distinto de `valorDeclarado` (que sigue exigiendo ≥ 45 000). Sin contraentrega vale 0 o no se envía; mayor que 0 se rechaza con `CONTRAENTREGA_NO_DISPONIBLE` (contraentrega fuera de v1). `DocumentosPedido` ya **no** copia el valor declarado a «Total recaudo» (el quirk heredado de Inter): la liquidación toma el valor declarado como base del seguro cuando el recaudo es 0 y `Seguro = SI`, así que el seguro resultante es el mismo. La prueba de paridad con `CrearGuia` conserva una sola diferencia deliberada, marcada.
+
+**Docs:** RN-003 y la tabla de campos (`totalRecaudo`), RN-072/RN-P-05 (estados anulables por transportadora, configurables; MVP solo «Creado»), P-01 resuelto, y en `pendientes-preprod.md` la propuesta de métrica, alarma y runbook de P-07 (documento ausente) y la de observabilidad máxima con el WAF de producción en modo contar (P-09).
+
+**Pendiente de implementar** (F1b-c): excepción `DocumentoAusenteException` con la métrica y la alarma, el runbook, la lista de estados anulables por transportadora en la base, y el resto de la lista de archivos ya enviada.

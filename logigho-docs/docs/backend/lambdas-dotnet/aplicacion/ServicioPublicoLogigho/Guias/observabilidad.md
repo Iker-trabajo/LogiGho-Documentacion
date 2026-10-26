@@ -28,7 +28,7 @@ estado: diseño
 | Alarma | Umbral inicial |
 | --- | --- |
 | Tasa de error | > 2% en 5 min |
-| Latencia p95 de creación | > 8 s |
+| Latencia p95 de creación | > 15 s (decisión de Iker 2026-10-25: el POST espera hasta 20 s al worker; con 8 s la alarma saltaba con cualquier guía) |
 | DLQ | > 0 mensajes |
 | Solicitudes `INCIERTA` | > 0 por más de 10 min |
 | Transportadora no disponible | circuito abierto |

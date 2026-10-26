@@ -55,11 +55,28 @@ flowchart TD
     AK --> AL[reintentarLimpieza]
     AJ -->|No| AM[Lote archivado]
 
-    AN[Pestaña Historico] --> AO[cargarLotes: filtro fecha]
-    AO --> AP[Filtro tienda client-side]
+    AN[Pestaña Historico] --> AO[cargarLotes: fecha por dia o rango]
+    AO --> AP[Filtros client-side: ecosistema, tienda, transportadora]
     AP --> AQ[Ver detalle de lote]
     AQ --> AR[getGuiasDeLote]
     AR --> AS[Seleccionar subset]
     AS --> AT[exportarSubsetDeLote: PDF sin archivar]
-    AR --> AU[regenerarPdf: PDF de lote completo]
+    AP --> AU[regenerarPdf: PDF de lote completo]
+
+    AN --> BA{Buscador de guias}
+    BA -->|Modo Lote: una o varias| BB[buscarGuiasEnHistorial]
+    BA -->|Modo Guia: una sola| BB
+    BB --> BC{Encontradas?}
+    BC -->|Ninguna| BD[Aviso: no encontradas]
+    BC -->|Modo Lote| BE[mostrarLotesDeBusqueda + aviso de no encontradas]
+    BE --> AP
+    BC -->|Modo Guia| BF[Abrir detalle del lote con solo esa guia]
+    BF --> AR
+
+    AP --> CA[Marcar varios lotes]
+    CA --> CB[Franja: resumen + Unir lotes]
+    CB --> CC{Aviso de confirmacion}
+    CC -->|Cancelar / Esc| CA
+    CC -->|Si, unir lotes| CD[getGuiasDeLote de cada lote]
+    CD --> CE[generarPdfDespacho por partes: PDF sin archivar]
 ```

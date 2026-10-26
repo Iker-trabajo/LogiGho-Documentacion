@@ -24,6 +24,34 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-26] — Servicio Público: CI/CD de ConsultarPedidos + tiendas desde base de datos
+
+### Nuevas funcionalidades
+
+- **CI/CD propio del sub-dominio `ServicioPublico/ConsultarPedidos`** en Azure DevOps: un pipeline CI (compila las 2 lambdas, corre los 11 tests, empaqueta los zips) y dos pipelines CD (PreProd por push a `release/*`, Prod por merge a `main` con aprobación del Environment `produccion`). Las plantillas son propias del sub-dominio (`servicio-publico-ci.yml`, `servicio-publico-cd.yml`), no dependen de las de pedidos.
+- **Roles de despliegue por Terraform**: `azdo-servicio-publico-preprod` (cuenta `376313750428`) y `azdo-servicio-publico-prod` (cuenta `522814697657`), asumidos vía OIDC desde los service connections `aws-{preprod,prod}-servicio-publico-consultar-pedidos`. Permiso acotado a `UpdateFunctionCode` + variables de las lambdas `APILambdaConsultarPedidos` y `APILambdaObtenerToken`, y a sus carpetas S3 de artefactos.
+
+### Cambios
+
+- **ConsultarPedidos ya no confía en el token para las tiendas.** El JWT ahora solo aporta identidad (`sub`, email, username); las tiendas del usuario se consultan en la colección `ApiUsuariosTiendas` por `sub`. Soporta `AccesoATodas` (comodín `*`) y responde `403` si el usuario no existe o está inactivo. El cambio llegó de la rama `feature/mejora-api-pedidos` del repo PreProd y se integró conservando el refactor de `PoliticaFechas`.
+- `COLECCION_PEDIDOS` por defecto pasa a `PedidosInter`.
+- El `function-name` de ConsultarPedidos se corrigió del typo `ApiLambaConsultarPedidos` al correcto `APILambdaConsultarPedidos`; los `aws-lambda-tools-defaults.json` quedaron con `environment-variables` vacío (secretos fuera del repo, en variable groups de Azure Library).
+
+### Correcciones
+
+- **Estreno de pipelines (3 fallos reales, resueltos):**
+    1. `ci.yml` apuntaba a `../../templates/lambda-dotnet-ci-varias.yml`, que no existe ahí (está 3 niveles arriba y es local de pedidos). Se creó la plantilla de CI propia del sub-dominio.
+    2. Azure rechazaba `gt(length(lambda.claves), 0)` dentro de un `each` (ve `Object`, no lista). Se quitó el guard innecesario (ambas lambdas siempre tienen claves).
+    3. El CD asumía el rol de guías (`azdo-guias-preprod`) por apuntar al service connection viejo `aws-preprod-servicio-publico`. Se corrigió al service connection propio `-consultar-pedidos`.
+
+### Documentación
+
+- Página **Backend → Servicio Público → ApiLambdaConsultarPedidos** actualizada a v3: flujo de autorización desde `ApiUsuariosTiendas`, authorizer de Cognito en API Gateway (`CognitoUsuariosExternos`, header `Authorization: Bearer`), `COLECCION_PEDIDOS` default `PedidosInter`, historial de cambios de Oct 26.
+- Nueva página **CI/CD y despliegue** del sub-dominio: pipelines, qué hace el CD paso a paso, roles/service connections, y la bitácora del estreno con los 3 fallos y sus arreglos.
+- Nueva página **Novedades Inter (MotivoNovedadInter)**: diseño del array de novedades, cómo activarlo en `ConfiguracionCamposApi`, y por qué no requiere cambio de código (evaluación de serialización descartada).
+
+---
+
 ## [2026-09-16] — Liquidaciones: motor Dinámico (TCC) conviviendo con el motor Legacy
 
 ### Nuevas funcionalidades

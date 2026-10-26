@@ -161,6 +161,8 @@ nav:
           - Servicio Público:
               - ApiLambdaConsultarPedidos:
                   - Lambda: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/ApiLambdaConsultarPedidos.md
+                  - CI/CD y despliegue: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/cicd-despliegue.md
+                  - Novedades Inter (MotivoNovedadInter): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/motivo-novedad-inter.md
                   - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/adr-001-migracion-validacion-tiendas.md
                   - Repositorio UsuarioTienda: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/usuario-tienda-repository.md
                   - Deuda Técnica (TODO): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/TODO-integracion-usuarios-api-completa.md

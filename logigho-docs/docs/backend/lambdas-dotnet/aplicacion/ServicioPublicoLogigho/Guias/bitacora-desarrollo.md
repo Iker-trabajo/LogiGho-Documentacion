@@ -1,0 +1,1072 @@
+---
+autor: Claude (chat de desarrollo) con Iker Acevedo
+fecha_creacion: 2026-10-22
+ultima_actualizacion: 2026-10-22
+estado: vivo
+---
+
+# Bitácora de desarrollo — API pública de guías
+
+Una entrada por paso cerrado. Cada una dice qué se hizo, por qué, qué se descartó, cómo se verificó y qué queda
+pendiente. Código en la rama local `feature/api-publica-guias` del repo de lambdas
+(`LambdasLogiGho.Aplicacion/ServicioPublicoLogigho/Guias/`); documentación en `docs/api-publica-guias`.
+Nada de esto está publicado ni desplegado.
+
+Comando de verificación usado en cada paso (build Release sin advertencias, tests, paquetes vulnerables y
+empaquetado de las dos Lambdas con `dotnet lambda package`).
+
+---
+
+## 2026-10-22 · F1a-a · Adaptador de Interrapidísimo
+
+**Commit de código:** `2c9941e` — `feat(guias): adaptador de Interrapidisimo para crear guias (F1a-a)`
+
+### Qué se hizo
+
+El worker ya sabe crear una guía en Interrapidísimo. Es la pieza que, hasta hoy, vivía dentro de
+`CargaInterUseCase` en `ApiLambdaCrearGuia` mezclada con Mongo, S3 y reglas de negocio. Ahora está aislada detrás de
+la interfaz `ICreadorGuia` (en Aplicación) y la implementa `CreadorGuiaInterrapidisimo` (en Infraestructura).
+
+Para poder armar el request, la solicitud (`SolicitudGuia`) dejó de ser un cascarón y ahora guarda:
+
+- `DatosGuia`: lo que declara el integrador (destinatario, dirección, medidas, valor declarado, tipo de entrega,
+  productos). Solo la forma; las validaciones llegan con `reglas-negocio.md` (F1b).
+- `ContextoEnvio`: lo que el servidor resuelve y nunca viene del body (nombre de tienda, sucursal remitente,
+  descripción del tipo de entrega, ciudad, origen).
+- `IdCargaPedido` e `IdPedidoInter`: los `_id` (formato ObjectId) con los que más adelante se insertarán los
+  documentos en `CargaPedido` y `PedidosInter`.
+- `RespuestaTransportadoraJson`, `PasosCompletados` y `UrlGuia`: para que, si algo falla después de crear la guía,
+  el reintento termine solo lo que falta sin volver a llamar a la transportadora.
+
+### Archivos principales
+
+| Archivo | Para qué |
+| --- | --- |
+| `Dominio/Guias/DatosGuia.cs` | Datos de la guía y contexto resuelto por el servidor |
+| `Dominio/Guias/IdsDocumento.cs` | Genera ids con formato ObjectId sin depender de Mongo |
+| `Dominio/Guias/CostosTransportadora.cs` | Lee `valorFlete`, `valorServicioContraPago`, `valorSobreFlete` de la respuesta de Inter |
+| `Dominio/Solicitudes/SolicitudGuia.cs`, `Paso.cs` | Máquina de estados ampliada (nueva transición `Creando → Reservada`) y pasos posteriores |
+| `Aplicacion/Puertos/ICreadorGuia.cs` | Cuatro resultados posibles: Creada, Rechazada, Incierta, **NoEnviada** |
+| `Aplicacion/Trazas/TrazaHttp.cs` | Request/response de la llamada, con credenciales enmascaradas (ADR-005) |
+| `Infraestructura/Transportadoras/Interrapidisimo/*` | Opciones, cuerpo de la admisión, adaptador y registro con resiliencia |
+| `Infraestructura/Persistencia/RepositorioSolicitudesMongo.cs` | Guarda los datos nuevos |
+| `test/.../Transportadoras/CreadorGuiaInterrapidisimoTests.cs` | 33 pruebas contra un Inter simulado (WireMock.Net) |
+
+### Cómo clasifica lo que responde Inter
+
+| Qué pasa | Resultado | Por qué |
+| --- | --- | --- |
+| HTTP 2xx con `numeroPreenvio` legible | **Creada** | Hay número de guía |
+| HTTP 2xx sin `numeroPreenvio` legible | **Incierta** | Inter dijo "ok" pero no sabemos qué creó |
+| HTTP 4xx de negocio (400, 422…) | **Rechazada** | Inter dijo que no; el motivo (máx. 500 caracteres) se devuelve al integrador |
+| HTTP 500/502/503/504/408 | **Incierta** | Inter pudo crear la guía antes de fallar. **No se reintenta** |
+| Timeout (30 s por defecto) | **Incierta** | Igual que arriba |
+| Error de red *después* de enviar | **Incierta** | No sabemos si Inter alcanzó a procesar |
+| Conexión rechazada, DNS, TLS (antes de enviar) | **NoEnviada** | Es seguro reintentar; la pipeline reintenta 2 veces |
+| HTTP 401/403/429 | **NoEnviada** | Credenciales de LogiGho mal o Inter limitando: no se creó nada |
+| Circuito abierto (5 fallos en 30 s) | **NoEnviada** | Se deja de golpear a Inter un rato |
+
+Cuando el resultado es **NoEnviada**, la solicitud vuelve de `Creando` a `Reservada` y el mensaje de SQS falla a
+propósito para que se reentregue. Si se agotan las entregas, cae en la DLQ (que tiene alarma). Así una caída corta de
+Inter no pierde guías ni las marca como fallidas.
+
+### Decisiones y alternativas descartadas
+
+- **Sin reintento ciego del POST.** Hoy `Generico.consumoGenerico` repite cualquier POST hasta 4 veces, incluida la
+  creación (ADR-003). El nuevo adaptador solo reintenta si el request ni siquiera salió. Esa política está en el
+  *handler de resiliencia* del `HttpClient`, no dentro del adaptador, y un test demuestra que un 500 genera exactamente
+  una llamada.
+- **No se manda el token del usuario a Inter** (hallazgo de seguridad en `hallazgos-lambdas-actuales.md`). Un test
+  revisa que no salgan los headers `Token` ni `Authorization`.
+- **Credenciales de Inter**: se leen de las mismas variables de entorno cifradas con AES que usan las lambdas actuales
+  (`URL_SERVICIO_INTER`, `ID_CLIENTE`, `USER_AUTH`, `TOKEN_AUTH`, `SUCURSAL_GENERICA`). No se crean secretos nuevos.
+- **Se replicó tal cual la partición del nombre** (`"Maria Jose Lopez Gomez"` → nombre `Maria Jose`, primer apellido
+  `Jose`, sin segundo apellido). Es una rareza heredada; se deja igual para que Inter reciba lo mismo que hoy y se fija
+  con tests. **Pregunta para Iker:** ¿queremos mejorar esa partición más adelante? Cambiaría lo que ve Inter.
+- **`AplicaContrapago` siempre `false`**: v1 no tiene contraentrega.
+- **IDs de documento generados en el Dominio**, no por Mongo: así insertar `CargaPedido`/`PedidosInter` con un `_id`
+  conocido hace idempotente el reintento (clave duplicada = "ya estaba") sin crear índices nuevos sobre colecciones
+  existentes. Descartado: índice único en `PedidosInter.Numeropreenvio` (tipo mixto string/número y posibles
+  duplicados sin verificar, ver `colecciones.md`).
+- **`HttpRequestError` decide si el request salió.** Solo `ConnectionError`, `NameResolutionError`,
+  `SecureConnectionError` y `ProxyTunnelError` se consideran "antes de enviar". Riesgo conocido y aceptado: si el
+  servidor cerrara la conexión justo durante el envío podría clasificarse como "antes"; en ese caso se reintenta una
+  vez y, si Inter ya había creado la guía, habría un duplicado. Es el único hueco y está acotado a 2 reintentos con
+  error de *conexión*, no de respuesta.
+
+### Cómo se verificó
+
+- 91 tests en verde (38 del esqueleto + 53 nuevos), incluyendo WireMock.Net con el `HttpClient` y la pipeline reales:
+  éxito, número como texto, cuerpo idéntico al actual, sucursal genérica, 400, motivo truncado, 5xx y 408 sin
+  reintento, 401/403/429, timeout sin reintento, conexión rechazada real y simulada (3 intentos), error de red tras
+  enviar (1 intento), circuito abierto (la sexta llamada no sale), transportadora equivocada.
+- `dotnet build -c Release`: 0 advertencias, 0 errores.
+- `dotnet list package --vulnerable --include-transitive`: sin paquetes vulnerables.
+- `dotnet lambda package` genera `ApiLambdaGuias.zip` (9,6 MB) y `ApiLambdaGuiasWorker.zip` (9,9 MB).
+- Paquetes nuevos (todos publicados hace más de 2 semanas): `Microsoft.Extensions.Http` 10.0.12 (08-sep),
+  `Microsoft.Extensions.Http.Resilience` 10.10.0 (09-sep), `WireMock.Net` 2.18.0 (22-sep, solo tests).
+
+### Pendiente / siguiente
+
+- **F1a-b:** escritores de `CargaPedido` y `PedidosInter` con el mismo documento de hoy.
+- Falta conectar el caso de uso para que, tras `Creada`, ejecute los pasos posteriores.
+- **Para Iker:** el nombre de empresa, la sucursal y los catálogos (`CiudadesInter`, `TipoEntregaInter`, `Tienda`)
+  los resolverá el endpoint en F1b; por ahora los tests usan datos ficticios.
+
+---
+
+## 2026-10-22 · F1a-b · Escritores de `CargaPedido` y `PedidosInter`
+
+**Commit de código:** `664012a` — `feat(guias): escritores de CargaPedido y PedidosInter con el documento actual (F1a-b)`
+
+### Qué se hizo
+
+Cuando el worker crea una guía, ahora deja las mismas huellas en Mongo que dejan hoy `ApiLambdaCrearGuia` y
+`ApiLambdaCargarGuias`, para que liquidaciones, sincronizadores, inventario y Angular no noten la diferencia:
+
+1. **Antes de llamar a Inter** inserta la fila en `CargaPedido` con `Estado = "Pendiente"` y `Origen = "API"`.
+2. **Si Inter crea la guía**, la fila pasa a `Cargado` con `NumeroPreenvio`, `Total Flete`, `Total Servicio`,
+   `Total Sobreflete`, `Cantidad Total Productos` y `Trayecto` vacío; y se inserta el documento de `PedidosInter`
+   con `Estado = "Creado"`.
+3. **Si Inter la rechaza**, la fila queda `Rechazado` con el campo `ERROR`, como hoy.
+4. **Si la respuesta es incierta** (timeout), la fila se queda en `Pendiente`: todavía no sabemos si la guía existe, así
+   que ni se carga ni se rechaza. Lo resuelve el reconciliador (F1a-g).
+
+### Cómo se garantiza "el mismo documento que hoy"
+
+`DocumentosPedido` (Infraestructura) arma los documentos con el mismo algoritmo de `CargaInterUseCase`
+(`ApiLambdaCrearGuia:186-253`): toma la fila, le cambia estado y costos, le quita `_id` y `ERROR`, pasa las claves por
+`ConvertToPascalCase` (minúsculas → título por palabra → sin espacios) y agrega los campos de seguimiento vacíos
+(`Estado Logigho`, `Fecha Entrega`, `Pago`, …).
+
+La prueba que lo protege **ejecuta una copia literal del algoritmo actual** (con `JToken` de Newtonsoft) sobre la misma
+fila y compara el resultado con el nuestro, campo por campo, tipo por tipo y en el mismo orden, en 10 casos
+(nombres de 1 a 4 palabras, sin seguro, etiqueta mediana, varios productos, sin productos, identificación no
+numérica, medidas decimales, teléfono mayor que int32, acentos y comillas, valor alto) más 4 formas distintas de la
+respuesta de Inter (número como texto, costos nulos, sin costos). Además hay una **foto de referencia** del documento
+de `PedidosInter` completo: si un nombre de campo, un tipo o un valor cambia, la prueba falla y obliga a decidirlo a
+propósito.
+
+### Idempotencia sin índices nuevos
+
+`CargaPedido` y `PedidosInter` las usan otros sistemas; crear un índice único sobre ellas no es algo que se haga de
+pasada (`PedidosInter.Numeropreenvio` tiene tipo mixto y posibles duplicados). En vez de eso, cada solicitud lleva dos
+`_id` (formato ObjectId) generados desde el principio: uno para su fila de `CargaPedido` y otro para su documento de
+`PedidosInter`. Si un reintento repite el insert, Mongo responde "clave duplicada" y se da por hecho que ya estaba.
+Las actualizaciones son `$set` de los mismos valores, repetibles sin efecto.
+
+### Qué pasa si algo falla a mitad de camino
+
+La solicitud recuerda qué pasos ya hizo (`CargaInsertada`, `CargaActualizada`, `PedidoInsertado`, `CargaRechazada`).
+Si el insert en `PedidosInter` falla, el mensaje de SQS falla, vuelve a la cola y el siguiente intento **solo repite ese
+paso**; nunca vuelve a llamar a Inter. Hoy ese caso es el hallazgo "insert en `PedidosInter` fallido solo se registra en
+log": la guía queda creada y el pedido huérfano, sin aviso. Aquí el fallo llega hasta la DLQ, que tiene alarma.
+
+### Decisiones, supuestos y preguntas para Iker
+
+| Tema | Lo que se hizo | Por qué / qué falta confirmar |
+| --- | --- | --- |
+| Fila de `CargaPedido` | Mismos campos y tipos que la fila de una guía manual en Angular (`modal-creacion-pedidos`) | `reglas-negocio.md` aún no existe; si la lista de campos del API cambia, cambia aquí |
+| `Origen` | `"API"` | Lo dice el diseño; el código actual solo distingue `"CRM"` (va a `CargaPedidoCrm`), así que `"API"` va a `CargaPedido` |
+| `IdCarga` | `"-1"` (como la guía manual) | **Confirmar**: ¿las guías de la API deben tener otro `IdCarga`? |
+| `Idtienda` | Entero | **Confirmar con datos reales**: en `PedidosInter` puede haber string o int (hallazgo de `cupo.md`) |
+| `ASESOR` | `"Logigho"` (valor por defecto de Angular) | **Confirmar**: podría ser útil guardar el cliente API, pero cambia el documento |
+| `CODIGO OFICINA`, `CODIGO REGIONAL`, `VALOR BASE PRODUCTO` | `1`, `3`, `10000`: constantes que hoy manda Angular | Se copian tal cual |
+| `Total recaudo` | Queda igual al **valor declarado** aunque no haya contraentrega | **Hallazgo**: así lo hace hoy `CargaInterUseCase` (línea 199). `cupo.md` supone recaudo 0 para guías sin COD; hay que decidir si la liquidación lo lee de `PedidosInter` y cómo lo trata |
+| Fecha | Hora de Colombia (UTC−5) fija entre reintentos | La solicitud guarda `RecibidaEn` y `CreadaEn` para que un reintento escriba la misma fecha |
+| `Cantidad Total Productos` | Suma de todas las cantidades | `ApiLambdaCrearGuia` suma solo hasta 12 productos y `ApiLambdaCargarGuias` hasta 18; la API limitará por regla (F1b) |
+| `UrlGuia` | Se escribe en un paso aparte (etiqueta, F1a-c) | Hoy `CargarGuias` lo inserta con el documento y `CrearGuia` lo actualiza después; el resultado final es igual |
+| Forma de pago | `CREDITO` para Inter; `CONTADO` para Envía (invertida) | Regla de `reglas-modalidad-pago.ts`; sin contraentrega |
+
+### Cómo se verificó
+
+- 146 tests en verde, 10 de ellos de **integración contra el Mongo local** (servicio `mongod` ya instalado en el equipo;
+  cada prueba usa su propia base `LogighoTest_*` que se borra, y solo corre si el servidor es `localhost`):
+  insert idempotente y con 10 llamadas simultáneas, update, `Rechazado` con motivo, `UrlGuia` en el documento correcto,
+  flujo completo con repositorios reales (una sola guía aunque el mensaje llegue dos veces) e ida y vuelta de la
+  solicitud completa.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+- CI (`pipelines/servicio-publico`): ahora levanta `mongo:7` y define `MONGO_TEST_URI`, igual que el CI de novedades.
+  Sin Mongo, localmente, esas pruebas se **omiten** y se ven como omitidas, no como aprobadas.
+- Se encontró y corrigió una prueba intermitente del paso anterior (timeout de 5 s demasiado justo en el primer
+  request en frío); ahora el margen es de 30 s y se probó en 3 compilaciones limpias seguidas.
+- `Newtonsoft.Json` 13.0.4 (16-sep-2025) entra solo en el proyecto de tests, únicamente para ejecutar la copia del
+  algoritmo actual.
+
+### Pendiente / siguiente
+
+- **F1a-c:** etiqueta de Inter a S3 (mismos buckets y claves), aviso a inventario y trazas a S3, como pasos
+  reintentables. Hoy `PasosPendientes` solo incluye los dos de Mongo.
+- Una solicitud que se queda en `Creando` porque la Lambda murió antes de recibir respuesta no avanza sola: la recoge
+  el reconciliador (F1a-g).
+- Docker Desktop no arranca en este equipo (WSL1 no es compatible con la configuración actual); no hizo falta porque ya
+  hay un `mongod` local. Si algún día se necesita Docker, hay que habilitar WSL2.
+
+---
+
+## 2026-10-22 · F1a-c · Etiqueta de Inter en S3, aviso a inventario y trazas
+
+**Commit de código:** `feaaf10` — `feat(guias): etiqueta de Inter a S3, aviso a inventario y trazas en S3 (F1a-c)`
+
+### Qué se hizo
+
+Después de que Inter crea la guía y de que quedan `CargaPedido` y `PedidosInter`, el worker completa tres cosas más,
+cada una como un **paso que se puede repetir sin duplicar nada**:
+
+1. **Etiqueta.** Pide el PDF a Inter (`Admision/ObtenerBase64PdfPreGuiaFormatoPeq/{n}` para sticker,
+   `.../ObtenerBase64PdfPreGuia/{n}` para mediana), lo valida, lo publica en S3 y escribe `UrlGuia` en `PedidosInter`.
+2. **Inventario.** `POST {URL_SERVICIO_AWS}/actualizaInventarioLotes` con `{"Guias":["<número>"]}`.
+3. **Trazas.** Guarda en S3 el request y la response exactos de cada llamada a Inter.
+
+Orden de los pasos de una guía creada: `CargaActualizada → PedidoInsertado → EtiquetaSubida → InventarioAvisado`.
+El inventario va al final porque lee la guía de `PedidosInter`.
+
+### Etiqueta: mismo destino que hoy (ADR-004)
+
+Se verificó contra `ApiLambdaPutObjectAOT` y contra AWS (solo lectura) que los buckets existen
+(`bucket-guias-inter-prod`, `bucket-guias-pdf-prod`) y que el dominio público es el de CloudFront configurado en esa
+lambda (`URL_CLOUDFRONT`). El worker escribe con el SDK de S3, con el mismo formato:
+
+| Archivo | Bucket | Clave | Contenido |
+| --- | --- | --- | --- |
+| Texto | `BUCKET_GUIAS_INTER` | `{numeroGuia}.txt` | El PDF en base64 como texto (igual que hoy) |
+| PDF | `BUCKET_GUIAS_PDF` | `guias-pdf/inter/{id}.pdf` | Bytes del PDF, `application/pdf`, `inline` |
+| `UrlGuia` | — | — | `URL_CLOUDFRONT` + clave del PDF |
+
+La prueba levanta un S3 simulado (WireMock) y usa el **SDK real**, así comprueba rutas, headers y contenido tal como
+saldrían a S3. El `{id}` del PDF es **aleatorio y se guarda en la solicitud antes de subir el archivo**: si el paso se
+repite escribe en la misma clave (no deja archivos huérfanos) y la URL sigue siendo impredecible. Importa porque el PDF
+es público y contiene datos personales: una clave derivada del número de guía se podría adivinar.
+
+### Trazas (ADR-005)
+
+`trazas/{yyyy}/{MM}/{dd}/{numeroGuia}/{solicitudId}-{paso}.json.gz` en el bucket `BUCKET_TRAZAS_GUIAS`, JSON
+comprimido con solicitud, cliente, tienda, request y response. Las credenciales de Inter van como `***`. En Mongo solo se
+anota la clave, el código HTTP y la latencia. Se guardan la admisión (incluso si Inter la rechaza o queda incierta) y la
+petición de etiqueta; esta última **sin el PDF**, que ya está en el bucket. Si S3 falla al guardar una traza, la guía
+sigue su camino y se deja un aviso en el log: la traza sirve a soporte, no al flujo.
+
+### Qué pasa si algo falla
+
+| Falla | Resultado |
+| --- | --- |
+| Inter devuelve PDF vacío, concatenado, con su mensaje de error o cortado | Se reintenta hasta 3 veces; si ninguno es válido, el mensaje de SQS falla y vuelve a la cola. La guía queda `Creada` y **no se rechaza** (hoy la carga masiva marca la fila `Rechazado` aunque la guía ya existe) |
+| S3 rechaza la escritura | Igual: el paso se repite desde la cola |
+| El inventario responde error | Reintento corto con espera (2 veces); si persiste, el mensaje vuelve a la cola y solo se repite ese paso |
+
+### Decisiones y alternativas descartadas
+
+- **No se usa `/putObject`.** Esa ruta no tiene authorizer ni API key (hallazgo de ADR-004) y exige un token de usuario
+  que un cliente de máquina no tiene.
+- **Validación de PDF sin PDFsharp.** El método actual (`PdfUtils.IsValidPdf`) abre el PDF con PDFsharp para contar
+  páginas. PDFsharp 6.2.4 trae `System.Security.Cryptography.Pkcs` 8.0.1 con **dos vulnerabilidades conocidas**
+  (GHSA-846f-f764-76mx, alta; GHSA-2fmv-rv2c-59x7, moderada) y los parches salieron el 13-oct-2026, así que todavía no
+  cumplen la regla de 2 semanas. En su lugar se revisa: base64 decodificable, cabecera `%PDF`, que no haya dos cabeceras
+  (PDFs pegados), que no contenga el mensaje de error de impresión de Inter y que termine con `%%EOF`. Es más ligera
+  que abrir el archivo. Se puede volver a PDFsharp después del 27-oct-2026.
+- **Ocultar al remitente "LOGIGHO" en el sticker: pendiente de decisión.** Consulté la configuración de las lambdas
+  en producción (solo lectura): `ApiLambdaCargarGuias` tiene `OCULTAR_REMITENTE_ETIQUETA=true` con
+  `TEXTOS_OCULTAR_ETIQUETA=LOGIGHO,LOGIGHO S.A.S` y reescribe el PDF con iText; `ApiLambdaCrearGuia` y
+  `ApiLambdaCrearEtiquetaManual` **no** lo hacen. `MODIFICACION_ETIQUETA` está en `false` en las tres. La API publica
+  hoy la etiqueta tal como la entrega Inter (`TransformadorEtiquetaIdentidad`), igual que la creación manual.
+  **Pregunta para Iker:** ¿las etiquetas de la API deben ocultar "LOGIGHO" como la carga masiva? Si sí, hay que portar
+  `EditorContenidoPdf` (iText, ~350 líneas y una dependencia AGPL) detrás de la misma interfaz
+  `ITransformadorEtiqueta`; no cambia nada más del flujo.
+- **Auditoría de direcciones de etiqueta** (`AuditoriaEtiquetasInter`): en producción `AUDITORIA_ETIQUETA` no está
+  definida, o sea apagada. No se porta.
+- **Inventario con `Guias`, no `Idcarga`.** `ApiLambdaInventarioCarga` acepta una lista de guías; es lo que pide el
+  diseño. CargarGuias envía `Idcarga` y sin esperar respuesta (la Lambda puede congelarse antes de que salga la
+  llamada); aquí se espera la respuesta.
+- **Configuración.** Se reusan los nombres de variable de hoy (`BUCKET_GUIAS_PDF`, `URL_CLOUDFRONT`,
+  `URL_SERVICIO_AWS`) y se crean dos nuevas que debe definir Terraform: `BUCKET_GUIAS_INTER` y `BUCKET_TRAZAS_GUIAS`. Hoy
+  el bucket de texto está escrito en el código con el sufijo `-prod` incluso en PreProd (hallazgo de
+  `hallazgos-lambdas-actuales.md`); aquí es configurable por entorno.
+
+### Cómo se verificó
+
+- 191 tests en verde: S3 simulado con el SDK real (rutas, content-type, `inline`, comillas y espacios en el base64,
+  repetir la publicación, base64 inválido, S3 con error 403); trazas gzip (clave, JSON, credenciales ocultas, carpeta
+  `sin-guia`); inventario (cuerpo `{"Guias":[...]}`, sin header `Authorization`, reintento ante 503, error 400 sube);
+  etiqueta de Inter (ruta por tipo, base64 con y sin comillas, primer PDF inválido y segundo bueno, tres inválidos,
+  error HTTP persistente, sin credenciales de usuario ni PDF en la traza); validador de PDF; caso de uso (orden de pasos,
+  el reintento no repite lo ya hecho, fallo de traza no frena la guía); y el **contenedor real del worker** con las
+  variables de entorno cifradas con AES.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan (ahora ~12 MB cada una).
+- Paquete nuevo: `AWSSDK.S3` 4.0.104.1 (1-oct-2026, más de 2 semanas; la 4.0.104.2 salió el 8-oct y se dejó fuera por
+  margen).
+
+### Pendiente / siguiente
+
+- **Terraform** (paso 4 del plan): crear el bucket de trazas con lifecycle de 90 días y definir las dos variables nuevas.
+- Decidir lo de ocultar el remitente (arriba).
+- **F1a-d:** `ApiClientes` y autorización. **F1a-e:** idempotencia en `ApiSolicitudesGuia`. **F1a-f:** cupo.
+  **F1a-g:** reconciliador (también recoge las solicitudes que se quedan en `Creando` o `Incierta`).
+
+---
+
+## 2026-10-22 · F1a-d · `ApiClientes` y autorización
+
+**Commit de código:** `6f7debc` — `feat(guias): ApiClientes y autorizacion por claims, scopes e IP (F1a-d)`
+
+### Qué se hizo
+
+Cada llamada a la API ahora pasa por una autorización en dos capas, como pide [ADR-002](adr-002-autenticacion.md):
+
+1. **API Gateway** (aún por configurar en Terraform) valida el token de Cognito y el scope del método.
+2. **El Lambda** vuelve a comprobar, usando solo los *claims* que el gateway ya validó:
+   - `client_id` (qué integrador es) y `scope` (qué permisos trae el token) de `HttpContext.User`;
+   - la IP de origen que ve el gateway;
+   - el perfil del cliente en `ApiClientes` (con caché de 30 s).
+
+Se rechaza, **en este orden**: sin identidad (401 `NO_AUTENTICADO`) → cliente sin perfil (`CLIENTE_NO_REGISTRADO`) →
+cliente no activo (`CLIENTE_BLOQUEADO`) → falta el scope (`SCOPE_INSUFICIENTE`) → IP fuera de la lista
+(`IP_NO_PERMITIDA`). Un cliente bloqueado siempre ve `CLIENTE_BLOQUEADO`, aunque además le falte el scope.
+Todos son `ProblemDetails` con `codigo` y `traceId`. El mensaje nunca revela datos de otros clientes ni la lista de IPs.
+
+El perfil también expone las comprobaciones por **tienda, transportadora y producto** (`PermiteEnvio`), que usará el
+endpoint de crear guías (F1b). Primeros endpoints protegidos, a modo de uso real: `GET /v1/tiendas` y
+`GET /v1/transportadoras` (scope `guias:leer`), que devuelven solo lo que el perfil del cliente permite.
+
+### Por qué por claims y no leyendo el token
+
+En `/pedidos` hoy la lambda lee el header `Token` y decodifica el JWT **sin verificar la firma** mientras el gateway
+valida otro header (`Authorization`): quien mande un JWT inventado en `Token` podría hacerse pasar por otro. La API nueva
+no lee ningún header de token. Dos pruebas lo fijan:
+
+- Un JWT falso con el `client_id` de otro cliente en `Authorization` y `Token` **no** suplanta a nadie (responde 401).
+- Una prueba usa la **librería real** `Amazon.Lambda.AspNetCoreServer` con un evento REST de API Gateway y comprueba que
+  los claims del authorizer llegan a `HttpContext.User` y que la IP (`sourceIp`) llega a la conexión. Si una actualización
+  de la librería cambiara eso, la prueba avisa antes de que la seguridad deje de funcionar.
+
+### Decisiones y supuestos
+
+| Tema | Decisión | Por qué / qué confirmar |
+| --- | --- | --- |
+| Estado desconocido | Se trata como **bloqueado** | Fail-closed: un error de tipeo en `ApiClientes` no abre la puerta |
+| Lista de productos vacía | **Ningún producto permitido**; una guía sin productos no consulta la lista | **Confirmar con Iker**: ¿vacío debería significar "todos los de la tienda"? Se eligió lo más restrictivo |
+| Lista de IPs vacía | Cualquier origen | Así lo dice el diseño ("lista opcional de IPs permitidas") |
+| Entrada de IP ilegible | Se ignora | Con lista llena, lo ilegible no abre la puerta |
+| Scopes | Se comparan por nombre, sin el prefijo del resource server | Cognito entrega `logigho/guias:crear`; así el código no depende del identificador de cada entorno. Riesgo: otro resource server con el mismo nombre de scope. El pool solo tendrá el nuestro |
+| Caché | 30 s, incluida la de clientes inexistentes | Un bloqueo se nota en menos de 30 s; sin esto, un cliente sin perfil provocaría una lectura de Mongo por request |
+| Códigos nuevos | `NO_AUTENTICADO`, `CLIENTE_NO_REGISTRADO`, `SCOPE_INSUFICIENTE`, `IP_NO_PERMITIDA` | Agregados a [Endpoints](endpoints.md) |
+| Forma de `ApiClientes` | Documentada en [Colecciones](colecciones.md) | El código solo lee; la administración (alta, bloqueo, rotación de secreto) es otra fase |
+
+### Un hallazgo de diseño (de las pruebas)
+
+Al registrar los casos de uso en la API, la validación de dependencias de ASP.NET (que corre en las pruebas) falló
+porque la API intentaba construir el caso de uso **del worker**, que necesita la transportadora. Se separó el registro:
+`AddAplicacionGuias` (API) y `AddProcesamientoGuias` (worker). Un error así en producción habría tumbado el arranque
+de la Lambda; las pruebas lo atraparon antes.
+
+### Cómo se verificó
+
+- 269 tests en verde (78 nuevos): permisos por tienda/transportadora/producto, listas de IP (exacta, CIDR, IPv6, IPv4
+  mapeada, entradas ilegibles), lectura de scopes, caso de uso con cada rechazo y su orden, caché con reloj manual
+  (vence a los 30 s, recuerda inexistentes), lectura de `ApiClientes` en el Mongo local (campos extra ignorados, estado
+  y transportadoras desconocidos), la API completa con claims simulados (401, cada 403, listados) y el contrato con la
+  librería de Lambda.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+
+### Pendiente / siguiente
+
+- **F1a-e:** idempotencia en `ApiSolicitudesGuia` e índices desde código (incluye `ux_ApiClientes_ClienteId`).
+- Las rutas de administración de clientes y la rotación de secretos no están (fase de administración).
+- En Terraform (paso 4): authorizer de Cognito con scopes por método y usage plan con API key.
+
+---
+
+## 2026-10-22 · F1a-e · Idempotencia e índices desde código
+
+**Commit de código:** `49164fe` — `feat(guias): idempotencia por Idempotency-Key e indices creados desde codigo (F1a-e)`
+
+### Qué se hizo
+
+Es la pieza que impide que la misma guía se cree dos veces cuando el integrador reintenta (por ejemplo, porque su
+conexión se cortó justo antes de recibir la respuesta). Cumple el punto 1 de [ADR-003](adr-003-idempotencia.md):
+
+- Cada `POST` trae un header `Idempotency-Key` (el integrador usa, por ejemplo, el id de su pedido).
+- Al llegar, se intenta **insertar** la solicitud en `ApiSolicitudesGuia`. La base tiene un **índice único**
+  `{ClienteId, IdempotencyKey}`: si la clave ya existe para ese cliente, el insert se rechaza.
+- Si ya existía, se compara la **huella del body** (`HashCuerpo`) con la de la solicitud guardada:
+
+| Situación | Resultado | Qué ve el integrador |
+| --- | --- | --- |
+| Primera vez que llega esa key | **Nueva** | Se procesa la solicitud |
+| Misma key, mismo body, ya hay resultado (guía creada, fallo definitivo o incierta) | **Repetida** | Se devuelve lo guardado, sin crear nada |
+| Misma key, mismo body, todavía sin resultado (`RECIBIDA`, `RESERVADA`, `CREANDO`) | **EnCurso** | `409 SOLICITUD_EN_CURSO`: espere y consulte |
+| Misma key, **otro** body | **Conflicto** | `422 IDEMPOTENCY_CONFLICTO` |
+
+La key es **por cliente**: dos integradores distintos pueden usar la misma sin chocar. Una solicitud `INCIERTA` cuenta
+como *resultado* (Repetida) y no como "en curso", para que el integrador vea que está incierta en vez de esperar
+indefinidamente.
+
+### Por qué la garantía está en el índice y no en el código
+
+Si la API revisara "¿ya existe esta key?" y luego insertara, dos requests simultáneos podrían pasar la revisión a la vez
+(más aún con varios contenedores de Lambda). El índice único hace que **la base decida atómicamente** cuál gana. Una
+prueba lo demuestra con 50 requests en paralelo, cada uno con su propio cliente de Mongo (como si fueran contenedores
+distintos): exactamente 1 queda como Nueva, 49 ven "en curso" y en la colección hay un solo documento.
+
+### La huella del body (`HashCuerpo`)
+
+SHA-256 del JSON **canónico**: propiedades ordenadas, sin espacios y con los números normalizados. Así, si la librería
+del integrador reordena campos o escribe `1.0` en lugar de `1` en el reintento, no se confunde con un conflicto. Un
+cambio real (otro valor, un campo de más o de menos, otro orden en un arreglo, mayúsculas, un espacio al final del texto)
+sí cambia la huella. Los vectores de prueba se calcularon con un SHA-256 independiente (Python).
+
+### Índices desde código
+
+`GarantiaIndices` crea los índices de las colecciones `Api*` antes de la primera inserción de cada contenedor, tanto en
+PreProd (Atlas) como en producción (DocumentDB):
+
+| Colección | Índice | Para qué |
+| --- | --- | --- |
+| `ApiSolicitudesGuia` | `ux_ApiSolicitudesGuia_Cliente_Key` (único) | Idempotencia |
+| `ApiSolicitudesGuia` | `ix_ApiSolicitudesGuia_NumeroGuia` | Consultar por número de guía |
+| `ApiSolicitudesGuia` | `ix_ApiSolicitudesGuia_Estado_Fecha` | Reconciliador (buscar solicitudes atascadas) |
+| `ApiClientes` | `ux_ApiClientes_ClienteId` (único) | Un perfil por cliente |
+
+Reglas: si no se pueden crear, **la inserción falla** (sin índice único no hay idempotencia, así que es mejor no seguir);
+crear un índice que ya existe no hace nada, por lo que muchos arranques en frío a la vez no se estorban (también
+probado); solo se usan opciones que DocumentDB soporta (índices simples y compuestos, únicos y TTL; nada parcial ni de
+texto); y **solo colecciones propias** (`Api*`). Los índices de colecciones que usan otros sistemas
+(`PedidosInter`, `LiquidacionesLogigho`…) quedan para crearse aparte, en horario valle, tal como pide `cupo.md` §8.8; una
+prueba comprueba que esta lista nunca los incluya.
+
+### Lo que no cubre este paso (y por qué importa)
+
+- **Solicitud atascada antes de encolar.** Si la API inserta la solicitud (`RECIBIDA`) y se cae antes de reservar cupo o
+  de encolar el mensaje, esa key queda "en curso" para siempre. No es posible resolverlo en el registro; lo resuelve el
+  reconciliador (F1a-g), que debe reencolar o dar por fallidas las solicitudes con más de N minutos sin avanzar. El índice
+  `Estado + FechaActualizacion` existe justamente para eso.
+- **El endpoint** `POST /v1/guias` que usa todo esto llega en F1b (necesita las reglas campo por campo).
+
+### Decisiones y supuestos
+
+| Tema | Decisión | Por qué |
+| --- | --- | --- |
+| `Incierta` | Cuenta como resultado (Repetida) | El integrador debe poder ver "incierta" en lugar de esperar |
+| Body | Se hashea el JSON recibido, canonicalizado | Tolera reordenamientos del cliente sin perder detección de cambios reales |
+| Key | Por cliente, no global | Dos integradores pueden usar el mismo id de pedido |
+| Fallo al crear índices | La inserción falla | Mejor un error visible que perder la garantía en silencio |
+
+### Cómo se verificó
+
+- 314 tests en verde (45 nuevos): huella (vectores, orden, espacios, números, cambios reales, unicode, JSON inválido),
+  caso de uso por cada estado de la solicitud, 20 requests simultáneos sobre el repositorio en memoria, y contra el
+  **Mongo local**: nombres y opciones de los índices, creación repetida y simultánea, insert duplicado, clave por
+  cliente, 50 requests en paralelo con clientes de Mongo distintos, 20 con bodies distintos (1 ganadora, 9 "en curso",
+  10 "conflicto"), solicitud terminada que se devuelve con sus datos, y que guardar no rompa el índice.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+
+### Pendiente / siguiente
+
+- **F1a-f:** cupo (reserva atómica, ledger `ApiMovimientosCupo`, fail-closed) con pruebas de concurrencia en Mongo local.
+- **F1a-g:** reconciliador (incluye las solicitudes atascadas de arriba).
+
+---
+
+## 2026-10-23 · F1a-f · Cupo por tienda
+
+**Commit de código:** `57800dd` — `feat(guias): cupo por tienda con reserva atomica, libro y conteos diarios (F1a-f)`
+
+### Qué se hizo
+
+Se implementó el motor del cupo descrito en [cupo.md](cupo.md): antes de crear una guía se **aparta** su costo de peor caso
+del cupo de la tienda, y ese monto se ajusta o se libera según lo que pase después. Piezas:
+
+| Pieza | Qué hace |
+| --- | --- |
+| `ApiCupoTiendas` | Un documento por tienda con `Base`, `Reservado`, `Disponible`, modo, aplicación (`OBSERVAR`/`APLICAR`) y suspensión |
+| `ApiMovimientosCupo` | **Libro** de solo inserción: cada reserva, ajuste, liberación o suspensión es una línea con id determinista |
+| `ApiContadoresUso` | Guías por cliente y por tienda por día (límite diario), con TTL de 90 días |
+| `GestorCupo` | Reservar (antes de encolar), ajustar con los valores reales (worker), liberar (fallo) y auditar |
+| Pasos del worker | `CupoAjustado` (último paso de una guía creada) y `CupoLiberado` (tras un fallo definitivo) |
+
+### La reserva es una sola operación atómica
+
+La base decide quién entra, no el código de la API. Una reserva es un `findOneAndUpdate` con esta forma (compatible con
+DocumentDB):
+
+```
+filtro:  { _id: tienda, Modo != BLOQUEADO, Suspension.Activa = false, Disponible >= monto }
+cambio:  { $inc: { Disponible: -monto, Reservado: +monto } }
+```
+
+Si el filtro no cumple, no se toca nada y se explica por qué (tienda sin cupo, bloqueada, suspendida o saldo insuficiente con
+`disponible` y `requerido`). **Pruebas con concurrencia real:** con 100 000 de cupo y 20 solicitudes de 14 250 al mismo tiempo
+entran exactamente **7** (ejemplo 2 de `cupo.md`) y 13 reciben `CUPO_INSUFICIENTE`; con 200 solicitudes simultáneas
+el `Disponible` nunca queda negativo y `Reservado` es exactamente aceptadas × monto.
+
+### Cómo se mantiene cuadrado sin transacciones
+
+DocumentDB no tiene transacciones, así que cupo y libro se actualizan por separado. Regla: lo que **aumenta** lo reservado
+actualiza primero el cupo y luego el libro; lo que lo **reduce**, primero el libro y luego el cupo. Si algo se cae a medias,
+`Reservado` queda **por encima** de la suma del libro (se aparta de más, nunca de menos). La auditoría
+(`AuditarAsync`) lo detecta y, si se pide, lo corrige con una línea `Correccion` — solo si `Reservado` no cambió mientras se
+auditaba, para no pisar una reserva que entró. Ejemplos probados: reservas, ajustes y liberaciones simultáneas terminan
+con libro y cupo iguales; un descuadre fabricado se detecta, se corrige y la segunda auditoría cuadra.
+
+Una misma solicitud **no reserva dos veces**: la línea de `Reserva` tiene id `{solicitudId}:Reserva:1`. Si la API se cae antes
+de guardar la solicitud y reintenta, recupera lo ya reservado en vez de apartarlo otra vez. Lo mismo para el ajuste y la
+liberación (ejecutarlos dos veces, o con la solicitud desactualizada, no mueve el cupo dos veces).
+
+### Reglas de `cupo.md` cubiertas
+
+| Regla | Cómo |
+| --- | --- |
+| RC-005 | Tienda sin documento de cupo → 403 `TIENDA_NO_PERMITIDA` |
+| RC-008 | Modo `BLOQUEADO` rechaza en `OBSERVAR` y en `APLICAR` (403 `TIENDA_BLOQUEADA`); un modo desconocido también bloquea |
+| RC-009 | `Disponible ≤ 0` tras reservar suspende la tienda y deja línea `Suspension` |
+| RC-013/014 | Se reserva antes de encolar; calculadora caída → 503 `CUPO_NO_DISPONIBLE`, sin tarifa → 422 `CUPO_TARIFA_NO_RESUELTA`; **jamás se reserva cero** (el tipo `ReservaCupo` lo impide) |
+| RC-017 | Con los valores reales de Inter el cupo puede quedar negativo (ejemplo 5: +2 750 con 2 000 disponibles): la tienda se suspende, la guía **no** se anula |
+| RC-020 | Ids deterministas en el libro |
+| RC-022/023 | Fallo definitivo → `Liberacion`; `INCIERTA` y "no enviada" conservan la reserva |
+| RC-033 | Límite diario por cliente y por tienda (contador atómico, día de Colombia, se devuelve si la guía no entra) |
+| RC-034 | `OBSERVAR` acepta y marca `HabriaRechazado`; no suspende |
+| RC-041 | En `APLICAR`, un saldo sin recalcular hace más de 60 min rechaza con `CUPO_NO_DISPONIBLE` |
+
+Los ejemplos numéricos 1 (ocho guías y la novena rechazada con `disponible 4 000`, `requerido 14 250`), 2, 5, 12 y 13
+están como pruebas.
+
+### Decisiones y hallazgos
+
+- **Las líneas `Correccion` no suman en la auditoría.** `cupo.md` (RC-031) dice que la suma de las líneas debe igualar
+  `Reservado` y que la corrección mueve `Reservado` en `±delta`. Las dos cosas a la vez son imposibles: corregir `Reservado`
+  hasta el valor del libro y a la vez contar esa corrección en el libro lo vuelve a descuadrar. Se implementó que la
+  suma use `Reserva + AjusteReserva − Liberacion − Consumo` y que `Correccion` documente el ajuste hecho. Quedó anotado en
+  `cupo.md` §8.7. **Confirmar con Iker** que le sirve esa lectura.
+- **La calculadora todavía no existe.** `ICalculadoraCupo` es el puerto; hoy se registra `CalculadoraCupoNoConfigurada`, que
+  falla siempre (503). Eso es seguro (fail-closed) y deja el flujo de guías sin cupo funcionando mientras no haya reserva
+  (las solicitudes sin reserva no ejecutan pasos de cupo). Falta la función Lambda de cálculo y las pruebas doradas contra
+  liquidaciones reales (`cupo.md` §14, paso 0).
+- **Falta el job de saldo** (`SaldoConfiable`, `ExposicionExterna`, liberación al liquidar, `Consumo`). Hasta que exista,
+  ninguna tienda debe pasar a `APLICAR`: con RC-041 el saldo se vería "viejo" y todo se rechazaría con 503. El piloto empieza en
+  `OBSERVAR`, así que no estorba.
+- **Vida del libro y volumen.** Cada guía escribe 2 líneas (reserva y ajuste) más una si se libera; a 50 000 guías/mes son
+  ~100 000 líneas/mes. Los índices del libro son por tienda+fecha, número de guía y cliente+fecha.
+- **Decisión menor:** el día de conteo es el de Colombia (UTC−5), igual que las fechas de `CargaPedido`.
+- **Límite del cliente.** Se recibe como parámetro opcional (`ApiClientes.Limites` aún no está modelado); sin valor, solo
+  rige el límite de la tienda. Pendiente de confirmar el valor inicial (`cupo.md` sugiere 200 por tienda).
+
+### Cómo se verificó
+
+- 405 tests en verde: dominio del cupo (base, utilización, libro, pasos de la solicitud), 47 pruebas del gestor contra el
+  **Mongo local** (reserva, concurrencia, modos, bloqueo, suspensión, calculadora caída, conteos, ajustes, liberación,
+  auditoría, lectura de vuelta de cada documento) y 7 del worker (orden de los pasos de cupo, reintentos, fallos).
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+- Índices nuevos creados desde código: `ix_ApiSolicitudesGuia_Tienda_ReservaViva`, `ix_ApiCupoTiendas_Aplicacion_Suspension`,
+  `ix_ApiMovimientosCupo_*` (3) e `ix_ApiContadoresUso_Fecha_TTL` (90 días).
+
+### Pendiente / siguiente
+
+- **F1a-g:** reconciliador de solicitudes (`INCIERTA`, `CREANDO` atascadas, `RECIBIDA` sin encolar).
+- Función Lambda de cálculo, job de saldo y liberación al liquidar (`Consumo`) — dependen de datos de producción.
+- F1b: `POST /v1/guias` que llama a `ReservarAsync` antes de encolar.
+
+---
+
+## 2026-10-23 · F1a-g · Reconciliador de solicitudes
+
+**Commit de código:** `ce0b876` — `feat(guias): reconciliador de solicitudes, cola SQS, metricas EMF y resolucion de inciertas (F1a-g)`
+
+### Qué se hizo
+
+Un proceso que corre cada 5 minutos y **arregla lo que las fallas dejan a medias**, sin crear nunca una guía. Es la red de
+seguridad de [ADR-003](adr-003-idempotencia.md): cuando algo se cae (la Lambda, SQS, la API), ninguna solicitud se queda
+colgada para siempre.
+
+| Situación | Cuándo | Qué hace |
+| --- | --- | --- |
+| **Creando** atascada | más de 5 min sin cambios | Pasa a **Incierta**: no se sabe si se envió a Inter, así que **jamás se reintenta** (se duplicaría la guía) |
+| **Reservada** que nadie tomó | más de 2 min | Se **vuelve a encolar** (el worker mira el estado: repetir el mensaje es inofensivo) |
+| **Recibida** que no avanzó | más de 10 min | Pasa a **Fallida** con un mensaje accionable ("reintente con una nueva `Idempotency-Key`"). Si la API alcanzó a apartar cupo antes de morir, la reserva se recupera del libro y queda lista para liberarse |
+| Guía creada con **pasos sin completar** (etiqueta, inventario, cupo…) o fallida con cupo por liberar | más de 5 min | Se **vuelve a encolar**; el worker retoma solo lo que falta |
+| **Incierta** | más de 10 min | Se intenta resolver con la transportadora; si no se puede, queda para Operaciones y **suena la alarma** |
+
+Cambios de estado con **guarda**: el reconciliador solo cambia una solicitud si en la base sigue en el estado que él leyó. Así
+nunca pisa al worker que justo la está terminando (una prueba con 15 rondas de carrera real contra Mongo: gana uno solo).
+
+### Lo que NO se puede automatizar: resolver una `Incierta`
+
+El diseño decía "el reconciliador consulta a la transportadora". **No existe** (en el código de las lambdas actuales) una
+consulta de Interrapidísimo que permita saber si una admisión llegó a crear la guía: la admisión no lleva ningún
+identificador nuestro, y el único dato que identifica la guía es el número que justamente se perdió. Por eso:
+
+1. `IResolutorIncierta` es un puerto; el adaptador de Inter devuelve **`NoDeterminada`** y no inventa nada.
+2. La solicitud queda `INCIERTA`, el reconciliador publica la métrica `SolicitudesInciertas` (también en 0, para que la
+   alarma vuelva a verde) y **Operaciones la resuelve a mano** con `IResolverIncierta`:
+   - *Como creada*: con el número de guía y la respuesta (valores de flete, etc.) vistos en el portal de Inter. El worker
+     completa el resto (`CargaPedido`, `PedidosInter`, etiqueta, inventario, ajuste de cupo).
+   - *Como no creada*: queda `FALLIDA` y se libera el cupo.
+3. Esa operación hoy es un caso de uso; falta exponerlo como endpoint de administración (`/admin/v1/...`).
+
+**Pregunta para Iker:** ¿Inter tiene alguna consulta (por fecha, destinatario, referencia del cliente) que nos permita
+resolver inciertas automáticamente? Si existe, se escribe un adaptador nuevo y no cambia nada más.
+
+### Observabilidad
+
+Las métricas salen por el log en formato **EMF** de CloudWatch (una línea JSON por métrica): no hacen llamadas de red ni
+piden permisos extra. Namespace `ApiPublicaGuias`, métricas `SolicitudesInciertas` y `SolicitudesReencoladas`. La alarma
+de `observabilidad.md` ("`INCIERTA` > 0 por más de 10 min") sale de la primera.
+
+### Cola SQS
+
+Se implementó el adaptador que encola (`ColaSolicitudesSqs`): un mensaje por guía con **solo el id de la solicitud**
+(ningún dato personal viaja por SQS). La prueba usa el SDK real contra un SQS simulado. Lo usará también el endpoint de
+crear guías (F1b). Variable nueva: `COLA_SOLICITUDES_URL`.
+
+### Despliegue (para la parte de Terraform)
+
+- El reconciliador es **otra función Lambda con el mismo paquete** del worker, handler
+  `ApiLambdaGuiasWorker::ApiLambdaGuiasWorker.Function::Reconciliar`, invocada por una regla de EventBridge `rate(5 minutes)`.
+- El umbral "Creando → Incierta" (5 min) **debe ser mayor que el timeout de la Lambda worker**; si no, se declararía
+  incierta una guía que el worker aún está creando. Timeout sugerido del worker: ≤ 2 min.
+- Alarma de `SolicitudesInciertas > 0` por más de 10 min; alarma de DLQ > 0 (ya prevista).
+
+### Decisiones
+
+| Tema | Decisión | Por qué |
+| --- | --- | --- |
+| `Recibida` vieja → `Fallida` (no se reintenta) | El integrador debe usar una nueva `Idempotency-Key` | Una `Recibida` vieja nunca llegó a la transportadora, pero no hay datos para reconstruir con certeza qué alcanzó a hacerse |
+| Reserva huérfana | Se recupera del libro por su id determinista y se libera | Evita que el cupo quede apartado para una guía que no existe |
+| Máximo por ciclo | 200 por categoría | Evita que un atasco masivo sature DocumentDB; el ciclo siguiente continúa |
+| Índice nuevo | `ix_ApiSolicitudesGuia_Pendientes_Fecha` sobre `ConPasosPendientes` | Encontrar solicitudes con pasos pendientes sin recorrer las miles ya terminadas |
+
+### Cómo se verificó
+
+- 444 tests en verde: cada regla y cada umbral del reconciliador (también "reciente no se toca"), carrera con el worker,
+  fallo de SQS en una solicitud, máximo por ciclo, resolución como creada / no creada / ya cambiada, consultas por estado y
+  antigüedad contra el Mongo local, ciclo completo con Mongo real, recuperación de una reserva huérfana (cupo y libro reales),
+  SQS simulado con el SDK real (cuerpo, cola, error), formato EMF, y el contenedor del worker con la nueva variable.
+- Build Release sin advertencias, sin paquetes vulnerables, las dos Lambdas empaquetan.
+- `AWSSDK.SQS` 4.0.100.15 (30-sep-2026, más de 2 semanas).
+
+### Pendiente / siguiente
+
+**F1a queda completo (a–g).** Lo que sigue:
+
+- **F1b**: `POST /v1/guias` y `GET /v1/solicitudes/{id}`, con las validaciones de `reglas-negocio.md`. **Bloqueado:** ese
+  documento aún no existe (lo escribe otro chat con Iker). El endpoint usa lo ya construido: autorización, idempotencia,
+  permisos por tienda/producto/transportadora, cupo, cola.
+- Calculadora de cupo (función Lambda), job de saldo y liberación al liquidar.
+- Endpoint de administración para resolver inciertas.
+- Terraform (paso 4 del plan) con todo lo anotado en cada entrada.
+
+---
+
+## 2026-10-23 · Terraform · Módulo `guias-api` y entornos `preprod/guias` y `prod/guias`
+
+**Commit (repo `Terraform_Infraestructura_Logigho`, rama local `feature/api-publica-guias`):** `70d8e7a` —
+`feat(guias): modulo guias-api y entornos preprod/prod de la API publica de guias`
+
+> **Alcance:** solo código y `terraform fmt` / `terraform validate` (ambos pasan en los dos entornos). **No se hizo `plan` ni
+> `apply` contra ninguna cuenta**, ni se escribió nada en AWS. La sesión SSO de producción había vencido, así que tampoco se
+> pudo leer el estado real del API Gateway; por eso varios valores son variables obligatorias (ver abajo).
+> El repo de Terraform tenía otra rama en uso (`chore/terraform-inventario`) en su carpeta principal; para no tocarla, el trabajo
+> se hizo en un *worktree* aparte (`Terraform_Infraestructura_Logigho-guias`) sobre `main`.
+
+### Qué crea el módulo
+
+| Pieza | Detalle |
+| --- | --- |
+| 3 funciones .NET 10 | `ApiLambdaGuias` (API), `ApiLambdaGuiasWorker` (cola) y `ApiLambdaGuiasReconciliador` (mismo paquete que el worker, handler `...::Reconciliar`). Un **rol por función** con permisos acotados al recurso exacto |
+| Cola SQS + DLQ | `ApiGuias-Solicitudes-<entorno>`: cifrada, visibilidad = 6 × timeout del worker, 5 entregas antes de la DLQ (14 días de retención), mapeo con `ReportBatchItemFailures` |
+| Bucket de trazas | Privado, cifrado, solo TLS, expira a los 90 días, `prevent_destroy` (ADR-005) |
+| Reconciliador | Regla EventBridge cada 5 min, **apagada** al nacer; una alarma avisa si, estando encendida, deja de ejecutarse |
+| Rutas `/v1/*` | En el REST público `rl7zt6zak5`: cada método pide **token de Cognito con el scope del método + API key**; `GET /v1/salud` es público |
+| Plan de uso | Ritmo, ráfaga y cuota diaria por API key (cada cliente recibe la suya) |
+| WAF regional | Reglas administradas de AWS, límite por IP y lista de IPs bloqueadas, asociado al stage |
+| Cognito | Resource server `logigho` con los 4 scopes (`guias:crear`, `guias:leer`, `guias:anular`, `cupo:leer`) |
+| Alarmas + dashboard | Tasa de error > 2 %, latencia p95 > 8 s, DLQ, mensaje viejo en la cola, solicitudes `INCIERTA` > 10 min, circuito de la transportadora abierto, errores y *throttles* por función → SNS (correo y Slack) |
+
+Permisos por función (mínimo privilegio): la **API** solo puede enviar a la cola; el **worker** consume la cola y solo escribe en
+`{numeroGuia}.txt` del bucket de guías, en `guias-pdf/*` del bucket de PDF y en `trazas/*` del bucket de trazas; el **reconciliador**
+solo envía a la cola. Ninguno tiene acceso a otros buckets ni a otras colas.
+
+### Decisiones
+
+- **Terraform es dueño de la plataforma; el pipeline, del código.** Igual que el dominio de inventario: se ignoran código y variables
+  de entorno. Las cifradas con AES (`CADENA_CONEXION`, `ID_CLIENTE`, `USER_AUTH`, `TOKEN_AUTH`, `SUCURSAL_GENERICA`,
+  `URL_SERVICIO_INTER`) las agrega el pipeline desde su variable group; aquí nacen solo las no sensibles (incluidas las dos nuevas
+  que usa el código: `BUCKET_GUIAS_INTER`, `BUCKET_TRAZAS_GUIAS`, `COLA_SOLICITUDES_URL`).
+- **El timeout del worker debe ser menor que 300 s.** El reconciliador declara incierta toda solicitud en `Creando` pasados 5 minutos;
+  una *precondición* de Terraform lo exige. Valor por defecto: 120 s.
+- **Producción usa concurrencia reservada** (API 20, worker 10, reconciliador 1) y tope en el mapeo de SQS (10): DocumentDB es una sola
+  instancia pequeña y ya cargada (ADR-001). **PreProd no puede reservar** (límite de 10 ejecuciones en toda la cuenta), así que ahí el tope
+  va solo en el mapeo de SQS (2).
+- **WAF: `SizeRestrictions_BODY` solo cuenta, no bloquea.** La regla administrada bloquea cuerpos de más de 8 KB y rechazaría lotes
+  legítimos de hasta 50 guías.
+- **En PreProd las rutas, el WAF y el plan de uso están apagados** (`crear_rutas = false`). Falta decidir cuál es el REST público de PreProd
+  y el authorizer de PreProd apunta hoy al pool de Cognito de producción (hallazgo de `hallazgos-lambdas-actuales.md`). Con eso apagado sí se
+  pueden probar el worker y el reconciliador con mensajes directos a SQS.
+- **Buckets de etiquetas de PreProd propios** (`bucket-guias-inter-preprod`, `bucket-guias-pdf-preprod`): las lambdas actuales llevan los de
+  producción escritos en el código también en PreProd (hallazgo). **Pendiente de verificar que existen.**
+
+### Para Iker: lo que hay que leer o decidir antes del primer `plan`
+
+1. **Valores a leer del AWS real** (variables obligatorias, no se inventaron): en producción `database_name`, `parent_resource_id` (recurso
+   `/` de `rl7zt6zak5`), `authorizer_id` y `stage_name`; en PreProd `database_name` y `url_publica_pdf`.
+2. **Confirmar** que el authorizer de `rl7zt6zak5` es de tipo Cognito, usa el header `Authorization` y apunta al pool `6jmSkfK4B`.
+3. **Convención del repo de Terraform:** su README dice "un solo REST por entorno; no se crean APIs aparte" y nombra `API_LogiGho_Rest`
+   (`7elgyten88`) como el de producción. El diseño aprobado de esta API usa el REST **público ya existente** `rl7zt6zak5`
+   (`ApiIntegracionesExternas`). No se crea ningún REST nuevo, pero conviene que Iker confirme que `rl7zt6zak5` cuenta como "el REST del
+   entorno" para integradores.
+4. **Slack en producción:** `notificador_slack_arn` queda vacío; no se verificó si `ApiLambdaNotificadorEventos` existe en la cuenta de producción.
+5. **Rol de despliegue (CD):** no se creó. El pipeline `cd-preprod`/`cd-prod` del servicio aún no existe (solo hay `ci.yml`); cuando exista
+   se reutiliza `modules/rol-despliegue-codigo-lambdas` como hace inventario.
+6. Los `.terraform.lock.hcl` de los dos entornos nuevos **no se versionaron** (los existentes no incluyen el proveedor `archive`); se generan
+   con `terraform providers lock -platform=linux_amd64 -platform=windows_amd64` en la primera ejecución real.
+7. Después de aplicar en producción hay que **publicar el deployment** del stage con el CLI (el REST no es de Terraform) y se puede revertir
+   con el deployment anterior; el README del repo lo explica.
+
+### Cómo se verificó
+
+- `terraform fmt -check` y `terraform validate` en `environments/preprod/guias` y `environments/prod/guias`: correctos (usando los proveedores
+  ya descargados por otros entornos, sin bajar nada nuevo y sin credenciales).
+- `validate` encontró dos errores reales que se corrigieron: un **ciclo de dependencias** (la cola dependía del timeout del worker y las
+  funciones dependían de la cola; ahora el timeout se calcula aparte) y un tipo inconsistente al armar el dashboard (ahora cada *widget* se
+  codifica a JSON por separado).
+
+### Pendiente / siguiente
+
+- **Paso 5 del plan: ADR-006 del servidor MCP** (se detiene para validación antes de implementar).
+- Cuando haya sesión SSO: leer los valores de arriba, `terraform plan` solo si Iker lo pide, y revisar contra el estado real del REST.
+
+---
+
+## 2026-10-23 · MCP · ADR-006 (propuesta, **sin código**)
+
+**Documento:** [ADR-006 — Servidor MCP remoto sobre la API pública](adr-006-mcp.md) (estado: *propuesta*). Aquí **termina** el trabajo
+autónomo: el plan manda detenerse y pedir validación antes de implementar el MCP.
+
+### Qué se hizo
+
+Investigué la especificación vigente de autorización MCP (versión 2026-07-28), los requisitos de Claude como cliente de conectores, las
+limitaciones de Amazon Cognito como servidor de autorización y el SDK oficial de C#, y escribí el ADR con una propuesta de arquitectura,
+herramientas y autenticación. También leí la HU [MCP pedidos claude](https://app.clickup.com/t/86e3teac0): **está vacía** (solo el título,
+sin descripción, subtareas ni enlaces). No se modificó ClickUp.
+
+### Hallazgos que condicionan el diseño
+
+1. **Claude no soporta `client_credentials`**: siempre inicia sesión una persona. La API pública hoy solo conoce clientes máquina. Hace falta un
+   puente (el *cliente delegado* `mcp-gateway` + header `X-Actua-Como`) y un user pool de personas.
+2. **Reenviar el token del usuario a la API está prohibido** por la especificación (*token passthrough*).
+3. **Cognito solo no basta**: no tiene DCR, CIMD ni el parámetro `resource` (dato de fuentes secundarias; confirmar contra su documentación actual).
+   Para el piloto: cliente pre-registrado por el administrador de cada cliente. Más adelante, una fachada de autorización propia.
+4. **El MCP necesita `/.well-known/*` en la raíz del dominio** → un HTTP API con dominio propio, que es una excepción a "un solo REST por entorno".
+5. **En modo *stateless* el servidor no puede pedir confirmación al usuario** → se propone `vistaPrevia` en `crear_guia` y que el modelo confirme.
+6. La versión 2.3.0 del SDK tiene 3 días; se propone la 2.2.0 (2026-08-13) por la regla de 2 semanas.
+
+### Qué se necesita
+
+Las **9 decisiones** listadas en el ADR (usuarios del MCP, modelo delegado, camino de autorización, dominio, user pool, `vistaPrevia`,
+`consultar_pedidos`, orden de entrega y contenido de la HU). Sin ellas no se escribe código del MCP.
+
+---
+
+## 2026-10-23 · MCP · decisiones de Iker sobre el ADR-006 (beta de lectura)
+
+**Documento:** [ADR-006](adr-006-mcp.md), sección *Decisiones tomadas* (estado: *aceptada con ajustes*).
+
+### Qué se hizo
+
+Iker revisó las 9 decisiones una por una. Se registraron en el ADR y se completó la HU [MCP pedidos claude](https://app.clickup.com/t/86e3teac0)
+(estaba vacía; ahora tiene objetivo, cómo funciona, alcance por fases y pendientes). Objetivo declarado: *un beta del MCP que funcione, no
+completo, pero armando la estructura*.
+
+### Decisiones y su efecto en el diseño
+
+- **Usuarios:** los de la colección de usuarios API; el login debe coincidir con uno de ellos. La API los resuelve por el `sub` de Cognito.
+- **Delegación:** `mcp-gateway` + header `X-Actua-Como-Usuario: <sub verificado>` (cambió de `X-Actua-Como` con `clienteId`: así el MCP no toca Mongo).
+- **Login:** mismo pool y mismos usuarios; nuevo *app client* con PKCE. Sin pool nuevo.
+- **Alojamiento:** dentro del REST `rl7zt6zak5` (no un HTTP API aparte); `resource_metadata` explícito en el `401`.
+- **`vistaPrevia`:** entra en F1b. **`consultar_pedidos`:** fase 2.
+- **Orden:** beta de lectura primero (`listar_tiendas`, `listar_transportadoras`).
+
+### Qué sigue
+
+1. API: soporte del usuario delegado (`PuedeActuarComo`, usuarios por `sub`, auditoría de tres identidades).
+2. Proyecto `ApiLambdaGuiasMcp` con login, PRM y las dos herramientas de lectura.
+3. Terraform del MCP (ruta sin authorizer, función, *app client*).
+
+### Pendiente / riesgos
+
+Sin MFA en el login del MCP (se puede exigir solo en su *app client*); el `resource` del metadato debe coincidir con la URL pegada en Claude;
+Claude Code (puerto local variable) queda fuera del beta; confirmar que Cognito sigue sin DCR/CIMD/`resource`.
+
+---
+
+## 2026-10-23 · MCP · paso 1 de 3 del beta: la API acepta al usuario delegado
+
+**Commit de código:** rama `feature/api-publica-guias` (mensaje `feat(guias): usuario delegado del MCP…`).
+
+### Qué se hizo
+
+La API ahora entiende la delegación del [ADR-006](adr-006-mcp.md): el cliente delegado del MCP llama con su propio token y el header
+`X-Actua-Como-Usuario: <sub de Cognito>`; la API busca a esa persona entre los `Usuarios` de `ApiClientes` y evalúa tiendas, productos
+y cupo contra **el cliente de la persona**. El resultado de la autorización ya no es solo el cliente sino las **tres identidades**
+(cliente, persona, delegado), listas para la auditoría de F1b.
+
+### Archivos
+
+- `Dominio/Clientes/ClienteApi.cs`: `PuedeActuarComo` y `Usuarios` (`UsuarioCliente`: `Sub`, `Activo`). Sin los campos, nadie delega.
+- `Aplicacion/Seguridad/AutorizarLlamada.cs`: flujo de delegación; devuelve `IdentidadLlamada`.
+- `Aplicacion/Puertos/IRepositorioClientes.cs` + `Infraestructura/Persistencia/*`: `BuscarPorUsuarioAsync` (máximo 2 resultados), caché de 30 s,
+  índice `ix_ApiClientes_Usuarios_Sub`.
+- `ApiLambdaGuias/Seguridad/RequiereScope.cs`: lee el header y guarda la identidad; el log lleva `usuarioSub` e `intermediarioClienteId`.
+- Códigos nuevos: `ACTUA_COMO_NO_AUTORIZADO`, `ACTUA_COMO_REQUERIDO`, `USUARIO_NO_REGISTRADO`, `USUARIO_BLOQUEADO`.
+
+### Decisiones
+
+- **Un cliente normal que manda el header se rechaza** (no se ignora): es el intento de suplantación y debe quedar visible.
+- **El delegado no opera por sí mismo**: sin header, `ACTUA_COMO_REQUERIDO`.
+- **Header vacío o repetido no equivale a "sin header"**: se rechaza como usuario inválido. Ignorarlo dejaría pasar la llamada como no delegada.
+- **Una persona en dos clientes se rechaza** en vez de elegir uno; el índice no es único para que la escritura del administrador no falle a
+  medias y la API lo detecte al leer.
+- **Sin cadenas**: el cliente de la persona no puede ser otro delegado.
+- **Scope e IP se comprueban sobre el delegado** (token y origen que ve API Gateway). La IP de la persona no existe en ese tramo; las IPs
+  del cliente de la persona no se aplican a llamadas delegadas.
+- **Mismos mensajes** para "no existe" y "ambiguo": no se revela a qué cliente pertenece una persona.
+- Alternativa descartada: que el MCP mande el `clienteId` en el header. Obligaba al MCP a leer Mongo y la API tendría que fiarse de lo
+  que dice el delegado; con el `sub` la API verifica el vínculo.
+
+### Verificación
+
+Release sin advertencias, **477 pruebas** (33 nuevas: delegación, API de punta a punta, caché, Mongo real), sin paquetes vulnerables,
+las dos Lambdas se empaquetan.
+
+### Pendiente
+
+- Alta real del cliente delegado y de los `Usuarios` en `ApiClientes` (la administración llega con `/admin/v1/clientes-api`).
+- Guardar la identidad de tres partes en la solicitud (F1b).
+- Aviso: otro chat cambió la rama del checkout compartido de Lambdas; este trabajo se hace en un *worktree* propio
+  (`Lambdas_NET_LogiGho-guias`) sobre `feature/api-publica-guias`.
+
+---
+
+## 2026-10-23 · MCP · paso 2 de 3 del beta: el servidor MCP con login y lectura
+
+**Commit de código:** rama `feature/api-publica-guias` (`feat(guias): servidor MCP beta…`). **Detalle y variables:** sección *Estado de la implementación* del [ADR-006](adr-006-mcp.md).
+
+### Qué se hizo
+
+Nuevo proyecto `ApiLambdaGuiasMcp`: un servidor MCP remoto (Streamable HTTP, sin estado) que valida el token de Cognito de la persona, llama a la API
+pública con el token del cliente delegado y expone dos herramientas de lectura, `listar_tiendas` y `listar_transportadoras`. No toca Mongo.
+
+### Archivos
+
+- `Seguridad/ValidacionTokenCognito.cs`: validación del JWT (RS256, emisor, vencimiento, `token_use`, `client_id`, scope) y `403 insufficient_scope`.
+- `Api/ProveedorTokenDelegado.cs` y `Api/ClienteApiGuias.cs`: token `client_credentials` cacheado y cliente de la API con los tres headers.
+- `Herramientas/HerramientasCatalogo.cs`: las dos herramientas, con anotaciones de solo lectura y descripciones pensadas para el modelo.
+- `Configuracion/OpcionesMcp.cs`: configuración con arranque fallido si falta algo.
+- `Program.cs`, `aws-lambda-tools-defaults.json`; el proyecto entra en `LambdasLogiGho.sln` y en el empaquetado del CI (`guias-ci.yml`).
+- Pruebas (`test/Logigho.Guias.Tests/Mcp/`): 66 nuevas con el **cliente MCP real del SDK** y WireMock para Cognito y la API.
+
+### Decisiones y alternativas
+
+- **Validar con `client_id` en lugar de `aud`** (Cognito no emite `aud`); documentado como desviación consciente de RFC 8707.
+- **Metadatos en dos rutas** por la diferencia de *stage* entre API Gateway y la URL pública (descubierto con una prueba que daba 404).
+- **Reintentos solo en GET** y tope total de 8 s (Claude espera ~10 s): un POST ciego duplicaría guías (ADR-003).
+- **Una sola llamada de calentamiento** en las pruebas: el primer uso del proceso (JIT) superaba el tiempo límite de 4 s en un CI cargado y produjo un fallo intermitente.
+- Alternativa descartada: servir el documento de metadatos solo con el esquema del SDK; no responde sin el *stage* en la ruta.
+
+### Verificación
+
+Release sin advertencias, **543 pruebas** (66 del MCP; cuatro ejecuciones seguidas sin fallos), sin paquetes vulnerables, las tres Lambdas se empaquetan
+(el MCP pesa 4 MB). Se comprobó con una mutación que la prueba del `client_id` falla si se quita la regla.
+
+### Pendiente
+
+- **Terraform del MCP** (siguiente paso): rutas `/mcp` y `/.well-known/oauth-protected-resource` sin authorizer en `rl7zt6zak5`, función, *app client* con PKCE, scope `mcp:usar`.
+- Alta real de `mcp-gateway` (con `PuedeActuarComo`) y de los `Usuarios` en `ApiClientes`, y la API key.
+- Probar con un Claude real (requiere despliegue en PreProd, que no se hace desde aquí).
+- Confirmar contra la documentación actual de Cognito que sigue sin DCR/CIMD/`resource`.
+
+---
+
+## 2026-10-23 · MCP · paso 3 de 3 del beta: Terraform (apagado)
+
+**Commit en el repo de Terraform:** rama `feature/api-publica-guias` (`feat(guias): Terraform del servidor MCP…`). Solo código, `fmt`, `validate` y pruebas sin cuenta de AWS; **ningún `plan` ni `apply`**.
+
+### Qué se hizo
+
+El módulo `guias-api` tiene ahora `crear_mcp` (**apagado por defecto**, en los dos entornos). Encendido crea la cuarta función `ApiLambdaGuiasMcp`, el scope
+`logigho/mcp:usar`, el *app client* de las personas y las dos rutas del MCP en el REST público existente (`rl7zt6zak5`).
+
+### Archivos
+
+- `modules/guias-api/mcp.tf` (nuevo): app client, rutas, permiso de invocación, validaciones.
+- `main.tf` (función `Mcp` condicionada), `seguridad.tf` (scope), `variables.tf`, `outputs.tf`; `environments/{preprod,prod}/guias/main.tf`; README.
+- `modules/guias-api/tests/mcp.tftest.hcl`: 3 casos con proveedores simulados (apagado no crea nada; encendido crea lo correcto; sin lo necesario no se puede encender).
+
+### Decisiones
+
+- **Rutas sin authorizer ni API key:** el `401` con `resource_metadata` lo arma la Lambda (Claude lo exige); un authorizer del gateway devolvería su propio `401` sin ese dato.
+- **App client público con PKCE**, sin secreto, solo flujo de código y sin `USER_PASSWORD_AUTH`; access token de 30 minutos; callback exacto de Claude.
+- **El cliente M2M `mcp-gateway` no se crea en Terraform:** su secreto quedaría en el estado. Su *client id* entra por variable y el secreto lo agrega el pipeline.
+- **`ANY /mcp`:** en modo sin estado el servidor responde `405` a GET/DELETE; así lo hace él y no el gateway con un `403` confuso.
+- Alarmas de errores, throttles y duración vienen gratis: el MCP está en el mismo mapa de funciones.
+
+### Verificación
+
+`terraform fmt`, `validate` (preprod y prod) y `terraform test`: 3 pasan; se comprobó con una mutación (`api_key_required = true`) que la prueba falla.
+
+### Pendiente (lo que decide o hace Iker)
+
+1. Valores para encenderlo: dominio de Cognito del pool (`cognito_dominio_url`) y *client id* de `mcp-gateway` (hay que crearlo: `client_credentials`, scope `guias:leer`).
+2. En `ApiClientes`: el documento de `mcp-gateway` con `PuedeActuarComo: true` y los `Usuarios` (`sub` de Cognito) de cada cliente; el usuario también debe existir en el pool.
+3. API key del plan de uso para el MCP y las variables `Mcp__ApiKey` / `Mcp__SecretoDelegado` en el variable group del pipeline.
+4. Aprobar `plan`/`apply` en PreProd (hoy sin REST público confirmado en PreProd) y publicar el deployment con el CLI.
+5. Probar con Claude real y confirmar que Cognito sigue sin DCR/CIMD/`resource`.
+6. MFA para el *app client* del MCP (sigue siendo una decisión abierta).
+
+---
+
+## 2026-10-23 · Pendientes antes de PreProd (sin cambios de código)
+
+Por pedido de Iker se registró [`pendientes-preprod.md`](pendientes-preprod.md): 10 decisiones (P-01 a P-10) con evidencia, opciones y recomendación. **Ningún comportamiento cambió**: Iker decide al terminar el desarrollo. Verifiqué en el código dos de ellas: P-06 (el reconciliador reencola `Reservada` cada 2 min sin tope de intentos ni de antigüedad) y P-07 (hay alarma de DLQ genérica, pero ni alarma ni runbook propios para "documento ausente").
+
+---
+
+## 2026-10-23 · PreProd · REST y pools propios, todo en IaC (sin plan ni apply)
+
+**Commit en el repo de Terraform:** rama `feature/api-publica-guias` (`feat(guias): PreProd con REST regional y pools de Cognito propios…`).
+
+### Qué se hizo
+
+Con las decisiones de Iker (REST nuevo con Terraform, pools propios de PreProd, MFA opcional) el stack `preprod/guias` ahora define toda la plataforma:
+
+- **`modules/guias-identidad` (nuevo):** pool de **integradores** (M2M) y pool de **personas** del MCP, solo por invitación, con protección contra borrado y dominio propio cada uno; personas con MFA opcional por aplicación y contraseña de 12+.
+- **`modules/guias-api/rest.tf` (nuevo, `crear_rest_api`):** REST regional `ApiIntegracionesExternas-PreProd`, authorizer sobre el pool de integradores, deployment (espera a todos los métodos) y stage; el plan de uso y el WAF dependen del stage.
+- **MCP:** el emisor y el app client de Claude son del pool de **personas**; el cliente delegado sigue en el de integradores. `crear_mcp` queda apagado.
+- **Producción no cambia:** `crear_rest_api = false` y se indica el REST existente.
+
+### Decisiones
+
+- **`stage_name` sigue siendo variable**, no el atributo del stage: la Lambda del MCP lleva su URL en el entorno y usar el atributo crearía un ciclo (stage → deployment → integraciones → Lambda → stage).
+- **Los app clients M2M no se crean en Terraform** (ni el de cada integrador ni `mcp-gateway`): su secreto quedaría en el estado.
+- **WAF apagado** en PreProd por ahora; el REST es nuevo, así que P-09 deja de aplicar allí.
+- Alternativa descartada: crear el deployment y el stage fuera del módulo; el plan de uso necesita el stage y el deployment necesita los métodos, y entre módulos habría un ciclo.
+
+### Verificación
+
+`terraform fmt`, `validate` (preprod y prod) y `terraform test` con proveedores simulados: **12 pruebas** (8 de `guias-api`, 4 de `guias-identidad`) pasan. Sin `plan` ni `apply`.
+
+### Pendiente
+
+Lista de encendido para Iker actualizada en [ADR-006](adr-006-mcp.md#encender-el-mcp-en-preprod-lista-para-iker). F1b sigue esperando `reglas-negocio.md`.
+
+---
+
+## 2026-10-24 · PreProd · MCP encendido; hallazgo del header `WWW-Authenticate`
+
+### Qué pasó
+
+Iker aplicó en PreProd el stack completo (REST propio, dos pools de Cognito, las funciones y el MCP) y se publicó el código a las 4 Lambdas con un script que copia las variables ya cifradas de `ApiLambdaCargarGuias`. Se crearon con la CLI (solo PreProd) los app clients M2M `mcp-gateway` e `integrador-prueba` y la API key; los secretos quedaron solo en archivos locales de Iker. En producción esas altas se harán por la consola web de AWS. Estado y ids no secretos: memoria del proyecto.
+
+### Hallazgo (probado en PreProd)
+
+`GET /.well-known/oauth-protected-resource` responde bien, `GET /v1/salud` responde 200 y `POST /mcp` sin token responde 401, **pero el header `WWW-Authenticate` llega renombrado a `x-amzn-Remapped-WWW-Authenticate`**. API Gateway (y las Function URL) lo hacen con el 401 que devuelve una Lambda. Claude necesita ese header (con `resource_metadata`) para saber dónde iniciar sesión: sin él, el conector no puede autenticarse.
+
+### Corrección
+
+El 401 que genera el **propio gateway** sí se puede personalizar. Ahora `/mcp` lleva un authorizer de Cognito sobre el pool de **personas** con el scope `logigho/mcp:usar`, y la Gateway Response `UNAUTHORIZED` agrega `WWW-Authenticate: Bearer resource_metadata="…"`. La Lambda sigue validando firma, emisor y `client_id` (el amarre de audiencia). Se actualizaron las pruebas del módulo; el plan real (solo lectura) da 3 por crear, 2 por cambiar y 1 por destruir, todo en API Gateway.
+
+Efecto colateral aceptado: la Gateway Response es del REST completo, así que los 401 del authorizer de `/v1/*` también llevan el header; es inocuo (apunta a un documento público de metadatos).
+
+### Pendiente
+
+- Aplicar el plan guardado y volver a probar con `curl`: el 401 de `/mcp` debe traer `WWW-Authenticate` sin renombrar.
+- Documentos `ApiClientes` en Atlas PreProd: `mcp-gateway` y el cliente de la persona. El de prueba quedó con `IdTienda: 0`: falta una tienda real de PreProd.
+- Probar el conector desde Claude.
+- F1b (`POST /v1/guias`) desbloqueado por `reglas-negocio.md`; sin empezar.
+
+---
+
+## 2026-10-24 · Decisiones y hechos del chat de bitácora para el MVP (sin código nuevo)
+
+Se registraron en los documentos (sin implementar todavía):
+
+- **Inventario (hecho verificado en solo lectura):** en producción `POST /actualizaInventarioLotes` (REST `7elgyten88`) integra con `ApiLambdaInventarioPorCarga`, no con la legacy; corregido en `hallazgos-lambdas-actuales.md`. En PreProd la ruta no existe en `8u5isw5u30`. Propuesta: la URL **completa** del aviso en una variable de entorno `URL_AVISO_INVENTARIO` por entorno, obligatoria en producción y vacía en PreProd hasta que Iker confirme (el paso se omite con registro y métrica en vez de reintentarse para siempre). No se toca el dominio de inventario.
+- **Idempotencia por guía:** `Idempotency-Key` en `POST /v1/guias` y en cada guía de un lote (RN-010). `referencia` queda pendiente (RN-P-14).
+- **P-06:** 5 reintentos antes de `Fallida`; falta la antigüedad máxima. **P-09:** WAF en producción primero solo contando.
+- **Tienda de prueba:** IdTienda 156783 (BTK MAN, Dropshipping). Solo el id; nada más de esa fila en la documentación.
+- **Pendiente de Iker, sin implementar:** si `Total recaudo` sin contraentrega es 0 con valor declarado ≥ 45 000 (propuesta: campo `totalRecaudo` opcional, 0 por defecto, mayor que 0 se rechaza con `CONTRAENTREGA_NO_DISPONIBLE`), y la regla de `referencia`.
+
+---
+
+## 2026-10-24 · Total recaudo separado, anulación por transportadora, P-07 y observabilidad del WAF
+
+**Código** (rama `feature/api-publica-guias`): `totalRecaudo` es un campo propio del body, distinto de `valorDeclarado` (que sigue exigiendo ≥ 45 000). Sin contraentrega vale 0 o no se envía; mayor que 0 se rechaza con `CONTRAENTREGA_NO_DISPONIBLE` (contraentrega fuera de v1). `DocumentosPedido` ya **no** copia el valor declarado a «Total recaudo» (el quirk heredado de Inter): la liquidación toma el valor declarado como base del seguro cuando el recaudo es 0 y `Seguro = SI`, así que el seguro resultante es el mismo. La prueba de paridad con `CrearGuia` conserva una sola diferencia deliberada, marcada.
+
+**Docs:** RN-003 y la tabla de campos (`totalRecaudo`), RN-072/RN-P-05 (estados anulables por transportadora, configurables; MVP solo «Creado»), P-01 resuelto, y en `pendientes-preprod.md` la propuesta de métrica, alarma y runbook de P-07 (documento ausente) y la de observabilidad máxima con el WAF de producción en modo contar (P-09).
+
+**Pendiente de implementar** (F1b-c): excepción `DocumentoAusenteException` con la métrica y la alarma, el runbook, la lista de estados anulables por transportadora en la base, y el resto de la lista de archivos ya enviada.
+
+---
+
+## 2026-10-24 · POST espera al worker, clave liberada tras Fallida, rechazo por cupo y `URL_AVISO_INVENTARIO`
+
+Respuestas de Iker a las cuatro preguntas de F1b-c, ya implementadas.
+
+**Código** (`feature/api-publica-guias`):
+
+- **Espera (RN-066).** `CrearGuia` sondea la solicitud cada 500 ms hasta `ESPERA_RESPUESTA_SEGUNDOS` (20 por defecto, tope 25). El endpoint responde `201` con el número de guía, `422 TRANSPORTADORA_RECHAZO` si la rechazaron, o `202` si el worker no terminó; `GET /v1/solicitudes/{id}` sirve siempre. Si el cliente cancela, la cancelación se propaga.
+- **Fallida libera la clave (RN-067).** `SolicitudGuia.LiberarClave()` la renombra a `clave~id`; solo una Fallida puede hacerlo. La misma clave crea una guía nueva. Probado también contra el índice único de Mongo.
+- **Sin cupo (RN-068).** Además de `ApiSolicitudesGuia` en `FALLIDA`, la guía se inserta en `CargaPedido` y se marca `Rechazado` con `ERROR = "Sin cupo disponible para la cuenta: …"`.
+- **Inventario.** `URL_SERVICIO_AWS` se reemplaza por `URL_AVISO_INVENTARIO`, la URL **completa** de `/actualizaInventarioLotes`. Vacía en PreProd: el paso se omite con un aviso en el log y la métrica `InventarioOmitido`. Con `ENTORNO=prod` y sin la variable, el worker no arranca (el error nombra la variable).
+
+**Terraform:** `url_servicio_aws` pasa a `url_aviso_inventario` (opcional, vacía por defecto); en el entorno `prod` es obligatoria (validación) y lleva la URL completa del REST de producción; PreProd la deja vacía a propósito. Se corrigió además una prueba de `preprod` desactualizada (esperaba tres funciones y el MCP está encendido desde el 2026-10-24: son cuatro).
+
+**Pendiente:** la calculadora de cupo real (el `POST` sigue terminando en error de cupo hasta entonces), `IdCarga`, `DocumentoAusenteException`, la métrica/alarma de P-07 y el resto de F1b-c.
+
+---
+
+## 2026-10-24 · Calculadora de cupo real (función de cálculo + fórmulas validadas contra liquidaciones reales)
+
+**Código** (`feature/api-publica-guias`):
+
+- **`Logigho.Guias.Liquidacion`** (nuevo, funciones puras): réplica fiel de `DepurarLiquidacionUseCase` para una guía: mismas búsquedas de tarifas (fila de la tienda, sin estado, genérica), mismas fórmulas, redondeos y orden de operaciones; entrega y devolución. `CalculadoraReserva` hace la estimación (sin los valores de Inter: flete máximo configurado + margen del cupo de la tienda, sin piso) y la exacta (con `valorFlete`, `valorServicioContraPago`, `valorSobreFlete`). La reserva es `max(−entrega, −devolución)` redondeada hacia arriba y nunca cero.
+- **Validación con datos reales (PreProd, solo lectura):** 92 de 92 liquidaciones de guías reproducidas con diferencia 0; las otras 33 filas del volcado son liquidaciones del proveedor. Fixture anonimizado en las pruebas. El volcado se hizo con la cadena de Atlas leída en memoria (no se copió ni se imprimió).
+- **`ApiLambdaGuiasCalculadora`** (nueva Lambda): `FunctionHandler(SolicitudCalculo) → RespuestaCalculo`. Lee `CostosTransporteTienda` (Interrapidísimo), `AdministracionCostos`, `Marketing` y `TarifasInter` con caché de 60 s (`LectorConfiguracionLiquidacion`); si recargar falla y hay datos, sigue con los anteriores. Comprobado de extremo a extremo contra PreProd con la tienda de prueba: lectura de configuración 631 ms en frío y 0 ms con caché; estimaciones de 20 200 a 25 900 según peso y valor declarado.
+- **Adaptador `CalculadoraCupoLambda`** (reemplaza al marcador que fallaba siempre cuando existe `FUNCION_CALCULADORA_CUPO`): `Lambda.Invoke` con timeout de 10 s y un reintento. Función caída, error de la función, respuesta ilegible o reserva en cero ⇒ `CalculadoraNoDisponibleException` (503 `CUPO_NO_DISPONIBLE`, no se reserva); tarifa que falta ⇒ `TarifaNoResueltaException` (422). `ICalculadoraCupo.EstimarAsync` ahora recibe el margen de estimación del cupo de la tienda.
+- **CI:** el empaquetado de `pipelines/servicio-publico` incluye la cuarta Lambda.
+
+**Terraform:** función `ApiLambdaGuiasCalculadora` (512 MB, 15 s, solo variables `DATABASE_NAME` y `ENTORNO`), sin permisos de AWS aparte de sus logs. La API, el worker y el reconciliador reciben `FUNCION_CALCULADORA_CUPO` y un permiso `lambda:InvokeFunction` acotado a esa función (se arma el ARN con el nombre para no crear un ciclo). Se elimina la variable `calculadora_cupo_arn`, que nunca se usó. Pruebas offline: 12 en el módulo y 1 en PreProd.
+
+**Decisiones y hallazgos para Iker:**
+
+1. **`FleteReexpedido` fuera de la estimación.** En una tienda real vale 32 500 y las demás columnas rondan 14 000; contarlo triplicaría la reserva de todas las guías. Reexpedido solo aparece después de crear la guía.
+2. **Valor del proveedor.** La liquidación descuenta `ValorDropshipper` en la entrega solo si el pedido trae `Tiendaproveedor`. La API no lo escribe hoy en `PedidosInter`, así que no entra en la reserva. Si se agrega (para que el proveedor liquide), la reserva de las guías de dropshipping debe incluirlo; la función ya lo soporta.
+3. **`TarifasInter`, `AdministracionCostos` y `Marketing` están vacías en PreProd.** Con valores reales de Inter y sin trayecto conocido la reserva toma la columna de flete más cara (conservador) y la respuesta avisa `TRAYECTO_NO_RESUELTO`. Hay que confirmar en producción (solo lectura) que `TarifasInter` existe.
+4. **Cuando el pedido no tiene fila propia** de la tienda en `CostosTransporteTienda` se usa la genérica y el seguro de una guía prepagada queda en 0, como hace la liquidación hoy.
+5. **`IdCarga` de los lotes (F2):** Iker prefiere un identificador único (uuid o el `_id` de Mongo) en lugar de un número negativo. Riesgo: `importacion-pedidos.component.ts` calcula la siguiente carga con `Math.max(...IdCarga) + 1`; un valor no numérico en `CargaPedido.IdCarga` daría `NaN` en la próxima carga masiva de esa tienda. Propuesta: `IdCarga` se queda en `"-1"` (como las guías individuales) y el identificador único del lote va en un campo nuevo `LoteApi` (el `_id` del documento del lote, sin contador).
+
+**Pendiente:** desplegar la función en PreProd y probar de punta a punta (el despliegue lo hace Iker); repetir las pruebas doradas con liquidaciones de producción; documentos `ApiCupoTiendas` de la tienda de prueba.
+
+---
+
+## 2026-10-25 · Todo lo pendiente de F1b-c, lotes y preparación de la prueba en PreProd
+
+Iker pidió hacer todo lo que quedaba y probar en PreProd. Respuesta a su cambio sobre `IdCarga`: sin negativos y con un identificador único; ver «Decisión de `IdCarga`» abajo.
+
+**Código** (`feature/api-publica-guias`, 949 → 1 038 pruebas):
+
+- **Asesor opcional** (`asesor` en el body, hasta 100 caracteres; sin él, «Logigho»), **sin límite diario por defecto** (`GuiasPorDiaTienda` nulo = sin límite y sin contador) y **estados anulables por transportadora** (`ReglasTransportadora.EstadosAnulables`, por defecto solo «Creado»; la anulación de F2 usará `PermiteAnular`).
+- **Worker:** documento ausente (P-07: métrica, revisión manual, cupo conservado), cinco intentos antes de `Fallida` (P-06) y **espera de cliente bloqueado** (la guía queda reservada, sin gastar intentos, y el reconciliador la reencola).
+- **Sticker sin remitente LOGIGHO** (`TransformadorEtiquetaPdf`, iText 9.7.0 como la carga masiva, de mejor esfuerzo; métrica `EtiquetaSinTransformar`).
+- **Lotes:** `POST /v1/lotes` (parcial, una `idempotencyKey` por guía, `rechazoId` por rechazo, tope por cliente) y `GET /v1/lotes/{id}`; colección `ApiLotesGuia`.
+- **Terraform:** alarmas de P-06 y P-07, WAF en modo `count` con registros (producción), ocultar remitente, calculadora de cupo con concurrencia reservada en producción.
+- **Scripts de PreProd** (`pipelines/servicio-publico/scripts`): `desplegar-preprod.ps1` y `probar-preprod.ps1`. Guía completa en [prueba-preprod.md](prueba-preprod.md).
+
+**Decisión de `IdCarga` (lotes).** Iker no quiere números negativos: prefiere un uuid o el `_id` de un documento de Mongo. Verifiqué en el front que `importacion-pedidos.component.ts` calcula la siguiente carga con `Math.max(...IdCarga) + 1` sobre `CargaPedido` y que `modal-generar-guias` y `exportacion-pedidos` filtran por `IdCarga`; un valor no numérico daría `NaN`. Iker pidió que se explicara el costo antes de decidir y luego dijo «dejemos el id carga como dices y lo del UUID o _id»: **`IdCarga` se queda en `"-1"` y el identificador único del lote (el `_id` del documento en `ApiLotesGuia`) va en el campo nuevo `LoteApi`** (RN-089).
+
+**Hallazgos de datos en PreProd (solo lectura):**
+
+- `ApiCupoTiendas` está vacía y el cliente `integrador-prueba` no tiene aún la tienda `156783`: hay que insertarlos (JSON en la guía de la prueba).
+- El único producto de la tienda de prueba (`1371`) está `Inactivo`.
+- `TarifasInter`, `AdministracionCostos` y `Marketing` están vacías; `CostosTransporteTienda` sí tiene las filas de entrega y devolución de la tienda.
+- La licencia de iText es AGPL: ya la usa `ApiLambdaCargarGuias`; Iker debe confirmar que LogiGho tiene la licencia comercial antes de producción.
+
+**Pendiente:** aplicar Terraform, publicar el código y probar de punta a punta en PreProd (Iker); los endpoints de F2 que quedan (anulación, etiqueta, costos, administración de clientes); `referencia` obligatoria, antigüedad máxima de pendientes y respuestas reales de Inter sin número (sin respuesta de Iker); repetir las pruebas doradas con liquidaciones de producción.

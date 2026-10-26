@@ -1,7 +1,7 @@
 ---
 autor: Iker Acevedo
 fecha_creacion: 2026-06-24
-ultima_actualizacion: 2026-09-19
+ultima_actualizacion: 2026-10-26
 estado: produccion
 ---
 
@@ -16,7 +16,7 @@ estado: produccion
 
 ## ¿Qué hace?
 
-Expone un endpoint REST para consultar pedidos paginados desde MongoDB (colección `PedidosInter`). Valida el token Cognito del request, consulta MongoDB para obtener las tiendas autorizadas del usuario desde la tabla `UsuarioTienda` (migración desde claims JWT — ver [ADR-001](adr-001-migracion-validacion-tiendas.md)), y filtra los pedidos únicamente a las tiendas permitidas. Soporta múltiples tiendas por usuario y lógica de "acceso a todas" (`AccesoATodas: true`). Los campos devueltos en cada pedido son dinámicos y se controlan desde la colección `ConfiguracionCamposApi` sin necesidad de redesplegar la lambda.
+Expone un endpoint REST para consultar pedidos paginados desde MongoDB (colección `PedidosInter`). El token Cognito lo valida el authorizer de API Gateway; la lambda usa el `sub` del token para consultar las tiendas autorizadas del usuario en la colección `ApiUsuariosTiendas` (migración desde claims JWT — ver [ADR-001](adr-001-migracion-validacion-tiendas.md)), y filtra los pedidos únicamente a las tiendas permitidas. Soporta múltiples tiendas por usuario y lógica de "acceso a todas" (`AccesoATodas: true` → comodín `*`). Los campos devueltos en cada pedido son dinámicos y se controlan desde la colección `ConfiguracionCamposApi` sin necesidad de redesplegar la lambda.
 
 ---
 
@@ -25,6 +25,24 @@ Expone un endpoint REST para consultar pedidos paginados desde MongoDB (colecci�
 | Método | Ruta | Autenticacion |
 | ------ | ---- | ------------- |
 | `GET` | API Gateway — `APILambdaConsultarPedidos` | Token Cognito (IdToken) |
+
+---
+
+## Authorizer de API Gateway (Cognito)
+
+La ruta `GET /pedidos` tiene un **JWT authorizer de Cognito** (`CognitoUsuariosExternos`) delante de la lambda. Ese guardia valida el token **antes** de que la función se ejecute. Si el token no es válido, API Gateway corta con `401 {"message":"Unauthorized"}` — ese mensaje viene del Gateway, no de la lambda.
+
+| Qué espera el authorizer | Valor |
+| --- | --- |
+| Header | `Authorization: Bearer <token>` (no `Token`) |
+| Issuer | `us-east-1_rTVHpDam9` (PreProd) |
+| Audience (client_id) | `3umhmbu9l5r92g617l1467h9vf` (PreProd) |
+
+!!! warning "Dos capas de autorización"
+    1. **El authorizer de Cognito** (puerta del Gateway) lee el token de `Authorization` y valida firma/issuer/audience. La lambda nunca se ejecuta si esto falla.
+    2. **La lambda** lee el token (de `Token` o `Authorization`) solo para el `sub`, y con él consulta las tiendas en `ApiUsuariosTiendas`.
+
+    El `COGNITO_CLIENT_ID` de `APILambdaObtenerToken` coincide con el audience del authorizer: el token que emite `/token` sirve para pasar el authorizer. Para probar, el token **debe ir en `Authorization: Bearer`**, aunque la lambda también acepte `Token` — si va solo en `Token`, el authorizer corta antes con `401`.
 
 ---
 
@@ -89,14 +107,15 @@ Los campos dentro de `Resultados` son dinámicos — dependen de la configuraci�
 
 | Código | Cuándo |
 | ------ | ------ |
-| `401` | Token ausente, inválido o sin tiendas en los claims |
+| `401` | Token ausente o inválido (lo corta el authorizer de Cognito en el Gateway, antes de la lambda) |
+| `403` | Usuario no existe en `ApiUsuariosTiendas`, está inactivo, o sin tiendas asignadas |
 | `405` | Método HTTP distinto de GET |
 | `500` | Excepción no controlada |
 
 ```json
 {
   "Error": true,
-  "Mensaje": "No autorizado, el token no contiene tiendas validas, por favor revisar"
+  "Mensaje": "El usuario no tiene permisos asignados o esta inactivo"
 }
 ```
 
@@ -201,7 +220,7 @@ Solo los documentos con `Activo: true` se incluyen en la proyección y en la res
 | -------- | ----------- | ------------- |
 | `CADENA_CONEXION` | Cadena de conexión MongoDB (encriptada AES-256-ECB) | String encriptado |
 | `DATABASE_NAME` | Nombre de la base de datos MongoDB | `"LogighoDB"` |
-| `COLECCION_PEDIDOS` | Nombre de la colección de pedidos | `"PedidosInter"` |
+| `COLECCION_PEDIDOS` | Nombre de la colección de pedidos | `"PedidosInter"` (default) |
 
 ---
 
@@ -230,6 +249,12 @@ Solo los documentos con `Activo: true` se incluyen en la proyección y en la res
 
 | Fecha | Autor | Cambio |
 | ----- | ----- | ------ |
+| 2026-10-26 | Iker Acevedo | **CI/CD propio del sub-dominio** en Azure DevOps (CI + CD PreProd/Prod). Ver [CI/CD y despliegue](cicd-despliegue.md). |
+| 2026-10-26 | Iker Acevedo | Documentado el **authorizer de Cognito** de API Gateway (`CognitoUsuariosExternos`): el token debe ir en `Authorization: Bearer`; la lambda nunca corre si el authorizer corta. |
+| 2026-10-26 | Iker Acevedo | Colección de permisos confirmada como `ApiUsuariosTiendas`; `403` cuando el usuario no existe o está inactivo. |
+| 2026-10-26 | Iker Acevedo | `function-name` corregido (`ApiLambaConsultarPedidos` → `APILambdaConsultarPedidos`); secretos fuera de los `aws-lambda-tools-defaults.json` (van a variable groups de Azure Library). |
+| 2026-10-26 | Iker Acevedo | `COLECCION_PEDIDOS` por defecto pasa a `PedidosInter`. Refactor: `CalcularFechaDesdeEfectiva` extraída a `PoliticaFechas` (clase de dominio pura). |
+| 2026-10-26 | Iker Acevedo | Soporte de novedades como arreglo (`MotivoNovedadInter`). Ver [Novedades Inter](motivo-novedad-inter.md). |
 | 2026-09-19 | Iker Acevedo | **Migración: validación de tiendas de claims JWT → MongoDB tabla `UsuarioTienda`.** Permite revocación inmediata, auditabilidad y UI de gestión. Ver [ADR-001](adr-001-migracion-validacion-tiendas.md). |
 | 2026-09-19 | Iker Acevedo | Nueva interface `IUsuarioTiendaRepository` y implementación `UsuarioTiendaRepository` para consultar permisos desde BD. |
 | 2026-09-19 | Iker Acevedo | Nuevo dominio `UsuarioTienda`: modelo de usuario con tiendas autorizadas e indicador `AccesoATodas`. |

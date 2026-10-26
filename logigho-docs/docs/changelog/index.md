@@ -24,6 +24,42 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-26] — Relación de Despacho: histórico completo, buscador de guías, Unir lotes y versión para celular
+
+### Nuevas funcionalidades
+- **Buscador de guías en el histórico** con dos modos: **Lote** (una o varias guías, muestra los lotes donde
+  están y avisa las no encontradas) y **Guía** (una guía, abre el detalle de su lote mostrando solo esa).
+  Busca en todo el historial y acepta pegar una columna de Excel.
+- **Filtros del histórico:** fecha por día o por rango (dos clics en el calendario), ecosistema, tienda y
+  transportadora.
+- **Columna Transportadora** con etiqueta de color (Inter, Envía, Servientrega, TCC) y fecha con hora.
+- **Ver 10 / 25 / 50 / 100** por página en la lista de lotes y en el detalle del lote.
+- **Unir lotes:** franja con el resumen de los lotes marcados, "Quitar selección" y un aviso de confirmación
+  antes de generar el PDF unido.
+- **Versión para celular:** tarjetas en vez de tablas, filtros en dos columnas, menús como hoja inferior y
+  la vista a todo el ancho.
+- **Tour de 11 pasos** que recorre Pendientes e Histórico.
+
+### Cambios
+- Las guías de **Envía** se muestran con su 0 inicial en tablas, PDF y código de barras (la base de datos no
+  cambia).
+- Logo de Envía nuevo (transparente, alta calidad) y logos del PDF más nítidos.
+- Encabezado nuevo: tarjeta con "N guías pendientes" y los pasos ①②③ (solo en computador).
+- Casillas de los filtros con el mismo estilo de las tablas.
+- Estilos del módulo en la carpeta `styles/` (computador y celular por separado).
+- Se quitó el pie de página de toda la aplicación.
+
+### Correcciones
+- La hora del histórico ya no aparece 5 horas antes.
+- El selector de cantidad por página ya no se sale de la pantalla en celular.
+- Las pruebas `should create` del módulo pasan con un repositorio falso.
+
+### Documentación
+- **Relación de Despacho:** histórico (filtros, buscador Lote/Guía, Unir lotes), 0 de Envía, encabezado,
+  tour, celular, estructura de carpetas, pruebas (58) y diagrama de flujo al día.
+
+---
+
 ## [2026-10-26] — Servicio Público: CI/CD de ConsultarPedidos + tiendas desde base de datos
 
 ### Nuevas funcionalidades

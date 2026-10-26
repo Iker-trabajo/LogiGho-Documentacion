@@ -1,7 +1,7 @@
 ---
 autor: Iker Acevedo Vargas
 fecha_creacion: 2026-08-14
-ultima_actualizacion: 2026-08-14
+ultima_actualizacion: 2026-09-21
 estado: desarrollo
 nivel: 5
 ---
@@ -18,7 +18,7 @@ nivel: 5
 
 ## ¿Qué hace?
 
-Renderiza HTML no confiable de forma aislada. Es el componente donde vive la Capa 1 (iframe sandbox) y la Capa 5 (pantalla completa sin pestaña nueva) del [modelo de seguridad del módulo](overview.md#modelo-de-seguridad). Reutilizado tal cual en tres lugares: previsualización en Gestión de Reportes, visor de usuario, y (potencialmente) cualquier futura vista que necesite renderizar HTML no confiable.
+Renderiza HTML no confiable de forma aislada. Es el componente donde vive la Capa 1 (iframe sandbox) y la Capa 5 (pantalla completa sin pestaña nueva) del [modelo de seguridad del módulo](overview.md#seguridad-del-visor). Se reutiliza en previsualización y en el visor de usuario.
 
 ---
 
@@ -60,7 +60,7 @@ ngOnDestroy()
 
 ### `alternarPantallaCompleta()`
 
-Fullscreen API nativa (`Element.requestFullscreen()` / `document.exitFullscreen()`) sobre el `<div>` contenedor — nunca sobre el `<iframe>` directamente, para poder mostrar el botón de salir superpuesto durante el fullscreen. Deliberadamente **no** usa `window.open()`: ver la decisión descartada en el [overview](overview.md#decisión-descartada-abrir-en-pestaña-nueva).
+Fullscreen API nativa (`Element.requestFullscreen()` / `document.exitFullscreen()`) sobre el `<div>` contenedor — nunca sobre el `<iframe>` directamente, para poder mostrar el botón de salir superpuesto durante el fullscreen. Deliberadamente **no** usa `window.open()`: abrir el `blob:` como documento de primer nivel comprometería el aislamiento descrito en el [modelo de seguridad](overview.md#seguridad-del-visor).
 
 ---
 
@@ -101,3 +101,4 @@ Tokens **nunca** concedidos: `allow-same-origin` (el que anularía todo lo demá
 | Fecha | Autor | Cambio |
 | --- | --- | --- |
 | 2026-08-14 | Iker Acevedo Vargas | Versión inicial con sandbox de 3 tokens, blob URL, y Fullscreen API nativa reemplazando el botón de pestaña nueva |
+| 2026-09-21 | Iker Acevedo Vargas | Integración con el visor rediseñado, cuyos controles externos evitan duplicar el botón interno de pantalla completa. |

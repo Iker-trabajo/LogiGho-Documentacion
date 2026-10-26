@@ -74,6 +74,16 @@ nav:
       - Diagrama del sistema: arquitectura/diagrama-sistema.md
       - Decisiones tecnicas: arquitectura/decisiones.md
       - Flujo API Gateway: arquitectura/api-gateway.md
+      - Seguridad y accesos (propuesta): arquitectura/seguridad-accesos.md
+      - Decisiones de Inventario (ADR):
+          - Indice: arquitectura/adr/inventario/index.md
+          - ADR-INV-001 Clave unica e indice sparse: arquitectura/adr/inventario/ADR-INV-001-clave-unica-e-indice-sparse.md
+          - ADR-INV-002 Un cierre por guia: arquitectura/adr/inventario/ADR-INV-002-un-cierre-por-guia.md
+          - ADR-INV-003 Formula v2: arquitectura/adr/inventario/ADR-INV-003-formula-v2.md
+          - ADR-INV-004 Filtro de activacion: arquitectura/adr/inventario/ADR-INV-004-filtro-de-activacion.md
+          - ADR-INV-005 PedidosInter fuente de verdad y retorno: arquitectura/adr/inventario/ADR-INV-005-pedidosinter-fuente-de-verdad-y-retorno.md
+          - ADR-INV-006 Un proyecto, varias funciones, Strangler Fig: arquitectura/adr/inventario/ADR-INV-006-un-proyecto-ocho-funciones-strangler.md
+          - ADR-INV-007 CORS abierto: arquitectura/adr/inventario/ADR-INV-007-cors-abierto.md
 
   - Backend:
       - Overview: backend/overview.md
@@ -107,6 +117,16 @@ nav:
                   - Envía: backend/lambdas-dotnet/aplicacion/Cotizacion/FuncionesCotizar/ApiLambdaCotizarEnvia/ApiLambdaCotizarEnvia.md
               - ApiLambdaProcesoAutomaticoInter:
                   - Lambda: backend/lambdas-dotnet/aplicacion/interrapidismo/ApiLambaProcesoAutomaticoInter/ApiLambaProcesoAutomaticoInter.md
+              - ApiLambdaNovedadesInter:
+                  - Lambda: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInter.md
+                  - Solicitar novedades (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/solicitar-novedades-usecase.md
+                  - Recibir resultado (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/recibir-resultado-usecase.md
+                  - Modelos de Dominio: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/modelos.md
+                  - Webhook y contrato ws-inter: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/webhook-ws-inter.md
+                  - Observabilidad y monitoreo: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/observabilidad.md
+                  - Runbook (puesta en marcha y operación): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/runbook.md
+                  - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-001-una-lambda-paso-en-la-step-y-dos-colecciones.md
+                  - Webhook en el REST del entorno (ADR-002): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-002-webhook-en-el-rest-del-entorno-con-api-key.md
               - ApiLambdaLiquidacionesLogighoAOT:
                   - Vision general: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/overview.md
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/ApiLambdaLiquidacionesLogighoAOT.md
@@ -139,6 +159,14 @@ nav:
                   - JobId en Inventario (ADR-003): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-003-jobid-en-inventariodevolucion.md
                   - Fechas UTC (ADR-004): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-004-fechas-utc.md
                   - Confiabilidad Inter (ADR-005): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaDevolucionesMasivo/adr/ADR-005-confiabilidad-inter.md
+              - ApiLambdaPublicarReporteAnalytics:
+                  - Lambda: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/ApiLambdaPublicarReporteAnalytics.md
+                  - Solicitar Carga (Caso de Uso): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/casos-uso/solicitar-carga-usecase.md
+                  - Confirmar Carga (Caso de Uso): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/casos-uso/confirmar-carga-usecase.md
+                  - Modelos de Dominio: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/dominio/modelos.md
+                  - Repositorios: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/infraestructura/repositorios.md
+                  - Servicios: backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/infraestructura/servicios.md
+                  - Autenticación (ADR-001): backend/lambdas-dotnet/aplicacion/Logigho/ApiLambdaPublicarReporteAnalytics/adr/ADR-001-autenticacion-sub-sin-firma-mas-roles-en-users.md
           - Integración Pancake:
               - Estadísticas de Cuentas (Marketing):
                   - Descripción general: backend/pancake/overview.md
@@ -185,20 +213,50 @@ nav:
                   - Decisiones pendientes antes de PreProd: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/pendientes-preprod.md
                   - Bitácora de desarrollo: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/bitacora-desarrollo.md
           - Servicio Consultar Estadisticas Pagina: backend/pancake/lambdas/ApiLambdaConsultarEstadisticasPagina/ApiLambdaConsultarEstadisticasPagina.md
+      - Inventario (ApiLambdaInventario):
+          - Vision del dominio y glosario: backend/inventario/index.md
+          - Arquitectura: backend/inventario/arquitectura.md
+          - Estados, cierres y formula: backend/inventario/estados-y-formula.md
+          - Llamadores y estandar de llamadas: backend/inventario/llamadores.md
+          - Alertas diarias por Slack: backend/inventario/alertas-slack.md
+          - Operacion y runbook: guias/inventario-operacion.md
+          - Tareas futuras: backend/inventario/tareas-futuras.md
+          - Pantallas del front: frontend/views/logistica/inventario/inventario-front.md
+          - Changelog de la liberacion: changelog/inventario-2026-10.md
 
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
+      - Layout:
+          - Menu lateral (Default Layout): frontend/layout/default-layout.md
+          - Barra superior (Default Header): frontend/layout/default-header.md
+      - Sistema de Experiencias (propuesta):
+          - Que es: frontend/experiencias/index.md
+          - Arquitectura (ADR-001): frontend/experiencias/adr/ADR-001-sistema-experiencias.md
+          - Estructura del proyecto: frontend/experiencias/estructura-proyecto.md
+          - Crear una vista: frontend/experiencias/crear-vista.md
+          - Crear una experiencia: frontend/experiencias/crear-experiencia.md
+          - Reglas de cambio entre experiencias: frontend/experiencias/reglas-de-cambio.md
+          - Tokens y estilos: frontend/experiencias/tokens-y-estilos.md
+          - Seguridad por diseno: frontend/experiencias/seguridad-por-diseno.md
+          - "Buenas practicas: si y no": frontend/experiencias/buenas-practicas.md
+          - Migracion de vistas: frontend/experiencias/migracion-vistas.md
+          - "Ejemplo: tienda/pedidos": frontend/experiencias/ejemplo-tienda-pedidos.md
+          - Plan de implementacion: frontend/experiencias/plan-implementacion.md
       - Componentes:
           - Core:
             - Estandarizador de direcciones: frontend/core/estandarizador-direcciones.md
             - Servicio de Cotizacion: frontend/core/cotizacion-service.md
             - Reglas Modalidad de Pago: frontend/core/reglas-modalidad-pago.md
+            - Servicio de Notificaciones: frontend/core/notificaciones-service.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
+              - Campana de Notificaciones: frontend/components/campana-notificaciones.md
               - Paso Cotizacion (Modal Pedidos): frontend/components/paso-cotizacion.md
               - Importacion Pauta: frontend/components/importacion-pauta.md
+              - Importacion Facturas Inter: frontend/components/importacion-facturas.md
+              - Importacion Facturas Envia: frontend/components/importacion-facturas-envia.md
               - Importacion Facturas Generico: frontend/components/importacion-facturas-generico.md
               - Importacion Pagos Generico: frontend/components/importacion-pagos-generico.md
               - Creacion Productos: frontend/components/creacion-productos.md
@@ -211,6 +269,7 @@ nav:
               - Escaner Camara: frontend/components/escaner-camara.md
               - Importacion Pedidos: frontend/components/importacion-pedidos.component.md
               - Generar Guia Modal: frontend/components/modal-generar-guias.component.md
+              - Consultar Guia (modal del header): frontend/components/consulta-guia-modal.md
               - Visualización Documentos: frontend/components/visualizacion-documento-comprobante.md
               - Modal Creacion Pedidos: frontend/components/modal-creacion-pedidos.component.md
               - Menu Acciones: frontend/views/dropshipping/product-hub/components/menu-acciones.md
@@ -223,6 +282,9 @@ nav:
                   - Visor de Reporte: frontend/views/analytics/vista-reporte.md
                   - Componente Sandbox: frontend/views/analytics/reporte-sandbox.md
                   - Servicios: frontend/views/analytics/servicios.md
+                  - Áreas Organizacionales: frontend/views/analytics/areas-organizacionales.md
+                  - Telemetría y Auditoría: frontend/views/analytics/telemetria-reportes.md
+              - CEO:
                   - Liquidaciones (Power BI): frontend/views/analytics/liquidaciones-dashboard.md
               - Director de Operaciones:
                   - Costos Transportadora:
@@ -263,12 +325,22 @@ nav:
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
+              - Logistica:
+                  - Inventario nuevo (pantallas): frontend/views/logistica/inventario/inventario-front.md
+                  - Directiva ayuda flotante: frontend/views/gestion-datos/export-data/directives/ayuda-flotante-directive.md
               - Tienda:
                   - Portafolio:
                       - Componente: frontend/views/tienda/Portafolio/portafolio.md
                       - Arquitectura: frontend/views/tienda/Portafolio/portafolio-ADR.md
                   - Pauta:
                       - Componente: frontend/views/tienda/pauta/pauta.md
+                      - Modal de importacion: frontend/components/importacion-pauta.md
+                      - Modelos: frontend/views/tienda/pauta/models/pauta-models.md
+                      - Repositorio: frontend/views/tienda/pauta/repository/pauta-repository.md
+                      - Lectura de Excel: frontend/views/tienda/pauta/services/lectura-excel-pauta-service.md
+                      - Validacion de filas: frontend/views/tienda/pauta/services/validacion-filas-pauta-service.md
+                      - Aviso toast: frontend/views/tienda/pauta/services/aviso-toast-service.md
+                      - Directiva solo numeros: frontend/views/tienda/pauta/directives/campo-solo-numeros-directive.md
                   - Wallet:
                       - Componente: frontend/views/tienda/wallet/wallet-view.md
                   - Gestion Cuentas:
@@ -327,12 +399,14 @@ nav:
       - Contratos y endpoints: api/contratos.md
       - Autenticacion: api/autenticacion.md
       - Manejo de errores: api/errores.md
+      - Inventario: api/inventario.md
 
   - Guias:
       - Setup local: guias/setup-local.md
       - Variables de entorno: guias/variables-entorno.md
       - Flujo de trabajo: guias/flujo-de-trabajo.md
       - Como documentar: guias/como-documentar.md
+      - Operacion de Inventario: guias/inventario-operacion.md
 
   - Plantillas:
       - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md
@@ -342,5 +416,8 @@ nav:
       - Lambda Python: plantillas/PLANTILLA-LAMBDA-PYTHON.md
       - API Endpoint: plantillas/PLANTILLA-API-ENDPOINT.md
       - Decision Tecnica (ADR): plantillas/PLANTILLA-ADR.md
+      - Vista del Sistema de Experiencias: plantillas/PLANTILLA-VISTA-EXPERIENCIAS.md
 
-  - Changelog: changelog/index.md
+  - Changelog:
+      - Historial: changelog/index.md
+      - Liberacion de Inventario (oct 2026): changelog/inventario-2026-10.md

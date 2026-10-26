@@ -13,9 +13,17 @@ Este proceso se encarga de preparar las tablas y los números del tablero a part
 
 ### Cómo aplica los filtros y selecciones
 
-Primero aplica los filtros generales (ciudad, mes, tienda, transportadora, ecosistema, estado logístico, fulfillment). Sobre ese resultado, aplica además las selecciones activas (el mes, día, tienda, transportadora o pedido en el que el usuario hizo clic), que se combinan todas entre sí.
+Primero aplica los filtros generales (ciudad, mes, tienda, transportadora, ecosistema, estado logístico, fulfillment). Sobre ese resultado, aplica además las selecciones activas (el mes, día, tienda, transportadora o pedido en el que el usuario hizo clic), que se combinan todas entre sí. Si hay varios días marcados, un pedido entra si es de **alguno** de ellos.
+
+Todo se agrupa por la **fecha de creación** del pedido.
 
 Hay una regla especial: **la tabla donde el usuario hizo clic no se limita a sí misma.** Por ejemplo, si el usuario selecciona un mes en la tabla de pedidos por mes, esa misma tabla sigue mostrando todos los meses (para poder seguir comparando o cambiar de selección fácilmente), pero el ranking de tiendas, los indicadores y el detalle sí quedan filtrados a ese mes. Lo mismo aplica al revés: si se selecciona una tienda en el ranking, la tabla de pedidos por mes sí se filtra a esa tienda, pero el ranking sigue mostrando todas las tiendas.
+
+---
+
+### La suma de los días marcados
+
+Cuando hay días marcados, además calcula cuántos pedidos suman esos días por cada transportadora y en total. La tabla por mes **no se recorta** por los días marcados (siguen viéndose todos los días del mes para poder marcar otros); la suma va aparte, en la fila "Seleccionados (N días)".
 
 ---
 
@@ -40,6 +48,9 @@ Cambia un filtro, una selección, o se pide exportar
   └─► se calcula la tabla de pedidos por mes y transportadora
   └─► se calcula el ranking de tiendas
   └─► se calculan los indicadores superiores
+  └─► si hay días marcados, se calcula su sumatoria
+  └─► se corta la página del detalle que toca mostrar
+        (50 pedidos en computador, 5 en celular)
   └─► se calculan las opciones disponibles de cada filtro
   └─► se entrega todo el resultado a la pantalla principal
         para que se muestre de inmediato
@@ -52,6 +63,7 @@ Cambia un filtro, una selección, o se pide exportar
 | Fecha | Cambio |
 |---|---|
 | 2026-07-10 | Creación del cálculo de tablas e indicadores, con selección combinable entre mes, día, tienda, transportadora y pedido, y exportación acotada por tabla |
+| 2026-10-22 | Agrupación por fecha de creación; filtro por varios días marcados y su sumatoria por transportadora |
 
 ---
 

@@ -195,6 +195,8 @@ nav:
                   - Repositorio UsuarioTienda: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/usuario-tienda-repository.md
                   - Deuda Técnica (TODO): backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/TODO-integracion-usuarios-api-completa.md
                   - Resumen de cambios: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarPedidos/RESUMEN-CAMBIOS-2026-09-19.md
+              - ApiLambdaConsultarHistorialPedido:
+                  - Lambda: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/ApiLambdaConsultarHistorialPedido/ApiLambdaConsultarHistorialPedido.md
               - API pública de guías:
                   - Visión general: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/ApiPublicaGuias.md
                   - Endpoints: backend/lambdas-dotnet/aplicacion/ServicioPublicoLogigho/Guias/endpoints.md

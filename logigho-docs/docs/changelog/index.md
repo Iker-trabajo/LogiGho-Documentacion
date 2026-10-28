@@ -24,6 +24,47 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-28] — Layout: el menú lateral se cierra al elegir una opción
+
+### Nuevas funcionalidades
+
+- **Cierre al elegir una opción:** la barra se cierra sola aunque el mouse siga encima, con el mouse o
+  con Enter, desde el menú o desde los resultados del buscador. Espera a que la página nueva cargue
+  (hasta 400 ms y a que el navegador quede libre) para que la animación no dé tirones. Mientras se
+  cierra, pasar el mouse no la reabre.
+- Al terminar de cerrarse, los grupos abiertos se **pliegan deslizándose** en 0.22 s en vez de saltar
+  de golpe.
+- **Botón X en el buscador** del menú para borrar lo escrito, en el lugar de la etiqueta `Ctrl B`.
+
+### Cambios
+
+- La búsqueda se borra cuando la barra termina de cerrarse; mientras se encoge, los resultados se
+  desvanecen y al final entran los iconos del menú completo.
+- En escritorio la cascada de los submenús se repite cada vez que se abre la barra.
+- Nuevo `coreui-sidebar-ajuste.ts`: CoreUI ya no cierra el grupo donde se acaba de elegir una opción
+  (grupos con direcciones mezcladas) y el grupo abierto no pierde la clase `show` al navegar.
+- Los `@keyframes` del menú pasaron a `src/scss/_animaciones-menu.scss` (estilos globales): dentro de
+  un `@media` del componente no se encontraban y no se animaban.
+- La X del navegador en el buscador se oculta en todos los dispositivos.
+
+### Correcciones
+
+- Al elegir con Enter el foco quedaba en el menú y las flechas de la página volvían a abrir la barra.
+- Un segundo clic (o doble clic) mientras la barra esperaba para cerrarse cancelaba el cierre.
+- Enter con la barra ya cerrada dejaba el menú sin abrirse al pasar el mouse.
+- Ctrl / Cmd / Shift + clic (abrir en otra pestaña) cerraba la barra.
+- Con la barra cerrada, el submenú del grupo de la página actual se veía amontonado al pasar el mouse.
+- Si una página tenía un error en su plantilla (Inversiones), la barra se quedaba abierta.
+
+### Documentación
+
+- **Menú lateral (Default Layout):** cierre al elegir una opción, plegado de los grupos, clase
+  `cerrando`, ajuste a CoreUI, botón X, `@keyframes` globales y el corte de celular frente al de
+  CoreUI. Se limpiaron líneas repetidas que había dejado un merge.
+- **Estructura de módulos:** se quitó el enlace repetido al menú lateral.
+
+---
+
 ## [2026-10-26] — Relación de Despacho: histórico completo, buscador de guías, Unir lotes y versión para celular
 
 ### Nuevas funcionalidades

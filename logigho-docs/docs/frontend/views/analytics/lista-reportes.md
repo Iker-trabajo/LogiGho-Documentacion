@@ -1,7 +1,7 @@
 ---
 autor: Iker Acevedo Vargas
 fecha_creacion: 2026-08-14
-ultima_actualizacion: 2026-09-21
+ultima_actualizacion: 2026-10-28
 estado: desarrollo
 nivel: 3
 ---
@@ -43,10 +43,26 @@ Las chips de categoría se llenan desde las áreas organizacionales **activas**,
 
 | Estado | Mensaje al usuario |
 |---|---|
-| Cargando | Indicador de carga. |
+| Cargando | Tarjetas fantasma animadas con la forma de las tarjetas reales. |
 | Sin reportes | “Todavía no hay reportes disponibles para ti”. |
 | Sin coincidencias | Mensaje claro para ajustar búsqueda o filtro. |
 | Error | Aviso de que no fue posible cargar el catálogo. |
+
+---
+
+## Versión para celular
+
+Estilos en `styles/lista-reportes.scss` (computador) y `styles/lista-reportes.mobile.scss` (celular).
+
+| Zona | En celular (≤768 px) |
+|---|---|
+| Página | Ocupa todo el ancho. |
+| Altura | Sube 36 px para compensar el margen del contenedor (20 px) y el que deja el encabezado (`mb-4` menos el `-2%` del cuerpo); el título queda a 8 px de la barra. |
+| Título | "Reportes" con línea azul de acento; **?** y **Gestionar ETL** a la derecha, de 42 px. |
+| Categorías | Chips que se deslizan de lado en una sola fila. |
+| Tarjetas | Una columna, sin el salto del hover y con botón "Ver Reporte" táctil. |
+
+Tamaños de pantalla usados: 860, 768 y 400 px.
 
 ---
 
@@ -62,3 +78,5 @@ Este filtro mejora la experiencia, pero es un control de interfaz. El backend de
 |---|---|---|
 | 2026-08-14 | Iker Acevedo Vargas | Catálogo inicial, filtro por estado y rol. |
 | 2026-09-21 | Iker Acevedo Vargas | Tarjetas responsive y categorías dinámicas desde Áreas Organizacionales. |
+| 2026-10-27 | Yadilton Torres | Tarjetas fantasma de carga, estilos en `styles/` y versión para celular. |
+| 2026-10-28 | Yadilton Torres | Título más arriba en celular. |

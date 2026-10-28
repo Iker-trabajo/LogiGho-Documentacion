@@ -1,7 +1,7 @@
 ---
 autor: Iker Acevedo Vargas
 fecha_creacion: 2026-09-21
-ultima_actualizacion: 2026-09-21
+ultima_actualizacion: 2026-10-27
 estado: desarrollo
 nivel: 4
 ---
@@ -111,8 +111,15 @@ flowchart LR
 
 ---
 
+## Celular
+
+En pantallas de hasta 768 px el modal sube desde abajo como hoja inferior, por encima del encabezado de la plataforma, con textos más grandes, campos de 16 px (evita el zoom automático de iOS) y botones a lo ancho. Los estilos están en `modal-area-organizacional.component.mobile.scss`. `Escape` y la ✕ cierran el modal.
+
+---
+
 ## Historial de cambios
 
 | Fecha | Autor | Cambio |
 |---|---|---|
 | 2026-09-21 | Iker Acevedo Vargas | Se reemplazó el catálogo hardcodeado por áreas configurables, con edición, prevención de duplicados y asociación dinámica de roles. |
+| 2026-10-27 | Yadilton Torres | Versión para celular como hoja inferior. |

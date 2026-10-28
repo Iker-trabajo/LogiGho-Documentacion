@@ -24,6 +24,63 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-28] — Métricas de reportes: ajustes de celular, zoom en vista previa y pruebas
+
+### Nuevas funcionalidades
+- **Zoom y pantalla completa en la vista previa de Gestión**, en la barra de título y fuera del reporte.
+- **Tarjeta compacta de Gestión en celular:** Activo y categoría arriba, fecha y autor en gris, y roles como
+  chips con "+N más".
+- **Indicadores de Telemetría en celular:** solo los 2 principales y un botón "Ver N indicadores más".
+
+### Cambios
+- En celular, el título de Lista, Telemetría y Gestión queda más arriba (se compensa el margen del
+  contenedor y del encabezado).
+
+### Correcciones
+- Al abrir los indicadores en celular ya no quedan huecos: el reporte líder va al final a lo ancho.
+
+### Documentación
+- **Analytics:** Gestión (zoom en vista previa, tarjeta de celular), Telemetría (indicadores en celular),
+  Lista (altura del título) y Servicios (tabla de pruebas, 7 nuevas).
+
+---
+
+## [2026-10-27] — Métricas de reportes: tiempo y clics reales, dos Excel y versión para celular
+
+### Nuevas funcionalidades
+- **Conteo de clics** por sesión (`ConteoClics`): en la página del visor y dentro del reporte, con un aviso
+  por `postMessage` que el sandbox solo acepta de su propio iframe.
+- **Dos Excel en Telemetría:** de reportes (Reportes + Información) y de usuarios (Usuarios, Consumo por
+  reporte + Información). Respetan filtros, máximo 1.000 filas, hora de Bogotá y tiempos en minutos.
+- **Tarjeta "Tiempo acumulado"** con el usuario de mayor permanencia; tiempo y clics por reporte; clics y
+  primer ingreso por usuario.
+- **Selector "Tiempo en"** (Automático, segundos, minutos u horas), guardado en el navegador.
+- **Zoom del reporte** (− / + y restablecer) con modo **Ajustado** en celular (dibuja a 1024 px y escala).
+- **Pantallas de carga:** componente de 3 pasos, esqueletos en visor, gestión y lista, barra de carga en
+  telemetría.
+- **Versión para celular** de Gestión, Lista, Telemetría y el marco del visor: página a todo el ancho,
+  título con línea de acento, filas de íconos, tablas como tarjetas y modales como hoja inferior.
+
+### Cambios
+- Cabecera de Telemetría: título y acciones arriba, barra de filtros con Período y Tiempo en debajo.
+- Vista previa de Gestión más grande, con un solo marco y una barra de título nueva.
+- Botón ✕ en todos los modales de Gestión.
+- Los nombres de usuario se toman siempre de la colección `Users`.
+- Estilos de las cuatro vistas en sus carpetas `styles/` (computador y celular por separado).
+
+### Correcciones
+- **El tiempo de lectura no se guardaba:** el tracker actualizaba con el `SesionId` y el servidor esperaba
+  el `_id` de Mongo (`500 ID no es válido`). Ahora resuelve el `_id` y el último envío usa `keepalive`.
+- Los promedios ignoran las sesiones antiguas con tiempo `0`.
+- El desplegable de "Tiempo en" salía demasiado grande por un error de CSS.
+- En celular, los filtros de Telemetría ya no se salen del recuadro ni mueven la página de lado.
+
+### Documentación
+- **Analytics:** Telemetría (Excel, unidad de tiempo, clics, celular), Servicios (tracker y consultas),
+  Sandbox (zoom, clics, carga), Gestión, Lista, Visor y Áreas (celular) y página nueva de Pasos de carga.
+
+---
+
 ## [2026-10-26] — Relación de Despacho: histórico completo, buscador de guías, Unir lotes y versión para celular
 
 ### Nuevas funcionalidades

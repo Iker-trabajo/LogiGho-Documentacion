@@ -283,6 +283,7 @@ nav:
                   - Lista de Reportes: frontend/views/analytics/lista-reportes.md
                   - Visor de Reporte: frontend/views/analytics/vista-reporte.md
                   - Componente Sandbox: frontend/views/analytics/reporte-sandbox.md
+                  - Pasos de carga: frontend/views/analytics/pasos-carga-reporte.md
                   - Servicios: frontend/views/analytics/servicios.md
                   - Áreas Organizacionales: frontend/views/analytics/areas-organizacionales.md
                   - Telemetría y Auditoría: frontend/views/analytics/telemetria-reportes.md

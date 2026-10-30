@@ -232,6 +232,7 @@ nav:
           - Reglas de clasificacion: backend/metricas/reglas-clasificacion.md
           - Seguridad (verificacion del JWT): backend/metricas/seguridad.md
           - Ajuste visual del porcentaje: backend/metricas/ajuste-visual.md
+          - Periodos de tiempo y rendimiento: backend/metricas/periodos.md
           - Operacion y despliegue: backend/metricas/operacion.md
           - Liberacion de oct 2026: changelog/metricas-2026-10.md
 

@@ -42,9 +42,9 @@ Dos tarjetas separadas:
 Define cómo se elevan los porcentajes que ven los usuarios (regla y parámetros en [Ajuste visual](../../backend/metricas/ajuste-visual.md)).
 
 - **Cómo funciona la fórmula:** una flecha ▾ abre y cierra la explicación paso a paso, con tabla de ejemplo y la advertencia del tope.
-- **Estado del ajuste:** *Apagado (porcentaje real)* o *Activo*.
+- **Estado del ajuste:** *Apagado (porcentaje real)* o *Activo*. Apagado, los controles se desactivan; el checkbox *Solo para calcular* permite probar valores sin aplicar nada.
 - **Porcentaje mínimo a mostrar** (1 a 99) y **modo** (*Por ciudad* / *Global*).
-- **Ciudades:** todas llevan el ajuste general; la casilla **Aplicar** excluye una ciudad (muestra el real) y **Mínimo propio** le da su propio porcentaje. Atajos: *Marcar/Quitar todas las que se ven* (siguen al buscador) y *Restablecer ciudades*. Ver [Ajuste visual](../../backend/metricas/ajuste-visual.md).
+- **Ciudades:** todas usan el general (casilla **General** marcada). Al desmarcarla se habilita **Mínimo propio** (1 a 99) con un ✔ verde. Atajos: *Usar el general / Personalizar las que se ven* (siguen al buscador) y *Restablecer ciudades*. Ver [Ajuste visual](../../backend/metricas/ajuste-visual.md).
 - **Guardar ajuste** (el mismo PUT de la configuración) y **Restablecer**. **Es inmediato:** al guardar sale "Ajuste guardado. Los usuarios lo ven al recargar Entregas." (el ajuste es solo del front; no espera una corrida, a diferencia de los parámetros de cálculo).
 - **Vista previa real → mostrado:** tabla por ciudad y transportadora, con la casilla y el mínimo propio de cada ciudad, con el porcentaje real tachado y el mostrado en negrita, buscador de ciudad o departamento y "Ver más". Incluye la cantidad de celdas con muestra y los promedios real y mostrado. La vista previa usa los valores **sin guardar** y funciona aunque el ajuste esté apagado.
 

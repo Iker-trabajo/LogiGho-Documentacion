@@ -26,6 +26,16 @@ Deducida de la pizarra de gerencia (65 → 99, 50 → 90, 20 → 60, tope 99) y 
 
 Ejemplo con mínimo 60: reales **65, 50 y 20** → desplazamiento 40 → **99** (65 + 40 = 105, tope), **90** y **60**. Coincide con la pizarra.
 
+### La misma fórmula, en escalones (como la explica gerencia)
+
+1. El **peor** del grupo (menor porcentaje real con muestra suficiente) se muestra con el **mínimo**.
+2. Cada transportadora = **mínimo + lo que le saca de ventaja al peor** (su real − el real del peor).
+3. Si pasa de **99 %**, se muestra 99 % (tope). Si el mínimo no supera al peor real, no se sube nada.
+
+Con mínimo 60 y reales 65, 50 y 20: A = 60 + (65 − 20) = 105 → **99 %** (tope), B = 60 + (50 − 20) = **90 %**, C = 60 + 0 = **60 %**. Es matemáticamente igual a `real + (mínimo − peor)` (un test lo comprueba en varios casos); `escalonar` en `ajuste.utils.ts` es la versión paso a paso que usa la calculadora.
+
+**Calculadora del panel:** dentro de "Cómo funciona la fórmula" hay una tabla con las transportadoras A, B y C (reales editables, por defecto 65, 50 y 20) que muestra la ventaja sobre el peor, el cálculo y lo que se muestra. Se recalcula con el mínimo que escribe el administrador. Es solo de práctica: no guarda nada.
+
 - El **orden nunca cambia** y las diferencias entre transportadoras se conservan hasta chocar con el tope de 99.
 - Un porcentaje `null` (sin guías finales) se queda `null`.
 - Si el mínimo definido no supera al menor real, no hay desplazamiento (solo se aplica el tope).

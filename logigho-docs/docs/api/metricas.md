@@ -81,9 +81,9 @@ Una corrida `EN_CURSO` con más de 20 minutos de antigüedad se considera **caí
 
 ## Configuración (`GET`/`PUT /configuracion`)
 
-`version`, `alcanceProgramado`, `minimoGuiasPorDefecto`, `estadosEntrega[]`, `estadosDevolucion[]`, `estadosPorFecha[]`, `mapaTransportadoras` (texto → código), `transportadorasExcluidas[]`, `aliasCiudades` (lista `{ ciudad, departamento, mun8 }`), `ajusteVisual` (`{ activo, porcentajeMinimo, modo }`), `actualizadoPor` (id de Cognito, auditoría), `actualizadoPorNombre` (nombre para mostrar, resuelto contra `Users`; solo lectura, no se guarda), `fechaActualizacion`.
+`version`, `alcanceProgramado`, `minimoGuiasPorDefecto`, `estadosEntrega[]`, `estadosDevolucion[]`, `estadosPorFecha[]`, `mapaTransportadoras` (texto → código), `transportadorasExcluidas[]`, `aliasCiudades` (lista `{ ciudad, departamento, mun8 }`), `ajusteVisual` (`{ activo, porcentajeMinimo, modo, excepciones[] }`, con `excepciones` = lista `{ mun8, excluida, porcentajeMinimo }`), `actualizadoPor` (id de Cognito, auditoría), `actualizadoPorNombre` (nombre para mostrar, resuelto contra `Users`; solo lectura, no se guarda), `fechaActualizacion`.
 
-El PUT rechaza con 400: un estado presente en dos listas, un alcance inválido, un mínimo de guías < 1, una clave de mapa vacía, un alias con `mun8` inexistente, un `porcentajeMinimo` del ajuste fuera de 1-99 o un `modo` inválido. Al guardar, `version` sube en 1 y se registran `actualizadoPor` (el `sub`) y la fecha. Los cambios aplican desde la **próxima corrida**.
+El PUT rechaza con 400: un estado presente en dos listas, un alcance inválido, un mínimo de guías < 1, una clave de mapa vacía, un alias con `mun8` inexistente, un `porcentajeMinimo` del ajuste fuera de 1-99, un `modo` inválido, o una excepción de ciudad con `mun8` inexistente, repetida o con porcentaje propio fuera de 1-99. Al guardar, `version` sube en 1 y se registran `actualizadoPor` (el `sub`) y la fecha. Los cambios aplican desde la **próxima corrida**.
 
 ## Ejemplos
 

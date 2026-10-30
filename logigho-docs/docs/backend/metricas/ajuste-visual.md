@@ -55,6 +55,24 @@ Ejemplo con mínimo 60: reales **65, 50 y 20** → desplazamiento 40 → **99** 
 - `PUT /configuracion` los valida: mínimo fuera de 1-99 o modo inválido → **400**.
 - `GET /metricas/entrega-ciudad` los devuelve en `ajusteVisual` para que cualquier usuario autenticado pueda aplicarlos (la ruta de configuración es solo de admin).
 
+## Ciudades: general para todas y personalizado por ciudad
+
+Por defecto **todas las ciudades llevan el ajuste general** (el `porcentajeMinimo` definido). Solo se guardan las **excepciones**:
+
+| Excepción | Efecto |
+|---|---|
+| `excluida: true` | Esa ciudad muestra el **porcentaje real** (sin ajuste) |
+| `porcentajeMinimo: N` (1 a 99) | Esa ciudad usa **su propio mínimo** en lugar del general |
+| (sin excepción) | Usa el mínimo general |
+
+- Una ciudad excluida **gana** sobre cualquier porcentaje propio.
+- En modo `GLOBAL`, las ciudades excluidas o con porcentaje propio **no** cuentan para calcular el desplazamiento general.
+- Se guardan en `AjusteVisual.Excepciones` (lista `{ Mun8, Excluida, PorcentajeMinimo }`). El `PUT /configuracion` rechaza con 400 un `mun8` que no exista en el catálogo, una ciudad repetida o un porcentaje propio fuera de 1-99. Una lista vacía significa "todas con el general".
+- En el panel (pestaña *Ajuste de porcentajes*): una casilla **Aplicar** y una caja **Mínimo propio** por ciudad, los atajos *Marcar todas las que se ven*, *Quitar todas las que se ven* (respetan el buscador, por ejemplo para quitar un departamento entero) y *Restablecer ciudades*, y un contador de ciudades sin ajuste y con porcentaje propio.
+
+!!! warning "Orden de despliegue"
+    La lambda anterior a esta versión **ignora** las excepciones (no las guarda). Si el front se despliega antes, el panel avisa con "la lambda desplegada todavía no guarda las excepciones por ciudad". Desplegar primero la lambda.
+
 ## Dónde se aplica en el front
 
 - **Vista de usuarios (Entregas):** `MetricasEntregaService.obtenerResumenParaUsuario()` descarga el resumen real, lee `ajusteVisual` y llama a `aplicarAjuste` (`views/tienda/entregas/utils/ajuste.utils.ts`) **antes** de pintar. Así el semáforo, la mejor opción, los rankings y la exportación a Excel usan los números ajustados. Cada celda conserva el real en `porcentajeReal`.
@@ -69,5 +87,5 @@ Ejemplo con mínimo 60: reales **65, 50 y 20** → desplazamiento 40 → **99** 
 
 ## Pruebas
 
-- Front: 14 tests de `ajustarValores` / `aplicarAjuste` (la pizarra 65-50-20, tope, nulos, muestra, ambos modos, no muta la entrada).
-- Backend: validación de la configuración (mínimo y modo) y que el resumen entrega `ajusteVisual` **sin** modificar los porcentajes.
+- Front: tests de `ajustarValores` / `aplicarAjuste` (la pizarra 65-50-20, tope, nulos, muestra, ambos modos, no muta la entrada) y de las excepciones por ciudad (excluir, porcentaje propio, GLOBAL, edición de la lista).
+- Backend: validación de la configuración (mínimo, modo y excepciones por ciudad) y que el resumen entrega `ajusteVisual` **sin** modificar los porcentajes.

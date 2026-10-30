@@ -33,6 +33,9 @@ Documentación técnica: [Métricas (visión general)](../backend/metricas/index
 - **Nombres en el panel:** "Actualizado por" y "Solicitada por" mostraban el id de Cognito; ahora el backend los resuelve al nombre del usuario (`Users`).
 - **Aviso del ajuste:** decía "aplica desde la próxima corrida", pero el ajuste es solo del front y es inmediato.
 - **Hover:** el `title` del navegador tardaba y no se parecía a la UI; se reemplazó por un tooltip propio e instantáneo.
+- **Ajuste por ciudad:** general para todas, con ciudades excluidas o con porcentaje propio (la lambda guarda y valida las excepciones; el cálculo sigue en el front).
+- **Ciudades no reconocidas:** si el texto libre de `Ciudad` no cruza, se prueba la ciudad que viene dentro de `Departamento` (`CODAZZI/CESAR`).
+- **Dropdowns con buscador, hovers que no se pisan y pie de la tabla azul.**
 - **Entregas abre en Medellín** y el panel de la ciudad vuelve al ranking comparativo de transportadoras.
 
 ## Producción: qué se hizo y qué se verificó (2026-10-30)

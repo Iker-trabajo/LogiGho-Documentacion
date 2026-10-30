@@ -24,6 +24,20 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-30] — Métricas de entrega por ciudad y transportadora (producción)
+
+### Nuevas funcionalidades
+- Vista **Entregas** (Mi Tienda) y **panel de administración** con la mejor transportadora por ciudad, corridas con auditoría y ajuste visual del porcentaje.
+- Lambda `ApiLambdaMetricasEntregaCiudad` con corrida semanal y manual; primera corrida en producción: 926 476 guías en 1 min 53 s.
+
+### Correcciones
+- Verificación de la firma del JWT (antes solo se decodificaba) y arreglo de la corrida manual (evento `Tipo`/`tipo` y candado reentrante).
+
+### Documentación
+- Detalle y pendientes en [Liberación de Métricas](metricas-2026-10.md).
+
+---
+
 ## [2026-10-26] — Relación de Despacho: histórico completo, buscador de guías, Unir lotes y versión para celular
 
 ### Nuevas funcionalidades

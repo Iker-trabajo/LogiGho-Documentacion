@@ -226,9 +226,22 @@ nav:
           - Pantallas del front: frontend/views/logistica/inventario/inventario-front.md
           - Changelog de la liberacion: changelog/inventario-2026-10.md
 
+      - Metricas (ApiLambdaMetricasEntregaCiudad):
+          - Vision del dominio y glosario: backend/metricas/index.md
+          - Arquitectura: backend/metricas/arquitectura.md
+          - Reglas de clasificacion: backend/metricas/reglas-clasificacion.md
+          - Seguridad (verificacion del JWT): backend/metricas/seguridad.md
+          - Ajuste visual del porcentaje: backend/metricas/ajuste-visual.md
+          - Operacion y despliegue: backend/metricas/operacion.md
+          - Liberacion de oct 2026: changelog/metricas-2026-10.md
+
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
+      - Crear un modulo por base de datos: frontend/crear-modulo-db.md
+      - Vistas:
+          - Efectividad por Ciudad (Entregas): frontend/views/metricas-efectividad-ciudad.md
+          - Configuracion de Entregas (admin): frontend/views/metricas-configuracion-entregas.md
       - Layout:
           - Menu lateral (Default Layout): frontend/layout/default-layout.md
           - Barra superior (Default Header): frontend/layout/default-header.md
@@ -402,6 +415,7 @@ nav:
       - Autenticacion: api/autenticacion.md
       - Manejo de errores: api/errores.md
       - Inventario: api/inventario.md
+      - Metricas (entrega por ciudad): api/metricas.md
 
   - Guias:
       - Setup local: guias/setup-local.md
@@ -423,3 +437,4 @@ nav:
   - Changelog:
       - Historial: changelog/index.md
       - Liberacion de Inventario (oct 2026): changelog/inventario-2026-10.md
+      - Liberacion de Metricas de entrega (oct 2026): changelog/metricas-2026-10.md

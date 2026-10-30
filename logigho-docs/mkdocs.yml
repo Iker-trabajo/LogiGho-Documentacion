@@ -407,6 +407,16 @@ nav:
                       - Detalle del Lote: frontend/views/logistica/ingreso-devoluciones/components/detalle-lote.md
                       - Historial de Lotes: frontend/views/logistica/ingreso-devoluciones/components/historial-lotes.md
                       - Filtro Múltiple: frontend/views/logistica/ingreso-devoluciones/components/filtro-multiple.md
+                  - Novedades:
+                      - Componente: frontend/views/logistica/novedades/novedades.md
+                      - Modelo: frontend/views/logistica/novedades/modelos/novedades-models.md
+                      - Repositorio: frontend/views/logistica/novedades/servicios/novedades-repository.md
+                      - Store: frontend/views/logistica/novedades/servicios/novedades-store.md
+                      - Mapper: frontend/views/logistica/novedades/helpers/novedades-mapper.md
+                      - Reglas (rules.ts): frontend/views/logistica/novedades/helpers/novedades-rules.md
+                      - Excel: frontend/views/logistica/novedades/helpers/novedades-excel.md
+                      - Filtro Desplegable: frontend/views/logistica/novedades/components/filtro-desplegable.md
+                      - Panel de Detalle: frontend/views/logistica/novedades/components/detalle-guia.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 

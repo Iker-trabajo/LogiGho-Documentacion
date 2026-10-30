@@ -38,6 +38,8 @@ Ejemplo con mínimo 60: reales **65, 50 y 20** → desplazamiento 40 → **99** 
 | `POR_CIUDAD` (por defecto) | Un desplazamiento por ciudad: las transportadoras de una misma ciudad son el "1, 2, 3" de la pizarra |
 | `GLOBAL` | Un solo desplazamiento para todas las celdas del resultado |
 
+**¿Cuál elegir?** Por ciudad mantiene a cada ciudad con su peor transportadora en el mínimo. Global usa el peor porcentaje de todo el país: si ese valor es muy bajo, el desplazamiento es grande y casi todo choca con el tope de 99 %, con lo que se pierden las diferencias. Se recomienda `POR_CIUDAD`; la vista previa del panel permite compararlos.
+
 !!! note "Hipótesis a confirmar con gerencia"
     Se asumió que el "1, 2, 3" de la pizarra son las transportadoras de una ciudad. La pestaña **Ajuste de porcentajes** del panel permite ver ambos modos con datos reales antes de activar.
 
@@ -62,7 +64,7 @@ Ejemplo con mínimo 60: reales **65, 50 y 20** → desplazamiento 40 → **99** 
 
 1. Entrar al panel (CEO o Desarrollador) → **Ajuste de porcentajes**.
 2. Elegir el modo y el mínimo y revisar la vista previa con gerencia.
-3. Marcar **Activo** y pulsar **Guardar ajuste**. Los usuarios lo ven al recargar Entregas.
+3. Marcar **Activo** y pulsar **Guardar ajuste**. Es **inmediato**: no espera ninguna corrida. Los usuarios lo ven al recargar Entregas (el resumen trae `ajusteVisual` en cada lectura).
 4. Para volver al dato real: **Apagado** y guardar.
 
 ## Pruebas

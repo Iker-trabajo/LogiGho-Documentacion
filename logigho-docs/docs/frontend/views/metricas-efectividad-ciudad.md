@@ -8,21 +8,34 @@ Vista de **Mi Tienda** que le muestra a cualquier usuario, para cada municipio, 
 | **Módulo de menú** | `Modulo` ID `169` — `Entregas \| Mi Tienda` (padre `1`), icono `cilTruck`; mismos roles que Pedidos (ID 19) |
 | **Código** | `SitioLogiGho/src/app/views/tienda/entregas/` |
 | **Backend** | `GET {apiUrlRest}metricas/entrega-ciudad` |
-| **Tests** | `ng test`: 93 en verde entre esta vista y el panel de administración |
+| **Tests** | `ng test`: 118 en verde entre esta vista y el panel de administración |
 
 ## Qué ve el usuario
 
-1. **Encabezado** con el título, el subtítulo y, arriba a la derecha, **"Actualizado en 29 de oct de 2026, 11:54 a. m."** (fecha de corte de la última corrida finalizada).
+0. **Ciudad por defecto:** la vista abre **siempre en Medellín** (se busca por su código DANE `05001000` y, si no está, por nombre; sin Medellín, la primera ciudad). Decisión de Iker, 2026-10-30.
+1. **Encabezado** (sin miga de pan, pegado a la cabecera de la plataforma) con el título, el subtítulo y, arriba a la derecha, **"Actualizado en 29 de oct de 2026, 11:54 a. m."** (fecha de corte de la última corrida finalizada).
 2. **Consulta rápida de efectividad municipal:** un buscador tipo *command palette*. Al escribir una ciudad se listan coincidencias con la mejor transportadora, su porcentaje y los despachos; se navega con ↑ ↓, `Enter` y `Esc`.
-3. **Tarjeta de la ciudad elegida:** la **mejor opción** (la de mayor porcentaje entre las que tienen muestra suficiente), con su porcentaje, su muestra y el botón *Priorizar*. Si ninguna alcanza la muestra mínima muestra "Sin recomendación".
-4. **Mejores ciudades por transportadora:** una lista **por transportadora, una al lado de otra**, con sus 5 mejores ciudades (solo con muestra suficiente), sin botones selectores.
-5. **Todos los municipios:** tabla nacional con las columnas de cada transportadora, la mejor opción por fila y estos controles:
+3. **Tarjeta de la ciudad elegida:** a la izquierda la **mejor opción** (la transportadora de mayor porcentaje entre las que tienen muestra suficiente), con su porcentaje, su muestra y el botón *Priorizar*; si ninguna alcanza el mínimo muestra "Sin recomendación". A la derecha, el **Ranking comparativo de transportadoras** de esa ciudad: una fila por transportadora, de mejor a peor, con posición, sigla, guías, porcentaje y barra. Una fila bajo 80 % lleva la insignia "⚠ Revisar". Las transportadoras con menos guías que el mínimo van aparte, punteadas, como **"Pocos datos (N guías)"**.
+4. **Todos los municipios:** tabla nacional con las columnas de cada transportadora, la mejor opción por fila y estos controles:
    - búsqueda por municipio;
-   - **Departamento** y **Ordenar por** (mayor/menor efectividad, mayor volumen, A-Z) como dropdowns propios;
+   - **Departamento** y **Ordenar por** (mayor/menor efectividad, mayor volumen, A-Z) como dropdowns propios (el de departamento dice solo **"Todos"**, sin conteo) que ocupan todo el ancho de su columna (en pantallas medianas el buscador ocupa la fila y los dos dropdowns quedan lado a lado; en móvil se apilan);
    - **chips de transportadora** (multiselección): filtran columnas y recalculan mejor opción, semáforo y orden sobre lo elegido;
    - **leyenda de semáforo clicable** como filtro;
    - paginación (25, 50 o 100 por página), con el total de municipios y de guías finales en el título;
    - **Exportar Excel** (CSV con BOM, abre con tildes correctas en Excel).
+
+El buscador de la parte superior muestra, por cada coincidencia, solo **"★ Mejor opción: <transportadora>"** en un color neutro (sin porcentaje ni rojos que preocupen).
+
+### Qué significan los datos en gris
+
+| En la tabla | Significa |
+|---|---|
+| `ⓘ 100 %` en gris | **Muestra insuficiente:** hay porcentaje, pero con menos guías con resultado final que el mínimo (30 por defecto). No es confiable: no cuenta para la mejor opción ni para los rankings |
+| `—` punteado | Esa transportadora **no tiene guías con resultado final** en esa ciudad |
+
+### Hover (tooltips)
+
+Al pasar el cursor aparece **al instante** un tooltip propio (fondo oscuro, texto corto) que explica cada dato: las celdas de la tabla (nivel del semáforo y con cuántas guías se calculó, o por qué están en gris), los encabezados de columna, "Mejor opción", "No concluyente", las filas del ranking, los niveles de la leyenda, los chips de transportadora, "Muestra auditada", "Entrega efectiva" y "Actualizado en". Es la directiva `egTip` (`components/eg-tip`): se coloca encima del dato (o debajo si no hay espacio), no se sale de la pantalla y no lo recorta la tabla con scroll. Reemplaza al `title` del navegador, que tardaba en aparecer. Los textos **nunca mencionan el porcentaje real**, solo lo que se muestra.
 
 ### Semáforo
 
@@ -53,7 +66,7 @@ El filtro de la leyenda es **por celda**: un municipio pertenece a un nivel si a
 
 ## Funciones puras (con tests)
 
-`utils/entrega.utils.ts` (semáforo, mejor transportadora, orden del ranking, filtro y orden de la tabla, sugerencias del buscador, total de guías, restricción por transportadoras, mensajes de error) y `utils/ajuste.utils.ts` (regla del ajuste). Sin dependencias de Angular, probadas con `entrega.utils.spec.ts` y `ajuste.utils.spec.ts`. El dropdown propio es `components/eg-select`.
+`utils/entrega.utils.ts` (semáforo, mejor transportadora, ranking comparativo `separarRanking`, filtro y orden de la tabla, sugerencias del buscador, total de guías, restricción por transportadoras, textos del hover, mensajes de error) y `utils/ajuste.utils.ts` (regla del ajuste). Sin dependencias de Angular, probadas con `entrega.utils.spec.ts` y `ajuste.utils.spec.ts`. El dropdown propio es `components/eg-select`.
 
 ## Entornos
 

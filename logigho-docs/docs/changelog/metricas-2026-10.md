@@ -29,7 +29,11 @@ Documentación técnica: [Métricas (visión general)](../backend/metricas/index
 - **Corridas caídas bloqueaban el panel:** una `EN_CURSO` de más de 20 minutos ahora se muestra como CAÍDA y no deshabilita *Lanzar corrida*.
 - **Id de corrida vacío y % de ciudad sin leer** en el panel (nombres de campo del adaptador).
 - **`apiUrlRest` de producción** apuntaba al gateway de PreProd (`environment.ts`).
-- **Estados disponibles:** el panel solo mostraba los ya configurados; ahora lista todos los observados en la última corrida.
+- **Estados disponibles:** el panel solo mostraba los ya configurados; ahora lista todos los observados en la última corrida, con buscador y "Ver más".
+- **Nombres en el panel:** "Actualizado por" y "Solicitada por" mostraban el id de Cognito; ahora el backend los resuelve al nombre del usuario (`Users`).
+- **Aviso del ajuste:** decía "aplica desde la próxima corrida", pero el ajuste es solo del front y es inmediato.
+- **Hover:** el `title` del navegador tardaba y no se parecía a la UI; se reemplazó por un tooltip propio e instantáneo.
+- **Entregas abre en Medellín** y el panel de la ciudad vuelve al ranking comparativo de transportadoras.
 
 ## Producción: qué se hizo y qué se verificó (2026-10-30)
 

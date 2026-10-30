@@ -41,7 +41,7 @@ Carpeta `Lambdas/Metricas/Entrega`:
 
 | Pipeline | Dispara | Qué hace |
 |---|---|---|
-| `Lambdas-Metricas-EntregaCiudad-CI` | Build validation de `main`/`release/*` | compila, corre los 201 tests, empaqueta el zip. No toca AWS |
+| `Lambdas-Metricas-EntregaCiudad-CI` | Build validation de `main`/`release/*` | compila, corre los 209 tests, empaqueta el zip. No toca AWS |
 | `Lambdas-Metricas-EntregaCiudad-CD-PreProd` | push a `release/*` | sube código, añade variables aditivas, prueba de humo. **No** publica el stage (lo hace Terraform/datos) |
 | `Lambdas-Metricas-EntregaCiudad-CD-Prod` | push a `main`, environment `produccion` (**aprobación manual**) | igual, contra prod |
 

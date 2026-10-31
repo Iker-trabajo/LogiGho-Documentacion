@@ -13,7 +13,7 @@ Una sola función Lambda **`ApiLambdaMetricasEntregaCiudad`** (.NET 10, no AOT, 
 | `Aplicacion` | Casos de uso (`EjecutarCorrida`, `ConsultarResumen`, `LanzarCorridaManual`, `GuardarConfiguracion`…), `EnrutadorApi`, `DetectorEventoCorrida`, DTOs, puertos (`IVerificadorToken`…), `AutorizacionUsuario` | No (puertos) |
 | `Infraestructura` | Repositorios Mongo, `InvocadorCorridaLambda`, `VerificadorJwtCognito`, `EncripcionAES`, `RelojBogota` | Sí |
 
-**201 tests** en verde (2026-10-30). El dominio y los casos de uso están cubiertos por tests; la infraestructura de Mongo se prueba contra Atlas, no con tests unitarios. El verificador de JWT sí tiene tests unitarios (genera sus propias claves RSA y un JWKS falso; sin red).
+**209 tests** en verde (2026-10-30). El dominio y los casos de uso están cubiertos por tests; la infraestructura de Mongo se prueba contra Atlas, no con tests unitarios. El verificador de JWT sí tiene tests unitarios (genera sus propias claves RSA y un JWKS falso; sin red).
 
 ## Flujo de una corrida
 

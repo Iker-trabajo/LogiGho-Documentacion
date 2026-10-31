@@ -56,7 +56,7 @@ Además, los datos de origen vienen sucios: la transportadora tiene variantes y 
     - **PreProd:** backend desplegado por pipeline, rutas en el stage `PreProd` del REST `8u5isw5u30`.
     - **Producción:** `terraform apply` de `environments/prod/metricas` (45 recursos), función `Active` dentro de la VPC de prod, CD de prod ejecutado, stage `Produccion` de `7elgyten88` publicado, `GET` sin token responde 401 `SIN_TOKEN`.
     - **Primera corrida `TODO` en prod** (2026-10-30): 926 476 guías leídas en **1 min 53 s**, **98,1 %** con ciudad resuelta, 25 023 documentos escritos, 1 118 ciudades. Los totales se contrastaron con conteos directos sobre `PedidosInter` (ver [Liberación](../../changelog/metricas-2026-10.md)).
-    - **Tests:** 201 en la lambda y 93 en las dos vistas del front, en verde.
+    - **Tests:** 209 en la lambda y 118 en las dos vistas del front, en verde.
     - **Seguridad:** la lambda verifica la firma del JWT de Cognito antes de confiar en el `sub` ([Seguridad](seguridad.md)).
     - **Datos de prod:** configuración inicial, índices y los módulos de menú 169 y 170 insertados.
 

@@ -71,7 +71,7 @@ Todas las respuestas usan el envoltorio `RespuestaGeneral` del sitio. La lambda 
 
 ## Corrida (`GET /corridas`, `GET /corridas/{id}`)
 
-Campos base: `corridaId`, `origen` (`PROGRAMADA`|`MANUAL`), `alcance` (`TODO`|`ULTIMOS_6`|`ULTIMOS_3`), `mesDesde`, `estado` (`EN_CURSO`|`FINALIZADA`|`FALLIDA`|`OMITIDA`), `solicitadoPor` (el `sub` o `scheduler`), `inicio`, `fin`, `duracionSeg`, `guiasLeidas`, `guiasEntrega`, `guiasDevolucion`, `noCuentaPorMotivo` (mapa motivo → número), `porcentajeCiudadResuelta`, `documentosEscritos`, `documentosBorrados`, `error`.
+Campos base: `corridaId`, `origen` (`PROGRAMADA`|`MANUAL`), `alcance` (`TODO`|`ULTIMOS_6`|`ULTIMOS_3`), `mesDesde`, `estado` (`EN_CURSO`|`FINALIZADA`|`FALLIDA`|`OMITIDA`), `solicitadoPor` (el `sub` o `scheduler`), `solicitadoPorNombre` (nombre para mostrar: el `username` de `Users`, "Programador (automático)" para el Scheduler; null si el usuario no existe), `inicio`, `fin`, `duracionSeg`, `guiasLeidas`, `guiasEntrega`, `guiasDevolucion`, `noCuentaPorMotivo` (mapa motivo → número), `porcentajeCiudadResuelta`, `documentosEscritos`, `documentosBorrados`, `error`.
 
 Solo en el **detalle** (`GET /corridas/{id}`): `topSinCiudad` (lista `{ ciudad, departamento, guias }`, hasta 50) y `estadosObservados` (lista `{ transportadora, estado, guias, clase }`). El panel de administración usa `estadosObservados` para listar **todos los estados disponibles** al clasificarlos.
 
@@ -81,9 +81,9 @@ Una corrida `EN_CURSO` con más de 20 minutos de antigüedad se considera **caí
 
 ## Configuración (`GET`/`PUT /configuracion`)
 
-`version`, `alcanceProgramado`, `minimoGuiasPorDefecto`, `estadosEntrega[]`, `estadosDevolucion[]`, `estadosPorFecha[]`, `mapaTransportadoras` (texto → código), `transportadorasExcluidas[]`, `aliasCiudades` (lista `{ ciudad, departamento, mun8 }`), `ajusteVisual` (`{ activo, porcentajeMinimo, modo }`), `actualizadoPor`, `fechaActualizacion`.
+`version`, `alcanceProgramado`, `minimoGuiasPorDefecto`, `estadosEntrega[]`, `estadosDevolucion[]`, `estadosPorFecha[]`, `mapaTransportadoras` (texto → código), `transportadorasExcluidas[]`, `aliasCiudades` (lista `{ ciudad, departamento, mun8 }`), `ajusteVisual` (`{ activo, porcentajeMinimo, modo, excepciones[] }`, con `excepciones` = lista `{ mun8, excluida, porcentajeMinimo }`), `actualizadoPor` (id de Cognito, auditoría), `actualizadoPorNombre` (nombre para mostrar, resuelto contra `Users`; solo lectura, no se guarda), `fechaActualizacion`.
 
-El PUT rechaza con 400: un estado presente en dos listas, un alcance inválido, un mínimo de guías < 1, una clave de mapa vacía, un alias con `mun8` inexistente, un `porcentajeMinimo` del ajuste fuera de 1-99 o un `modo` inválido. Al guardar, `version` sube en 1 y se registran `actualizadoPor` (el `sub`) y la fecha. Los cambios aplican desde la **próxima corrida**.
+El PUT rechaza con 400: un estado presente en dos listas, un alcance inválido, un mínimo de guías < 1, una clave de mapa vacía, un alias con `mun8` inexistente, un `porcentajeMinimo` del ajuste fuera de 1-99, un `modo` inválido, o una excepción de ciudad con `mun8` inexistente, repetida o con porcentaje propio fuera de 1-99. Al guardar, `version` sube en 1 y se registran `actualizadoPor` (el `sub`) y la fecha. Los cambios aplican desde la **próxima corrida**.
 
 ## Ejemplos
 

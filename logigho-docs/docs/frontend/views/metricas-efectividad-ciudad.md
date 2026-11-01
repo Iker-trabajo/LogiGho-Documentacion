@@ -37,6 +37,16 @@ El buscador de la parte superior muestra, por cada coincidencia, solo **"★ Mej
 
 Al pasar el cursor aparece **al instante** un tooltip propio (fondo oscuro, texto corto) que explica cada dato: las celdas de la tabla (nivel del semáforo y con cuántas guías se calculó, o por qué están en gris), los encabezados de columna, "Mejor opción", "No concluyente", las filas del ranking, los niveles de la leyenda, los chips de transportadora, "Muestra auditada", "Entrega efectiva" y "Actualizado en". Es la directiva `egTip` (`components/eg-tip`): se coloca encima del dato (o debajo si no hay espacio), no se sale de la pantalla y no lo recorta la tabla con scroll. Reemplaza al `title` del navegador, que tardaba en aparecer. Los textos **nunca mencionan el porcentaje real**, solo lo que se muestra.
 
+### Regla de desempate: gana el volumen de guías
+
+Para el **ranking comparativo** de la ciudad, la **mejor opción** y la columna "Mejor opción" de la tabla, las transportadoras se ordenan así (`compararTransportadoras`, regla de gerencia):
+
+1. Mayor **porcentaje mostrado** (redondeado a entero, tal como se ve en pantalla).
+2. Si empatan, **gana la que tiene más guías** con resultado final.
+3. Si aún empatan, el porcentaje exacto (con decimales). Las que no tienen dato van al final.
+
+Ejemplo: Interrapidísimo 47 % con 25 678 guías, Envía 47 % con 3 239 y Servientrega 47 % con 414 se ordenan en ese mismo orden. Un 80,4 % y un 79,6 % se ven como 80 % y también se desempatan por volumen.
+
 ### Semáforo
 
 | Nivel | Regla |

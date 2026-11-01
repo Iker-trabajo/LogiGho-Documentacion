@@ -6,29 +6,20 @@
   },
   "item": [
     {
-      "name": "0. Tokens",
+      "name": "0. Tokens (login directo a Cognito, como el front)",
       "item": [
         {
           "name": "Token administrador",
           "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveAdmin')));"
-                ]
-              }
-            },
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('estado 200', () => pm.response.to.have.status(200));",
-                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
-                  "pm.environment.set('tokenAdmin', pm.response.headers.get('Token'));",
-                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenAdmin')).to.be.a('string').and.not.empty);"
+                  "const r = pm.response.json();",
+                  "pm.test('trae IdToken', () => pm.expect(r.AuthenticationResult.IdToken).to.be.a('string').and.not.empty);",
+                  "pm.environment.set('tokenAdmin', r.AuthenticationResult.IdToken);"
                 ]
               }
             }
@@ -38,30 +29,28 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-amz-json-1.1"
               },
               {
-                "key": "headersecurity",
-                "value": "{{headersecurity}}"
+                "key": "X-Amz-Target",
+                "value": "AWSCognitoIdentityProviderService.InitiateAuth"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "raw": "https://cognito-idp.{{region}}.amazonaws.com/",
               "host": [
-                "{{baseUrl}}"
+                "cognito-idp",
+                "{{region}}",
+                "amazonaws",
+                "com"
               ],
               "path": [
-                "obtenerTokenAuth"
+                ""
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{ \"Usuario\": \"{{usuarioAdmin}}\", \"Password\": \"{{claveB64}}\" }",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{ \"AuthFlow\": \"USER_PASSWORD_AUTH\", \"ClientId\": \"{{cognitoClientId}}\", \"AuthParameters\": { \"USERNAME\": \"{{usuarioAdmin}}\", \"PASSWORD\": \"{{claveAdmin}}\" } }"
             }
           }
         },
@@ -69,23 +58,14 @@
           "name": "Token comercial",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveComercial')));"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('estado 200', () => pm.response.to.have.status(200));",
-                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
-                  "pm.environment.set('tokenComercial', pm.response.headers.get('Token'));",
-                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenComercial')).to.be.a('string').and.not.empty);"
+                  "const r = pm.response.json();",
+                  "pm.test('trae IdToken', () => pm.expect(r.AuthenticationResult.IdToken).to.be.a('string').and.not.empty);",
+                  "pm.environment.set('tokenComercial', r.AuthenticationResult.IdToken);"
                 ]
               }
             }
@@ -95,30 +75,28 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-amz-json-1.1"
               },
               {
-                "key": "headersecurity",
-                "value": "{{headersecurity}}"
+                "key": "X-Amz-Target",
+                "value": "AWSCognitoIdentityProviderService.InitiateAuth"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "raw": "https://cognito-idp.{{region}}.amazonaws.com/",
               "host": [
-                "{{baseUrl}}"
+                "cognito-idp",
+                "{{region}}",
+                "amazonaws",
+                "com"
               ],
               "path": [
-                "obtenerTokenAuth"
+                ""
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{ \"Usuario\": \"{{usuarioComercial}}\", \"Password\": \"{{claveB64}}\" }",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{ \"AuthFlow\": \"USER_PASSWORD_AUTH\", \"ClientId\": \"{{cognitoClientId}}\", \"AuthParameters\": { \"USERNAME\": \"{{usuarioComercial}}\", \"PASSWORD\": \"{{claveComercial}}\" } }"
             }
           }
         },
@@ -126,23 +104,14 @@
           "name": "Token tienda (sin rol de administración)",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveTienda')));"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('estado 200', () => pm.response.to.have.status(200));",
-                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
-                  "pm.environment.set('tokenTienda', pm.response.headers.get('Token'));",
-                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenTienda')).to.be.a('string').and.not.empty);"
+                  "const r = pm.response.json();",
+                  "pm.test('trae IdToken', () => pm.expect(r.AuthenticationResult.IdToken).to.be.a('string').and.not.empty);",
+                  "pm.environment.set('tokenTienda', r.AuthenticationResult.IdToken);"
                 ]
               }
             }
@@ -152,30 +121,28 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-amz-json-1.1"
               },
               {
-                "key": "headersecurity",
-                "value": "{{headersecurity}}"
+                "key": "X-Amz-Target",
+                "value": "AWSCognitoIdentityProviderService.InitiateAuth"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "raw": "https://cognito-idp.{{region}}.amazonaws.com/",
               "host": [
-                "{{baseUrl}}"
+                "cognito-idp",
+                "{{region}}",
+                "amazonaws",
+                "com"
               ],
               "path": [
-                "obtenerTokenAuth"
+                ""
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{ \"Usuario\": \"{{usuarioTienda}}\", \"Password\": \"{{claveB64}}\" }",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{ \"AuthFlow\": \"USER_PASSWORD_AUTH\", \"ClientId\": \"{{cognitoClientId}}\", \"AuthParameters\": { \"USERNAME\": \"{{usuarioTienda}}\", \"PASSWORD\": \"{{claveTienda}}\" } }"
             }
           }
         }
@@ -593,23 +560,14 @@
           "name": "El usuario nuevo inicia sesión con su contraseña",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveNueva')));"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('estado 200', () => pm.response.to.have.status(200));",
-                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
-                  "pm.environment.set('tokenNuevo', pm.response.headers.get('Token'));",
-                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenNuevo')).to.be.a('string').and.not.empty);"
+                  "const r = pm.response.json();",
+                  "pm.test('trae IdToken', () => pm.expect(r.AuthenticationResult.IdToken).to.be.a('string').and.not.empty);",
+                  "pm.environment.set('tokenNuevo', r.AuthenticationResult.IdToken);"
                 ]
               }
             }
@@ -619,30 +577,28 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-amz-json-1.1"
               },
               {
-                "key": "headersecurity",
-                "value": "{{headersecurity}}"
+                "key": "X-Amz-Target",
+                "value": "AWSCognitoIdentityProviderService.InitiateAuth"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "raw": "https://cognito-idp.{{region}}.amazonaws.com/",
               "host": [
-                "{{baseUrl}}"
+                "cognito-idp",
+                "{{region}}",
+                "amazonaws",
+                "com"
               ],
               "path": [
-                "obtenerTokenAuth"
+                ""
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{ \"Usuario\": \"{{correoNuevo}}\", \"Password\": \"{{claveB64}}\" }",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{ \"AuthFlow\": \"USER_PASSWORD_AUTH\", \"ClientId\": \"{{cognitoClientId}}\", \"AuthParameters\": { \"USERNAME\": \"{{correoNuevo}}\", \"PASSWORD\": \"{{claveNueva}}\" } }"
             }
           }
         }
@@ -957,23 +913,14 @@
           "name": "Inicia sesión con la contraseña nueva",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveNueva2')));"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('estado 200', () => pm.response.to.have.status(200));",
-                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
-                  "pm.environment.set('tokenNuevo2', pm.response.headers.get('Token'));",
-                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenNuevo2')).to.be.a('string').and.not.empty);"
+                  "const r = pm.response.json();",
+                  "pm.test('trae IdToken', () => pm.expect(r.AuthenticationResult.IdToken).to.be.a('string').and.not.empty);",
+                  "pm.environment.set('tokenNuevo2', r.AuthenticationResult.IdToken);"
                 ]
               }
             }
@@ -983,30 +930,28 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-amz-json-1.1"
               },
               {
-                "key": "headersecurity",
-                "value": "{{headersecurity}}"
+                "key": "X-Amz-Target",
+                "value": "AWSCognitoIdentityProviderService.InitiateAuth"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "raw": "https://cognito-idp.{{region}}.amazonaws.com/",
               "host": [
-                "{{baseUrl}}"
+                "cognito-idp",
+                "{{region}}",
+                "amazonaws",
+                "com"
               ],
               "path": [
-                "obtenerTokenAuth"
+                ""
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{ \"Usuario\": \"{{correoNuevo}}\", \"Password\": \"{{claveB64}}\" }",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{ \"AuthFlow\": \"USER_PASSWORD_AUTH\", \"ClientId\": \"{{cognitoClientId}}\", \"AuthParameters\": { \"USERNAME\": \"{{correoNuevo}}\", \"PASSWORD\": \"{{claveNueva2}}\" } }"
             }
           }
         }
@@ -1786,7 +1731,7 @@
       ]
     },
     {
-      "name": "5. obtenerTokenAuth (servicios)",
+      "name": "5. obtenerTokenAuth (solo si la ruta existe: NO está en PreProd, probar en prod con el pipeline en ensayo)",
       "item": [
         {
           "name": "Cuerpo vacío -> 400",

@@ -1,0 +1,1927 @@
+{
+  "info": {
+    "name": "LogiGho autenticación — E2E PreProd",
+    "description": "Matriz positiva y negativa del dominio autenticación (spec 007). Cargar el environment 'autenticacion-preprod', llenar las variables y correr la colección en orden con el Runner.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Tokens",
+      "item": [
+        {
+          "name": "Token administrador",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveAdmin')));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
+                  "pm.environment.set('tokenAdmin', pm.response.headers.get('Token'));",
+                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenAdmin')).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obtenerTokenAuth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": \"{{usuarioAdmin}}\", \"Password\": \"{{claveB64}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Token comercial",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveComercial')));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
+                  "pm.environment.set('tokenComercial', pm.response.headers.get('Token'));",
+                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenComercial')).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obtenerTokenAuth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": \"{{usuarioComercial}}\", \"Password\": \"{{claveB64}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Token tienda (sin rol de administración)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveTienda')));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
+                  "pm.environment.set('tokenTienda', pm.response.headers.get('Token'));",
+                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenTienda')).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obtenerTokenAuth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": \"{{usuarioTienda}}\", \"Password\": \"{{claveB64}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. createUser",
+      "item": [
+        {
+          "name": "Sin Token, solo headersecurity -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Codigo NO_AUTORIZADO', () => pm.expect(pm.response.json().Codigo).to.eql('NO_AUTORIZADO'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/createUser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "createUser"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": { \"email\": \"{{correoNuevo}}\", \"numTelefono\": \"3001234567\", \"tipoDocumento\": \"CC\", \"documento\": \"123456789\", \"autorizaDatos\": true, \"roles\": [\"Tienda\"], \"tiendas\": [\"{{tiendaPrueba}}\"] }, \"Contrasena\": \"{{claveNueva}}\", \"TipoUsuario\": \"Tienda\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Token falso -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Codigo NO_AUTORIZADO', () => pm.expect(pm.response.json().Codigo).to.eql('NO_AUTORIZADO'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenFalso}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/createUser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "createUser"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": { \"email\": \"{{correoNuevo}}\", \"numTelefono\": \"3001234567\", \"tipoDocumento\": \"CC\", \"documento\": \"123456789\", \"autorizaDatos\": true, \"roles\": [\"Tienda\"], \"tiendas\": [\"{{tiendaPrueba}}\"] }, \"Contrasena\": \"{{claveNueva}}\", \"TipoUsuario\": \"Tienda\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Rol Tienda -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Codigo PROHIBIDO', () => pm.expect(pm.response.json().Codigo).to.eql('PROHIBIDO'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenTienda}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/createUser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "createUser"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": { \"email\": \"{{correoNuevo}}\", \"numTelefono\": \"3001234567\", \"tipoDocumento\": \"CC\", \"documento\": \"123456789\", \"autorizaDatos\": true, \"roles\": [\"Tienda\"], \"tiendas\": [\"{{tiendaPrueba}}\"] }, \"Contrasena\": \"{{claveNueva}}\", \"TipoUsuario\": \"Tienda\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Comercial asigna Administrador -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Codigo ROL_NO_PERMITIDO', () => pm.expect(pm.response.json().Codigo).to.eql('ROL_NO_PERMITIDO'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenComercial}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/createUser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "createUser"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": { \"email\": \"{{correoNuevo}}\", \"numTelefono\": \"3001234567\", \"tipoDocumento\": \"CC\", \"documento\": \"123456789\", \"autorizaDatos\": true, \"roles\": [\"Administrador\"], \"tiendas\": [\"{{tiendaPrueba}}\"] }, \"Contrasena\": \"{{claveNueva}}\", \"TipoUsuario\": \"Tienda\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cuerpo malformado -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Codigo DATOS_INVALIDOS', () => pm.expect(pm.response.json().Codigo).to.eql('DATOS_INVALIDOS'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/createUser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "createUser"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{no es json",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Contraseña débil -> 400 con motivos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Codigo POLITICA_CONTRASENA', () => pm.expect(pm.response.json().Codigo).to.eql('POLITICA_CONTRASENA'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
+                  "pm.test('trae motivos', () => pm.expect(pm.response.json().Motivos.length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/createUser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "createUser"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": { \"email\": \"{{correoNuevo}}\", \"numTelefono\": \"3001234567\", \"tipoDocumento\": \"CC\", \"documento\": \"123456789\", \"autorizaDatos\": true, \"roles\": [\"Tienda\"], \"tiendas\": [\"{{tiendaPrueba}}\"] }, \"Contrasena\": \"corta\", \"TipoUsuario\": \"Tienda\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Comercial crea un usuario Tienda -> 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Codigo OK', () => pm.expect(pm.response.json().Codigo).to.eql('OK'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenComercial}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/createUser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "createUser"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": { \"email\": \"{{correoNuevo}}\", \"numTelefono\": \"3001234567\", \"tipoDocumento\": \"CC\", \"documento\": \"123456789\", \"autorizaDatos\": true, \"roles\": [\"Tienda\"], \"tiendas\": [\"{{tiendaPrueba}}\"] }, \"Contrasena\": \"{{claveNueva}}\", \"TipoUsuario\": \"Tienda\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mismo correo otra vez -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Codigo USUARIO_DUPLICADO', () => pm.expect(pm.response.json().Codigo).to.eql('USUARIO_DUPLICADO'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenComercial}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/createUser",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "createUser"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": { \"email\": \"{{correoNuevo}}\", \"numTelefono\": \"3001234567\", \"tipoDocumento\": \"CC\", \"documento\": \"123456789\", \"autorizaDatos\": true, \"roles\": [\"Tienda\"], \"tiendas\": [\"{{tiendaPrueba}}\"] }, \"Contrasena\": \"{{claveNueva}}\", \"TipoUsuario\": \"Tienda\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "El usuario nuevo inicia sesión con su contraseña",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveNueva')));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
+                  "pm.environment.set('tokenNuevo', pm.response.headers.get('Token'));",
+                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenNuevo')).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obtenerTokenAuth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": \"{{correoNuevo}}\", \"Password\": \"{{claveB64}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. cambio-pass (usa el usuario nuevo)",
+      "item": [
+        {
+          "name": "Sin Token -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Codigo NO_AUTORIZADO', () => pm.expect(pm.response.json().Codigo).to.eql('NO_AUTORIZADO'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cambio-pass",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cambio-pass"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ContrasenaActual\": \"x\",\n  \"Contrasena\": \"y\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Falta la actual -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Codigo DATOS_INVALIDOS', () => pm.expect(pm.response.json().Codigo).to.eql('DATOS_INVALIDOS'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenNuevo}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cambio-pass",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cambio-pass"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Contrasena\": \"{{claveNueva2}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Actual incorrecta -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Codigo CLAVE_ACTUAL_INVALIDA', () => pm.expect(pm.response.json().Codigo).to.eql('CLAVE_ACTUAL_INVALIDA'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenNuevo}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cambio-pass",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cambio-pass"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ContrasenaActual\": \"Incorrecta#2026x\",\n  \"Contrasena\": \"{{claveNueva2}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Nueva débil -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Codigo POLITICA_CONTRASENA', () => pm.expect(pm.response.json().Codigo).to.eql('POLITICA_CONTRASENA'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenNuevo}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cambio-pass",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cambio-pass"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ContrasenaActual\": \"{{claveNueva}}\",\n  \"Contrasena\": \"corta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Nueva igual a la actual -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Codigo NUEVA_IGUAL_ACTUAL', () => pm.expect(pm.response.json().Codigo).to.eql('NUEVA_IGUAL_ACTUAL'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenNuevo}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cambio-pass",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cambio-pass"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ContrasenaActual\": \"{{claveNueva}}\",\n  \"Contrasena\": \"{{claveNueva}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cambio correcto -> 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Codigo OK', () => pm.expect(pm.response.json().Codigo).to.eql('OK'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenNuevo}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cambio-pass",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cambio-pass"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ContrasenaActual\": \"{{claveNueva}}\",\n  \"Contrasena\": \"{{claveNueva2}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inicia sesión con la contraseña nueva",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('claveB64', btoa(pm.environment.get('claveNueva2')));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
+                  "pm.environment.set('tokenNuevo2', pm.response.headers.get('Token'));",
+                  "pm.test('trae Token', () => pm.expect(pm.environment.get('tokenNuevo2')).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obtenerTokenAuth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"Usuario\": \"{{correoNuevo}}\", \"Password\": \"{{claveB64}}\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. users",
+      "item": [
+        {
+          "name": "GET sin Token -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Codigo NO_AUTORIZADO', () => pm.expect(pm.response.json().Codigo).to.eql('NO_AUTORIZADO'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET con Token -> 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenTienda}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&email={{correoNuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "email",
+                  "value": "{{correoNuevo}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST con rol Tienda -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Codigo PROHIBIDO', () => pm.expect(pm.response.json().Codigo).to.eql('PROHIBIDO'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenTienda}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roles\": [\n    \"Tienda\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT roles por Comercial -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Codigo PRIVILEGIOS_NO_PERMITIDOS', () => pm.expect(pm.response.json().Codigo).to.eql('PRIVILEGIOS_NO_PERMITIDOS'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenComercial}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?_id={{idUsuarioNuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "_id",
+                  "value": "{{idUsuarioNuevo}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roles\": [\n    \"Administrador\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT del correo -> 400 aun siendo Administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Codigo CAMPOS_PROTEGIDOS', () => pm.expect(pm.response.json().Codigo).to.eql('CAMPOS_PROTEGIDOS'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?_id={{idUsuarioNuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "_id",
+                  "value": "{{idUsuarioNuevo}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"otro@x.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT con operador de Mongo -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?_id={{idUsuarioNuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "_id",
+                  "value": "{{idUsuarioNuevo}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"$set\":{\"roles\":[\"Administrador\"]}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT de roles por Administrador -> 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Codigo OK', () => pm.expect(pm.response.json().Codigo).to.eql('OK'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?_id={{idUsuarioNuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "_id",
+                  "value": "{{idUsuarioNuevo}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roles\": [\n    \"Tienda\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Un usuario edita su propio teléfono -> 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Codigo OK', () => pm.expect(pm.response.json().Codigo).to.eql('OK'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenNuevo2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?_id={{idUsuarioNuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "_id",
+                  "value": "{{idUsuarioNuevo}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numTelefono\": \"3009998888\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Un usuario edita el teléfono de otro -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Codigo PROHIBIDO', () => pm.expect(pm.response.json().Codigo).to.eql('PROHIBIDO'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenNuevo2}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?_id={{idOtroUsuario}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "_id",
+                  "value": "{{idOtroUsuario}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numTelefono\": \"3009998888\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE no existe -> 405",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 405', () => pm.response.to.have.status(405));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "headersecurity",
+                "value": "{{headersecurity}}"
+              },
+              {
+                "key": "Token",
+                "value": "{{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. registerContact (público)",
+      "item": [
+        {
+          "name": "POST válido -> 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 200', () => pm.response.to.have.status(200));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registerContact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registerContact"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"userName\": \"Prueba E2E\",\n    \"email\": \"prueba.e2e@example.com\",\n    \"phoneNumber\": \"3001234567\",\n    \"source\": \"Instagram\",\n    \"comienzo\": \"Ya vendo\",\n    \"isColombian\": true,\n    \"city\": \"Bogota\",\n    \"NombreComercio\": \"Tienda E2E\",\n    \"ventasPorMes\": \"1-10\",\n    \"businessType\": \"Moda\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST incompleto -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Codigo DATOS_INVALIDOS', () => pm.expect(pm.response.json().Codigo).to.eql('DATOS_INVALIDOS'));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registerContact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registerContact"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"userName\": \"Ana\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST con correo inválido -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registerContact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registerContact"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"userName\": \"Ana\",\n    \"email\": \"sin-arroba\",\n    \"phoneNumber\": \"300\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET -> 405 (ya no lista contactos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 405', () => pm.response.to.have.status(405));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registerContact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registerContact"
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT -> 405",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 405', () => pm.response.to.have.status(405));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registerContact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registerContact"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"userName\": \"Prueba E2E\",\n    \"email\": \"prueba.e2e@example.com\",\n    \"phoneNumber\": \"3001234567\",\n    \"source\": \"Instagram\",\n    \"comienzo\": \"Ya vendo\",\n    \"isColombian\": true,\n    \"city\": \"Bogota\",\n    \"NombreComercio\": \"Tienda E2E\",\n    \"ventasPorMes\": \"1-10\",\n    \"businessType\": \"Moda\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE -> 405 (ya no borra la colección)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 405', () => pm.response.to.have.status(405));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registerContact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registerContact"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. obtenerTokenAuth (servicios)",
+      "item": [
+        {
+          "name": "Cuerpo vacío -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obtenerTokenAuth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Clave no Base64 -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 400', () => pm.response.to.have.status(400));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obtenerTokenAuth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Usuario\": \"x\",\n  \"Password\": \"no es base64 !!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Credenciales incorrectas -> 500 sin mensaje de Cognito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('estado 500', () => pm.response.to.have.status(500));",
+                  "pm.test('sin detalle interno', () => pm.expect(pm.response.text()).to.not.match(/Exception|StackTrace|at .*\\.cs/));",
+                  "pm.test('no revela Cognito', () => pm.expect(pm.response.text()).to.not.match(/Cognito|NotAuthorized|UserNotFound/i));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/obtenerTokenAuth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "obtenerTokenAuth"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Usuario\": \"noexiste\",\n  \"Password\": \"Tm9FeGlzdGUjMjAyNng=\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "tokenFalso",
+      "value": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJmYWxzbyJ9.firma-falsa"
+    }
+  ]
+}

@@ -26,6 +26,12 @@
 | `/authAzure` | POST | ApiLambdaTokenAzureAOT | sin authorizer | Servicio (token de integración) | 3 | Entrega tokens de terceros; confirmar quién los llama |
 | `/authHoko` | POST | ApiLambdaTokenHokoAOT | sin authorizer | Servicio (token de integración) | 3 | Entrega tokens de terceros; confirmar quién los llama |
 | `/cambio-pass` | POST | ApiLambdaCambioPasswordCognito | sin authorizer | Usuario (identidad validada en la lambda) | hecho | Dominio autenticacion; Token JWT + rol desde Users; spec 007 |
+| `/cambio-pass/codigo` | POST | ApiLambdaCambioPasswordCognito | sin authorizer | Usuario (identidad validada en la lambda) | hecho en PreProd | Envía el código al correo de la cuenta; spec 008 y M-214 |
+| `/autenticacion/registro/solicitudes` | POST | ApiLambdaRegistro | sin authorizer | Pública por diseño | hecho en PreProd | Responde 202 igual exista o no el correo; límite por correo; spec 008 |
+| `/autenticacion/registro/solicitudes/reenvio` | POST | ApiLambdaRegistro | sin authorizer | Pública por diseño | hecho en PreProd | 60 s entre envíos, 3 por hora; spec 008 |
+| `/autenticacion/registro/confirmaciones` | POST | ApiLambdaRegistro | sin authorizer | Pública por diseño | hecho en PreProd | Código de un solo uso, 5 intentos; crea la cuenta con rol `Red social`; spec 008 |
+| `/autenticacion/roles-asignables` | GET | ApiLambdaUser | sin authorizer | Usuario (identidad validada en la lambda) | hecho en PreProd | Roles que quien consulta puede asignar |
+| `/autenticacion/usuarios/{usuarioId}/acceso` | POST | ApiLambdaUser | sin authorizer | Usuario (identidad validada en la lambda) | hecho en PreProd | Comercial asigna acceso a cualquier cliente; se quita `Red social`; con traza |
 | `/cargaDevoluciones` | POST | ApiLambdaGestionDevoluciones | sin authorizer | Usuario (procesos) | 4 | Procesos operativos y de integración |
 | `/cargaHoko` | GET, POST, PUT | ApiLambdaCrudCargaHokoAOT | sin authorizer | Usuario (dinero) | 1 | Mayor riesgo: lectura y escritura de saldos y retiros |
 | `/cargaPedidos` | ANY | ApiLambdaCrudCargaPedidosAOT | sin authorizer | Usuario (procesos) | 4 | Procesos operativos y de integración |

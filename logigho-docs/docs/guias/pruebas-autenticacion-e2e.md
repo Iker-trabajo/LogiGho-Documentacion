@@ -99,10 +99,14 @@ Pruebas en **PreProd** (`https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/
 | 9 | Límite por correo | 4.ª solicitud de `registro1` en la hora | 202 igual, sin fila nueva, evento `registro.solicitud.limitada` | 202; siguen 3 filas; evento registrado | OK |
 | 10 | Correo que ya tiene cuenta | solicitud con `prueba1tienda` | 202 idéntico, **no** se crea solicitud (se envía el aviso de cuenta existente) | 202; 0 filas creadas | OK |
 | 11 | Rutas protegidas sin token y con token falso | `GET roles-asignables`, `GET users`, `POST createUser`, `POST cambio-pass` | 401 en ambos casos | 401 / 401 en las cuatro | OK |
-| 12 | Asignar acceso sin token | `POST /autenticacion/usuarios/{id}/acceso` con `{}` | 401 | **400** (validaba el cuerpo antes que la identidad). Corregido en el PR 577 | Corregido |
-| 13 | Prueba de humo del CD | `curl -X GET -d '{}'` a `/users` | 401 | **403**: CloudFront rechaza un GET con cuerpo antes de llegar a la lambda. GET sin cuerpo = 401. Corregido en el PR 576 | Corregido |
+| 12 | Asignar acceso sin token | `POST /autenticacion/usuarios/{id}/acceso` con `{}` | 401 | **400** (validaba el cuerpo antes que la identidad). Corregido en el PR 577. **Verificado tras el despliegue: 401 / 401** | OK |
+| 13 | Prueba de humo del CD | `curl -X GET -d '{}'` a `/users` | 401 | **403**: CloudFront rechaza un GET con cuerpo antes de llegar a la lambda. GET sin cuerpo = 401. Corregido en el PR 576. **Verificado: el CD 677 terminó en verde con la prueba de humo** | OK |
 | 14 | Rol `Red social` existe | lectura de `Roles` en PreProd y producción | existe, activo | existe en ambos (`Usuario con unico permiso a la red social`) | OK |
 | 15 | Índices de `RegistroSolicitudes` | creados en PreProd | `solicitudHash` único, `email`+`creadoEn`, TTL `borrarEn` | 3 índices creados | OK |
+| 15b | Tras el despliegue (CD 677): `cambio-pass/codigo` sin token y con token falso | `POST /cambio-pass/codigo` | 401 y 401 | 401 y 401 | OK |
+| 15c | Tras el despliegue: `cambio-pass` sin token y con token falso | `POST /cambio-pass` | 401 y 401 | 401 y 401 | OK |
+| 15d | Tras el despliegue: preflight de `cambio-pass/codigo` | `OPTIONS` con `Origin` | 200 | 200 | OK |
+| 15e | Tras el despliegue: solicitud de `registro2` | formulario completo | 202 y correo enviado | 202; eventos `registro.solicitud.recibida` y `registro.otp.enviado`, sin `registro.ses.fallo` | OK |
 
 ### 7.2 Pendientes (necesitan el correo o un token de Comercial/Administrador)
 

@@ -125,8 +125,13 @@ Pruebas en **PreProd** (`https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/
 | 42 | Recuperación: contraseña débil | código correcto + `corta` | 400 `POLITICA_CONTRASENA`, sin gastar intento | Probado en Bruno por Iker (2026-11-03): respondió como se esperaba | OK |
 | 43 | Recuperación correcta | código del correo + contraseña nueva | 200; llega el correo de aviso del cambio; el login con la contraseña vieja falla y con la nueva funciona; el *refresh token* anterior ya no sirve | Probado en Bruno por Iker (2026-11-03): respondió como se esperaba | OK |
 | 44 | Recuperación: código ya usado | repetir la 43 | 409 `SOLICITUD_YA_USADA` | Probado en Bruno por Iker (2026-11-03): respondió como se esperaba | OK |
+| 39 | Recuperación: correo inválido o cuerpo roto | `{}` o `{"email":"no es correo"}` | 400 `DATOS_INVALIDOS` | Ejecutada con curl el 2026-11-03: respondió como se esperaba (400, 202 con evento recuperacion.solicitud.limitada, 410 sin gastar intentos) | OK |
+| 40 | Recuperación: límites | otra solicitud antes de 60 s; 4.ª en la hora | 202 sin enviar nada (evento `recuperacion.solicitud.limitada`) | Ejecutada con curl el 2026-11-03: respondió como se esperaba (400, 202 con evento recuperacion.solicitud.limitada, 410 sin gastar intentos) | OK |
+| 47 | `solicitudId` mal formado | enviar la dirección completa del enlace en vez del parámetro | 410 `SOLICITUD_VENCIDA` sin gastar intentos | Ejecutada con curl el 2026-11-03: respondió como se esperaba (400, 202 con evento recuperacion.solicitud.limitada, 410 sin gastar intentos) | OK |
 
 ### 7.2 Pendientes
+
+La recuperación (PR 579) se probó el 2026-11-03: 37, 38, 41 a 44 en Bruno y 39, 40 y 47 con curl; quedan las de abajo.
 
 La recuperación (PR 579) se probó en Bruno el 2026-11-03 con las pruebas 37, 38, 41, 42, 43 y 44; quedan las de abajo.
 
@@ -143,11 +148,8 @@ Se hacen en este orden, con alias nuevos y verificados para no agotar el límite
 | 29 | Rol que Comercial no puede dar | `{"roles":["Administrador"]}` | 403 `ROL_NO_PERMITIDO` con `Motivos` |
 | 30 | Comercial no toca a un administrador | `usuarioId` de un `Administrador` | 403 `USUARIO_PROTEGIDO` |
 | 31 | Nadie se asigna a sí mismo | `usuarioId` propio | 403 `AUTO_ASIGNACION_NO_PERMITIDA` |
-| 39 | Recuperación: correo inválido o cuerpo roto | `{}` o `{"email":"no es correo"}` | 400 `DATOS_INVALIDOS` |
-| 40 | Recuperación: límites | otra solicitud antes de 60 s; 4.ª en la hora | 202 sin enviar nada (evento `recuperacion.solicitud.limitada`) |
 | 45 | Recuperación: bloqueo | 5 códigos malos y luego el correcto | 429 `DEMASIADOS_INTENTOS` |
 | 46 | Un código de registro no recupera contraseñas | confirmar la recuperación con el `solicitudId` y código de un registro | 410 `SOLICITUD_VENCIDA` |
-| 47 | `solicitudId` mal formado | enviar la dirección completa del enlace en vez del parámetro | 410 `SOLICITUD_VENCIDA` sin gastar intentos |
 
 ### 7.3 Antes de producción
 

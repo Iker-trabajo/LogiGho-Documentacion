@@ -141,6 +141,7 @@ Pruebas en **PreProd** (`https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/
 | 49 | Rutas viejas: crear usuarios con Administrador | `POST /createUser` con token de Administrador (Comercial y Tienda de prueba) | 200 | 200 en los dos; sus cuentas entraron con la contraseña generada | OK |
 | 50 | Rutas viejas: editar con `PUT /users` | Comercial cambia roles; Administrador cambia `email` | 403 `PRIVILEGIOS_NO_PERMITIDOS`; 400 `CAMPOS_PROTEGIDOS` | Los dos como se esperaba | OK |
 | 51 | Rutas viejas: `GET /users` | con token de `Tienda`; sin token | 200 (hoy ve todos: M-199); 401 | 200 y 401 | OK |
+| 25 | Vencimiento | confirmar pasados 15 minutos | 410 `SOLICITUD_VENCIDA` | A los 15 min una solicitud de `test5` respondió 410 `SOLICITUD_VENCIDA` (antes de vencer respondía 400 `CODIGO_INVALIDO`) | OK |
 
 ### 7.2 Pendientes
 
@@ -156,7 +157,6 @@ Se hacen en este orden, con alias nuevos y verificados para no agotar el límite
 | # | Prueba | Cómo | Esperado |
 |---|---|---|---|
 | 23 | Reenvío | `POST .../reenvio` antes de 60 s; luego después | 429 `DEMASIADAS_SOLICITUDES`; luego 202 y el código viejo da `CODIGO_INVALIDO` |
-| 25 | Vencimiento | confirmar pasados 15 minutos | 410 `SOLICITUD_VENCIDA` |
 
 ### 7.3 Antes de producción
 

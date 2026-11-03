@@ -1,7 +1,7 @@
 ---
 autor: Yadilton Torres
 fecha_creacion: 2026-10-09
-ultima_actualizacion: 2026-10-28
+ultima_actualizacion: 2026-10-30
 estado: desarrollo
 nivel: 2
 ---
@@ -27,6 +27,7 @@ El menú lateral se arma según los roles del usuario (colección `module`) y ti
 - **Clics que no se pierden:** si el menú se mueve mientras se hace clic, la opción igual se abre.
 - **Ubicación visible:** barrita azul en la sección abierta o actual, opción activa en morado y subgrupos con pastilla y línea de árbol.
 - **Buscador del menú** con atajo **Ctrl + B** (**Cmd + B** en Mac), resultados agrupados por sección y botón **X** para borrar lo escrito.
+- **Etiquetas de módulos:** Nuevo, Mejorado, Actualizado o Beta junto a la opción, con un puntito en los grupos que las contienen y en la barra cerrada.
 - **Uso con el teclado:** con el menú abierto se recorre con las flechas, Enter abre submenús o va a la página y Escape cierra.
 - **Barrita del scroll:** arrastrarla no cierra el menú aunque el mouse salga de la barra.
 - **Celular:** el menú es un cajón completo que se cierra al elegir una opción o deslizando el dedo a la izquierda.
@@ -55,8 +56,8 @@ default-layout/
 │   └── sidebar-interaccion.directive.spec.ts → 33 pruebas del comportamiento del menú
 ├── styles/
 │   ├── _variables.scss                 → Tiempos, curvas de animación y corte de celular
-│   ├── _menu.scss                      → Colores, opciones, iconos, barrita azul, activo, grupos, subgrupos y marca del teclado
-│   ├── _barra.scss                     → Ancho cerrada/abierta, apertura por capas y cierre sin que se note (clase "cerrando")
+│   ├── _menu.scss                      → Colores, opciones, iconos, barrita azul, activo, grupos, subgrupos, marca del teclado y etiquetas de módulos
+│   ├── _barra.scss                     → Ancho cerrada/abierta, apertura por capas, cierre sin que se note (clase "cerrando") y puntito de las etiquetas con la barra cerrada
 │   ├── _buscador.scss                  → Campo, etiqueta Ctrl B, botón X, "Sin resultados" y resultados agrupados
 │   ├── _movil.scss                     → Cajón del celular
 │   ├── _animaciones.scss               → Fundidos, cascadas, brillo del activo y "reducir movimiento"
@@ -65,6 +66,10 @@ default-layout/
 
 src/scss/
 └── _animaciones-menu.scss              → @keyframes del menú (globales, ver Observaciones)
+
+src/app/core/domain/
+├── etiquetas-modulo.ts                 → Lista de etiquetas y funciones para buscarlas
+└── etiquetas-modulo.spec.ts            → Pruebas de esas funciones
 ```
 
 ---
@@ -259,6 +264,53 @@ Está en el layout (`onSearch()` y `searchNavItems()`).
 
 ---
 
+## Etiquetas de módulos
+
+Sirven para resaltar un módulo en el menú. Se guardan en el campo `etiqueta` de cada módulo (colección `module`) y la lista está en `core/domain/etiquetas-modulo.ts`. El orden de la lista es su importancia.
+
+| Etiqueta | Clase | Color |
+|---|---|---|
+| Nuevo | `nav-badge-nuevo` | Rosado a naranja |
+| Mejorado | `nav-badge-mejorado` | Verde |
+| Actualizado | `nav-badge-actualizado` | Azul |
+| Beta | `nav-badge-beta` | Amarillo, con texto café |
+
+### Dónde se elige
+
+| Pantalla | Cómo |
+|---|---|
+| Módulos, al crear (`modulos.component`) | Selector "Etiqueta", que se envía como `etiqueta` |
+| Módulos, modal de Actualizar (`actualizacion-campos.component`) | Selector con las etiquetas y la opción "Sin etiqueta" |
+
+Vacía significa **sin etiqueta**:
+
+- Módulos convierte los campos vacíos en "No Aplica" para mostrarlos, pero `etiqueta` queda vacía para que ese texto no se guarde en la base de datos al actualizar.
+- Si al modal le llega "No Aplica" o `null`, envía la etiqueta vacía.
+- Los módulos que no tienen el campo lo reciben vacío al cargar, para que salgan la columna y el campo en Actualizar.
+
+### Cómo se muestra en el menú
+
+`buildNavItems()` llama a `badgeDeModulo()` por cada módulo:
+
+| Caso | Qué se ve | Clase |
+|---|---|---|
+| El módulo tiene etiqueta | La etiqueta con su color, aunque tenga otras adentro | `nav-badge-etiqueta` |
+| No tiene, pero algún módulo interno sí (en cualquier nivel) | Puntito del color de la etiqueta más importante | `nav-badge-punto` |
+| Ninguno de los dos | Nada | — |
+| Barra cerrada, opciones del primer nivel | Puntito de color sobre la esquina del icono, en lugar de la etiqueta | Las mismas |
+
+- `buscarEtiqueta()` no distingue mayúsculas ni espacios. Un valor que no está en la lista no muestra nada.
+- Solo cuentan los módulos que el usuario puede ver: el menú se arma con los módulos activos de sus roles.
+- En los resultados del buscador las opciones conservan su etiqueta.
+- Sobre la opción activa (fondo morado) la etiqueta pasa a blanca.
+- La etiqueta late (`nav-etiqueta-latido`) y el puntito hace una onda (`nav-etiqueta-onda`).
+### Agregar una etiqueta
+
+1. Sumarla a `ETIQUETAS_MODULO`, en el lugar que le corresponda según su importancia. Los selectores y el menú la toman de ahí.
+2. Agregar su bloque `.nav-badge-<clase>` en `styles/_menu.scss`, con las variables `--etiqueta-fondo`, `--etiqueta-texto`, `--etiqueta-punto`, `--etiqueta-sombra` y `--etiqueta-onda`.
+
+---
+
 ## Diseño y animaciones
 
 | Qué | Cómo se ve |
@@ -274,6 +326,7 @@ Está en el layout (`onSearch()` y `searchNavItems()`).
 | Barra cerrada | Rayitas separadoras entre principales. El submenú del grupo de la página actual queda escondido aunque el mouse esté encima: CoreUI lo mostraba con `:hover` y se veían las opciones amontonadas en los 80 px |
 | Iconos | Entran con un fundido cuando se crean (al cambiar de los resultados al menú completo) |
 | Botón X del buscador | Gris; al pasar el mouse o con el foco del teclado, morado con fondo lila suave |
+| Etiquetas de módulos | Pastilla de color que late junto a la opción y puntito con onda en los grupos y en la barra cerrada. Ver [Etiquetas de módulos](#etiquetas-de-modulos) |
 | Traductor | `translate="no"` en el sidebar: el traductor del navegador no cambia los nombres del menú |
 | Menos movimiento | Se respeta la opción "reducir movimiento" del sistema (`prefers-reduced-motion`) |
 
@@ -287,7 +340,7 @@ Los valores que se repiten están en `styles/_variables.scss`:
 | `$curva-rebote` | `cubic-bezier(0.34, 1.56, 0.64, 1)` | Barrita azul, iconos y flechas |
 | `$corte-movil` / `$corte-escritorio` | `767.98px` / `768px` | Corte entre celular y escritorio. Debe coincidir con `CORTE_MOVIL` de la directiva |
 
-Los `@keyframes` del menú (`sidebar-aparecer`, `nav-sub-in`, `nav-glow`, `nav-text-in`) están en `src/scss/_animaciones-menu.scss`, en los estilos globales. Ver [Observaciones](#observaciones).
+Los `@keyframes` del menú (`sidebar-aparecer`, `nav-sub-in`, `nav-glow`, `nav-text-in`) están en `src/scss/_animaciones-menu.scss`, en los estilos globales. Los de las etiquetas (`nav-etiqueta-latido`, `nav-etiqueta-onda`) están en `styles/_menu.scss`. Ver [Observaciones](#observaciones).
 
 ---
 
@@ -297,7 +350,7 @@ Los `@keyframes` del menú (`sidebar-aparecer`, `nav-sub-in`, `nav-glow`, `nav-t
 Usuario entra a una ruta bajo /app
   → DefaultLayoutComponent
     → consulta users       → guarda tiendas y roles en sessionStorage
-    → consulta module      → buildNavItems() según roles → navItems / visibleNavItems
+    → consulta module      → buildNavItems() según roles, con la etiqueta o el puntito de cada módulo → navItems / visibleNavItems
     → validateModuleAccess() → si no tiene acceso a la ruta, va a login
     → cierra la barra (directiva)
 
@@ -342,6 +395,12 @@ El cierre al elegir una opción, el plegado de los grupos y el ajuste a CoreUI t
 npx ng test --include=src/app/layout/default-layout/directives/sidebar-interaccion.directive.spec.ts --watch=false --browsers=ChromeHeadless
 ```
 
+`core/domain/etiquetas-modulo.spec.ts` prueba las etiquetas: búsqueda sin importar mayúsculas ni espacios, valores vacíos o desconocidos y orden de importancia.
+
+```bash
+npx ng test --include=src/app/core/domain/etiquetas-modulo.spec.ts --watch=false --browsers=ChromeHeadless
+```
+
 ---
 
 ## Historial de cambios
@@ -351,6 +410,7 @@ npx ng test --include=src/app/layout/default-layout/directives/sidebar-interacci
 | 2026-10-09 | Yadilton Torres | Rediseño del menú lateral: apertura sin parpadeo con la clase `abierta`, clic que no se pierde, barrita azul y subgrupos, buscador del menú con Ctrl + B y resultados agrupados, cajón completo en celular. El comportamiento pasó a la directiva `SidebarInteraccionDirective` y los estilos a una carpeta por tema. |
 | 2026-10-15 | Yadilton Torres | Uso del menú con el teclado (flechas, Enter y Escape, marca de la opción con el foco, el mouse quita la marca). Arrastrar la barrita del scroll ya no cierra el menú. Con la barra cerrada se ven los iconos del menú completo aunque haya búsqueda. La directiva pasó a `directives/` y los estilos de `estilos/` a `styles/`. 33 pruebas. |
 | 2026-10-28 | Yadilton Torres | La barra se cierra sola al elegir una opción y espera a que cargue la página nueva; los grupos se pliegan deslizándose al terminar de cerrar; la búsqueda se borra al cerrarse; botón X en el buscador; ajuste a CoreUI (`coreui-sidebar-ajuste.ts`) para el grupo de la página actual; `@keyframes` del menú a los estilos globales. Correcciones: el foco quedaba en el menú tras elegir con Enter, un segundo clic cancelaba el cierre y Ctrl + clic cerraba la barra. |
+| 2026-10-30 | Yadilton Torres | Etiquetas de módulos (Nuevo, Mejorado, Actualizado, Beta): campo `etiqueta`, selectores en Módulos y en el modal de Actualizar, etiqueta en el menú y puntito en los grupos y en la barra cerrada. |
 
 ---
 

@@ -24,6 +24,22 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-10-30] — Layout: etiquetas de módulos en el menú lateral
+
+### Nuevas funcionalidades
+
+- **Etiquetas de módulos:** un módulo puede llevar Nuevo, Mejorado, Actualizado o Beta en el menú, cada
+  una con su color. Los grupos que las contienen muestran un puntito del color de la más importante, y
+  con la barra cerrada queda un puntito sobre el icono.
+- Se eligen en **Módulos**, al crear y en el modal de Actualizar, con la opción de dejarlo sin etiqueta.
+
+### Documentación
+
+- **Menú lateral (Default Layout):** nueva sección de etiquetas, cómo agregar una y sus pruebas.
+- **Estructura de módulos:** se agregaron las etiquetas a la descripción del menú lateral.
+
+---
+
 ## [2026-10-28] — Layout: el menú lateral se cierra al elegir una opción
 
 ### Nuevas funcionalidades

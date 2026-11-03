@@ -73,6 +73,7 @@ nav:
       - Vision general: arquitectura/vision-general.md
       - Diagrama del sistema: arquitectura/diagrama-sistema.md
       - Decisiones tecnicas: arquitectura/decisiones.md
+      - Rutas y autorizacion: arquitectura/rutas-y-autorizacion.md
       - Flujo API Gateway: arquitectura/api-gateway.md
       - Seguridad y accesos (propuesta): arquitectura/seguridad-accesos.md
       - Decisiones de Inventario (ADR):
@@ -87,6 +88,7 @@ nav:
 
   - Backend:
       - Overview: backend/overview.md
+      - Autenticacion (cuentas, permisos): backend/autenticacion.md
       - Lambdas .NET (Clean Architecture):
           - Filosofía del proyecto (Clean Architecture):
               - Estructura general: backend/lambdas-dotnet/estructura.md
@@ -239,6 +241,7 @@ nav:
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
+      - Autenticacion y registro: frontend/autenticacion.md
       - Crear un modulo por base de datos: frontend/crear-modulo-db.md
       - Vistas:
           - Efectividad por Ciudad (Entregas): frontend/views/metricas-efectividad-ciudad.md
@@ -424,6 +427,7 @@ nav:
       - Flujo de trabajo: guias/flujo-de-trabajo.md
       - Como documentar: guias/como-documentar.md
       - Operacion de Inventario: guias/inventario-operacion.md
+      - Pruebas E2E de autenticacion: guias/pruebas-autenticacion-e2e.md
 
   - Plantillas:
       - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md

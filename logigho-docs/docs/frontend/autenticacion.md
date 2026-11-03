@@ -2,6 +2,21 @@
 
 Qué cambió en el API de cuentas y qué vistas debe construir el front. Contrato completo de cada ruta (campos, respuestas y errores): [API de autenticación](../api/autenticacion.md). El backend está listo en **PreProd**; el front construye toda la experiencia (UX/UI) sobre estos endpoints y se prueba el flujo completo antes de producción.
 
+## Antes de empezar: a qué apuntar en PreProd
+
+El backend nuevo vive en la cuenta de **PreProd** de AWS. Para probar el flujo completo, la configuración de PreProd del front debe usar estos valores (no son secretos):
+
+| Qué | Valor |
+|---|---|
+| Base del API de estas rutas | `https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/PreProd` |
+| `cognitoUserPoolId` | `us-east-1_NtFz4uKGk` |
+| `cognitoAppClientId` | `37n1vom76u3godto2losctoh2v` |
+
+!!! warning "Hoy `environment.preprod.ts` apunta a otros recursos"
+    En la revisión del 2026-11-03 apuntaba a un user pool, un app client y un API (`g3iz6qk3f0`) que **no existen en la cuenta de PreProd**: una cuenta creada con estas rutas no puede iniciar sesión con esa configuración. Además, el API de PreProd tiene las rutas de autenticación pero hay que confirmar con backend si tiene las demás que usa el front (inventario, guías...). Si no, usen una URL base propia para las rutas de cuentas y dejen las demás como están.
+
+**Correos de prueba.** SES de PreProd solo entrega a correos verificados o a direcciones `@logigho.com` con buzón existente. Si necesitan probar con un correo externo, pídanle a Iker que lo habilite. Los correos pueden llegar a *Correo no deseado* en Hotmail/Outlook.
+
 ## Qué vistas hay que construir
 
 | # | Vista | Endpoints | Quién la usa |
@@ -9,14 +24,14 @@ Qué cambió en el API de cuentas y qué vistas debe construir el front. Contrat
 | 1 | Registro (formulario) | `POST /autenticacion/registro/solicitudes` | Público |
 | 2 | Código y contraseña (desde el enlace del correo) | `POST .../confirmaciones`, `POST .../solicitudes/reenvio` | Público |
 | 3 | Ingreso | Cognito directo (sin cambios) | Todos |
-| 4 | Cambio de contraseña con código | `POST /cambio-pass/codigo`, `POST /cambio-pass` | Usuario con sesión |
+| 4 | Olvidé mi contraseña / Cambiar contraseña (mismo flujo) | `POST /autenticacion/recuperacion/solicitudes`, `POST /autenticacion/recuperacion/confirmaciones` | Público (desde el ingreso) y usuario con sesión (desde el perfil) |
 | 5 | Asignar acceso a un cliente (en `/app/comercial/clientes`) | `GET /autenticacion/roles-asignables`, `POST /autenticacion/usuarios/{usuarioId}/acceso` | Comercial, CEO, Administrador, Desarrollador |
 | 6 | Crear y editar usuarios (ya existe) | `/createUser`, `/users` | Administrador, Desarrollador |
 
 ## Reglas que valen para todo el front
 
 1. **La identidad va en el header `Token`** con el `id_token` de la sesión (`sessionStorage.getItem('id_token')`). `headersecurity` ya no autoriza nada en las rutas de cuentas.
-2. **Nunca mandes a auditoría un cuerpo con contraseñas.** `ConsumoGenericoService.insertarGenerico` copia el cuerpo a la colección de auditoría salvo para las rutas de `RUTAS_SIN_AUDITORIA`. `cambio-pass` ya está en esa lista; si agregas otra ruta con contraseñas o códigos, agrégala también.
+2. **Nunca mandes a auditoría un cuerpo con contraseñas.** `ConsumoGenericoService.insertarGenerico` copia el cuerpo a la colección de auditoría salvo para las rutas de `RUTAS_SIN_AUDITORIA`. `cambio-pass` ya está en esa lista; agrega también `cambio-pass/codigo`, `registro/confirmaciones` y `recuperacion/confirmaciones`, y cualquier otra ruta con contraseñas o códigos.
 3. **Decide la UX con `Codigo`, no con el texto ni con el estado HTTP solo.** El cuerpo de error es `{ Error, Codigo, Mensaje, Motivos }`. `HttpErrorResponse.message` de Angular es genérico; el detalle está en `error.error.Mensaje`.
 4. **No pidas el rol al servidor para decidir permisos de seguridad.** Ocultar un botón es UX; el servidor es quien manda.
 
@@ -25,7 +40,7 @@ Qué cambió en el API de cuentas y qué vistas debe construir el front. Contrat
 | Archivo | Cambio |
 |---|---|
 | `register-service.service.ts` | `createUser` manda `Token`. Los tres sitios que lo llaman no cambian |
-| `cambio-contrasena.component.*` | Campo **Contraseña actual**; el cuerpo es `{ ContrasenaActual, Contrasena }` (sin correo); el modal ya no se cierra antes de saber el resultado; el error del servidor se muestra. **Falta** el paso del código: ver la vista 4 de abajo |
+| `cambio-contrasena.component.*` | Campo **Contraseña actual** y cuerpo `{ ContrasenaActual, Contrasena }`. **Queda obsoleto**: el flujo nuevo no pide contraseña actual ni usa `/cambio-pass` (ver la vista 4) |
 | `consumo-generico.service.ts` | `cambio-pass` agregado a `RUTAS_SIN_AUDITORIA` |
 | Pruebas | `register-service`, `consumo-generico` y `cambio-contrasena` cubren Token, cuerpo y no-auditoría |
 
@@ -41,14 +56,15 @@ Qué cambió en el API de cuentas y qué vistas debe construir el front. Contrat
 | `ROL_NO_PERMITIDO` (403) | `createUser`, `POST users` | "No puedes asignar estos roles" y mostrar `Motivos` |
 | `PRIVILEGIOS_NO_PERMITIDOS` (403) | `PUT users` | "Solo un administrador cambia roles y tiendas" |
 | `POLITICA_CONTRASENA` (400) | `createUser`, `cambio-pass`, confirmación OTP | Marcar cada requisito de `Motivos` que falla (tabla en el contrato) |
-| `CLAVE_ACTUAL_INVALIDA` (403) | `cambio-pass` | "La contraseña actual no es correcta" |
-| `NUEVA_IGUAL_ACTUAL` (400) | `cambio-pass` | "Elige una contraseña distinta" |
+| `CLAVE_ACTUAL_INVALIDA` (403) | `cambio-pass` (obsoleta) | "La contraseña actual no es correcta" |
+| `NUEVA_IGUAL_ACTUAL` (400) | `cambio-pass` (obsoleta) | "Elige una contraseña distinta" |
 | `DEMASIADOS_INTENTOS` (429) | `cambio-pass`, confirmación del registro | "Demasiados intentos": pedir un código nuevo o empezar de nuevo |
 | `DEMASIADAS_SOLICITUDES` (429) | pedir/reenviar código | "Espera un momento antes de pedir otro código" (60 s entre envíos, 3 por hora) |
 | `CODIGO_INVALIDO` (400) | `cambio-pass`, confirmación del registro | "El código no es correcto" (máximo 5 intentos) |
-| `CODIGO_VENCIDO` (410) | `cambio-pass` | "El código venció" y ofrecer pedir otro |
-| `SOLICITUD_VENCIDA` / `SOLICITUD_NO_DISPONIBLE` (410) | registro | "La solicitud venció" y volver a empezar |
-| `SOLICITUD_YA_USADA` / `CORREO_YA_REGISTRADO` (409) | registro | "Ya tienes una cuenta: ingresa" |
+| `CODIGO_VENCIDO` (410) | `cambio-pass` (obsoleta) | "El código venció" y ofrecer pedir otro |
+| `SOLICITUD_VENCIDA` / `SOLICITUD_NO_DISPONIBLE` (410) | registro y recuperación | "La solicitud venció" y volver a empezar. También sale si se mandó mal el `solicitudId` (por ejemplo la dirección completa en vez del parámetro) |
+| `SOLICITUD_YA_USADA` (409) | registro y recuperación | "Este código ya se usó" |
+| `CORREO_YA_REGISTRADO` (409) | registro | "Ya tienes una cuenta: ingresa" |
 | `CUENTA_SIN_CORREO` (409) | `cambio-pass/codigo` | "Tu cuenta no tiene correo registrado; comunícate con soporte" |
 | `CORREO_NO_ENVIADO` (503) | `cambio-pass/codigo` | "No pudimos enviar el código; intenta de nuevo" |
 | `AUTO_ASIGNACION_NO_PERMITIDA` / `USUARIO_PROTEGIDO` (403) | asignar acceso | "No puedes cambiar el acceso de este usuario" |
@@ -68,7 +84,7 @@ Qué cambió en el API de cuentas y qué vistas debe construir el front. Contrat
 ### Pantallas
 
 1. **Formulario.** Los campos de hoy del contacto más la autorización de datos. El front puede seguir guardando el contacto con `/registerContact` como hoy y luego llamar a `POST /autenticacion/registro/solicitudes` con los mismos datos; al confirmar, la fila se actualiza a "Registrado en plataforma" **sin duplicarse**. La solicitud responde **siempre 202** con el mismo mensaje exista o no el correo: la pantalla no puede decir "ese correo ya existe". Pasa a la pantalla 2 ("Revisa tu correo").
-2. **Código y contraseña.** Se abre desde el enlace del correo `{URL_REGISTRO}?solicitud=<solicitudId>`. Hay que definir la ruta final de esta pantalla y avisar para cambiar la variable (hoy `https://www.logigho.com/registro`). El `solicitudId` viaja **solo en la URL**: guárdalo en memoria, no en `localStorage`, y bórralo de la barra con `history.replaceState`. Campos: código de 6 dígitos y contraseña (con confirmación y la política del contrato). `POST .../confirmaciones`.
+2. **Código y contraseña.** Se abre desde el enlace del correo `{URL_REGISTRO}?solicitud=<solicitudId>`. Hay que definir la ruta final de esta pantalla y avisar para cambiar la variable (hoy `https://www.logigho.com/registro`). El `solicitudId` viaja **solo en la URL**: toma **solo el valor del parámetro** `solicitud` (`route.snapshot.queryParamMap.get('solicitud')`), nunca la dirección completa (con la dirección completa el servidor responde `SOLICITUD_VENCIDA`); guárdalo en memoria, no en `localStorage`, y bórralo de la barra con `history.replaceState`. Campos: código de 6 dígitos y contraseña (con confirmación y la política del contrato). `POST .../confirmaciones`.
 3. **Reenvío.** Botón "Reenviar código" deshabilitado 60 segundos; `POST .../solicitudes/reenvio` con el `solicitudId`.
 4. **Resultado.** `201` con `estado: "ACTIVO"`: ya puede iniciar sesión con su correo y su contraseña. Entra con el rol **`Red social`** (solo la red social) hasta que Comercial le asigne el acceso real. El menú que ve debe salir de sus roles como hoy.
 
@@ -91,16 +107,22 @@ Qué cambió en el API de cuentas y qué vistas debe construir el front. Contrat
 - No incluyas el correo ni el código en la URL, en analítica ni en mensajes de error.
 - Agrega las rutas con contraseñas o códigos a `RUTAS_SIN_AUDITORIA` (`cambio-pass`, `cambio-pass/codigo` y las de registro).
 
-## Vista 4. Cambio de contraseña con código
+## Vista 4. Olvidé mi contraseña y Cambiar contraseña (un solo flujo)
 
-Con sesión iniciada, en dos pasos (decisión M-214: contraseña actual **y** código al correo de la cuenta):
+Decisión 2026-11-03: **no se pide la contraseña actual**. El factor de seguridad es un código de 6 dígitos que llega al correo de la cuenta, y es el mismo servicio para quien olvidó su contraseña y para quien la cambia desde el perfil. Las rutas `/cambio-pass` y `/cambio-pass/codigo` quedan **obsoletas**: no construyan pantallas nuevas sobre ellas.
 
-1. El usuario pulsa "Cambiar contraseña". El front llama `POST /cambio-pass/codigo` (con `Token`, sin cuerpo) y guarda en memoria el `solicitudId` de la respuesta. Se le dice "Te enviamos un código a tu correo" (puedes enmascarar el correo en la pantalla con el que ya conoce el front; el servidor no lo devuelve).
-2. El usuario escribe **contraseña actual, contraseña nueva y el código**. El front llama `POST /cambio-pass` con `{ ContrasenaActual, Contrasena, Codigo, SolicitudId }`.
-3. Con `200` se **cierra la sesión local** y se pide ingresar con la contraseña nueva (el servidor revoca los refresh tokens).
-4. "Reenviar código": vuelve a llamar el paso 1; hay 60 s de espera y máximo 3 por hora.
+Pantallas:
 
-Un `403 CLAVE_ACTUAL_INVALIDA` no consume el código: puede corregir la contraseña actual y reintentar con el mismo código.
+1. **Pedir el código.** Campo de correo (en el perfil ya se conoce: ofrece "Enviar código a tu correo" con el correo enmascarado). `POST /autenticacion/recuperacion/solicitudes` con `{ "email": "..." }`. Responde **siempre 202** con el mismo mensaje: la pantalla dice "Si existe una cuenta con ese correo, te enviamos un código" y nunca confirma si el correo existe.
+2. **Código y contraseña nueva.** Se abre desde el enlace del correo `{URL_RECUPERACION}?solicitud=<solicitudId>` (hoy `https://www.logigho.com/recuperar`; avisen la ruta final para cambiar la variable). Toman **solo el valor** del parámetro `solicitud`, lo guardan en memoria y lo quitan de la barra. Campos: código de 6 dígitos y contraseña nueva con confirmación (política del contrato). `POST /autenticacion/recuperacion/confirmaciones` con `{ "solicitudId", "codigo", "contrasena" }`.
+3. **Resultado.** `200`: la contraseña cambió y **se cerraron todas las sesiones** del usuario. Cierra la sesión local y manda a la pantalla de ingreso. Le llega además un correo de aviso del cambio.
+4. **Reenviar código.** Vuelve a llamar al paso 1 con el correo (60 s de espera, máximo 3 por hora). Los códigos anteriores siguen valiendo hasta que venzan; se debe usar el correo más reciente.
+
+Respuestas a manejar: `202 OK` (siempre en el paso 1); en el paso 2, `400 POLITICA_CONTRASENA` (marcar los `Motivos`, no gasta intento), `400 CODIGO_INVALIDO` (máximo 5 intentos), `409 SOLICITUD_YA_USADA`, `410 SOLICITUD_VENCIDA` (pedir otro código) y `429 DEMASIADOS_INTENTOS` (pedir otro código). Los textos sugeridos están en la tabla de errores de arriba.
+
+Reglas de UX y seguridad: las mismas del registro (entrada numérica con `autocomplete="one-time-code"`, contraseña con `autocomplete="new-password"`, sin correo ni código en URL, analítica o errores, y rutas en `RUTAS_SIN_AUDITORIA`).
+
+Nota: las cuentas creadas con una red social (Google, etc.) no tienen contraseña propia; el cambio de contraseña no aplica y hoy responde `500`. Si el front ofrece ingreso con redes, oculten "Cambiar contraseña" para esas cuentas hasta que se defina el comportamiento.
 
 ## Vista 5. Asignar acceso desde `/app/comercial/clientes`
 
@@ -112,3 +134,7 @@ Hoy esa vista lista `RegisterContact`. Al registrarse una persona, su fila queda
 4. Manejar `403 ROL_NO_PERMITIDO` (mostrar `Motivos`), `403 USUARIO_PROTEGIDO`, `404` y `401`.
 
 El front **no decide** quién puede qué: oculta lo que no corresponde por UX, pero el servidor es quien manda.
+
+## Un usuario con solo `Red social` en el front
+
+Quien se registra por autoservicio queda con el rol `Red social` hasta que Comercial le asigne acceso. Con ese rol **no puede administrar nada**: `GET /autenticacion/roles-asignables` responde `403 PROHIBIDO` y `GET /users` le devuelve **únicamente su propio registro** (sin importar el filtro o la página que mande). Si una pantalla de listados llama a `/users` para ese rol, solo verá su fila.

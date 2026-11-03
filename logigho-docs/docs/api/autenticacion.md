@@ -1,6 +1,6 @@
 # Autenticación
 
-Contrato de las rutas de cuentas de LogiGho. Dominio dueño: `autenticacion` (código en `Lambdas_NET_LogiGho/LambdasLogiGho.Aplicacion/AWS/Autenticacion/`). Estado (2026-11-02): **desplegado y probado en PreProd** lo de `createUser`, `users` y el registro; el **cambio de contraseña con código** y la **asignación de acceso** quedan activos al completar los PR 576 y 577 del repo de lambdas. Producción se sube junto con el front, después del aval de Iker.
+Contrato de las rutas de cuentas de LogiGho. Dominio dueño: `autenticacion` (código en `Lambdas_NET_LogiGho/LambdasLogiGho.Aplicacion/AWS/Autenticacion/`). Estado (2026-11-03): **desplegado y probado en PreProd** `createUser`, `users`, el registro, el inicio de sesión, el cambio de contraseña con código y la asignación de acceso (PR 575, 576 y 577). La **recuperación de contraseña** (PR 579) y la restricción de `GET /users` para el rol `Red social` (PR 578) se activan al completar esos PR. Producción se sube junto con el front, después del aval de Iker.
 
 ## Entorno de PreProd (para construir y probar el front)
 
@@ -9,11 +9,20 @@ Contrato de las rutas de cuentas de LogiGho. Dominio dueño: `autenticacion` (c�
 | Base del API | `https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/PreProd` |
 | User pool de Cognito | `us-east-1_NtFz4uKGk` |
 | App client (sin secreto) | `37n1vom76u3godto2losctoh2v` |
-| Correos de prueba | SES está en *sandbox*: solo llegan correos a direcciones verificadas. Verificadas: `ikeracevedowrk+registro1@gmail.com`, `ikeracevedowrk+registro2@gmail.com` y `ikeracevedowrk+prueba1tienda@gmail.com` (los tres llegan al mismo buzón). Otra dirección no recibe el código |
+| Correos de prueba | SES está en *sandbox*: solo llegan correos a direcciones verificadas **o a cualquier dirección de un dominio verificado** (`logigho.com` ya lo está). Para probar con un correo externo, pide a Iker que lo habilite (ver abajo). Otra dirección no recibe el código, aunque la petición responda 202 |
 | Remitente de los correos | `Equipo Seguridad LogiGho <no-reply@logigho.com>` (no tiene buzón: las respuestas no las lee nadie) |
 | CORS | `*` (decisión de Iker; la identidad va en el header `Token`, no en cookies) |
 
 Estos identificadores no son secretos; ya van en el bundle del front.
+
+!!! warning "El front de PreProd debe apuntar a estos recursos"
+    En la revisión del 2026-11-03, `environment.preprod.ts` del front apuntaba a un user pool (`us-east-1_mncKiG8Fo`), un app client y un API (`g3iz6qk3f0`) que **no existen en la cuenta de PreProd**. Con esa configuración una cuenta creada en PreProd no puede iniciar sesión. Para probar el flujo completo, `cognitoUserPoolId`, `cognitoAppClientId` y la URL del API de estas rutas deben ser los de la tabla. El API de PreProd (`8u5isw5u30`) tiene las rutas de autenticación; confirma con backend si tiene también las demás que usa el front antes de apuntar todo ahí.
+
+!!! tip "Habilitar un correo de prueba en el sandbox (lo hace Iker)"
+    `python tools/ses-preprod/habilitar_correo.py correo@ejemplo.com` manda a ese correo el mensaje de verificación de Amazon; al abrir el enlace queda habilitado. Con `--alias base@dominio --prefijo front --desde 1 --hasta 5` verifica `base+front1@dominio` … `+front5`, que llegan al mismo buzón. Con `--estado` lista lo verificado. Las direcciones `@logigho.com` no necesitan este paso mientras el buzón exista. En producción SES sale del sandbox y esto no aplica (backlog M-225).
+
+!!! note "Los correos pueden llegar a *Correo no deseado*"
+    En Hotmail/Outlook los correos de PreProd llegaron a spam. Marcar "No es correo no deseado" ayuda. La causa de fondo (falta de DMARC en `logigho.com` y SPF sin SES) se resuelve antes de producción (M-224).
 
 ## Cómo se autentica una persona
 
@@ -61,7 +70,7 @@ Cuando falla, la respuesta es `400 POLITICA_CONTRASENA` y `Motivos` lista una o 
 | Al **crear**, asignar roles que no son de administración | Todos los de la primera fila |
 | Al crear, asignar `Administrador`, `Comercial`, `CEO` o `Desarrollador` | Solo `Administrador` y `Desarrollador` |
 | Dar acceso (roles y tiendas) a **cualquier** cliente desde la vista de clientes de Comercial | `Administrador`, `Desarrollador` (todos los roles) y `Comercial`/`CEO` (solo los de la lista configurable `ROLES_ASIGNABLES_COMERCIAL`: hoy `Tienda`, `Inversionista`, `Proveedor`, `Dropshipping`) |
-| Cambiar la propia contraseña | Cualquier usuario autenticado, con su contraseña actual **y un código enviado a su correo** |
+| Cambiar o recuperar la contraseña | Cualquier persona con acceso al correo de la cuenta, **sin sesión y sin la contraseña actual**: recibe un código al correo (sección *Recuperación de contraseña*). El cambio con sesión y contraseña actual (`/cambio-pass`) queda **obsoleto** |
 | Editar los propios datos de contacto | Cualquier usuario autenticado |
 
 Las listas salen de las variables `ROLES_ADMINISTRACION` y `ROLES_GESTION_PRIVILEGIOS` de cada lambda; si faltan, nadie puede nada. Los nombres de rol se comparan exactos (sin ignorar mayúsculas).
@@ -108,7 +117,10 @@ Requiere header `Token` de una persona con rol de administración.
 
 No se envía correo a la persona creada: `createUser` no manda mensajes. Cognito no le pide cambiar la contraseña en el primer ingreso.
 
-## Cambio de contraseña con código al correo
+## Cambio de contraseña con código al correo (obsoleto)
+
+!!! warning "Obsoleto desde 2026-11-03: usa la *Recuperación de contraseña*"
+    Se decidió un solo flujo para «olvidé mi contraseña» y «cambiar contraseña» desde el perfil, sin contraseña actual (ver *Recuperación de contraseña* y la decisión en `decisiones.md`). Estas dos rutas siguen activas en PreProd para no romper pruebas ya hechas y se retirarán cuando el front confirme que no las usa. **No construyas pantallas nuevas sobre ellas.**
 
 Dos pasos, los dos con header `Token`. Solo cambia **la contraseña de quien tiene la sesión**; el código viaja **únicamente por correo** al correo registrado de la cuenta (se lee de `Users`, nunca del cuerpo).
 
@@ -159,7 +171,7 @@ Después de un cambio exitoso Cognito revoca los *refresh tokens*: **el front de
 
 Todos los métodos requieren header `Token` y que la persona tenga registro en `Users`.
 
-**`GET /users?page=1&email=...`**: sin cambios en la respuesta (`Resultado` comprimido en gzip y `NumeroPaginas`). Cualquier usuario autenticado puede consultar. Restringirlo por rol queda en el backlog (M-199) porque el front lo usa al iniciar sesión y en listados.
+**`GET /users?page=1&email=...`**: sin cambios en la forma de la respuesta (`Resultado` comprimido en gzip y `NumeroPaginas`). Cualquier usuario con un rol de trabajo puede consultar (restringirlo más queda en M-199, porque el front lo usa al iniciar sesión y en listados). **Quien solo tiene el rol `Red social` (o ninguno) recibe únicamente su propio registro**: el filtro y la página que envíe se ignoran. Es así porque cualquier persona puede crear esa cuenta con el registro por autoservicio (PR 578).
 
 **`PUT /users?_id=<id>`** con un cuerpo parcial de campos a cambiar:
 
@@ -226,7 +238,7 @@ Usa **los mismos nombres de campo del formulario público de contacto** (`/regis
 }
 ```
 
-- Obligatorios: `userName`, `email` válido, `phoneNumber` y `autorizaDatos: true`. Los demás son opcionales. Textos de hasta 200 caracteres; cuerpo de hasta 16 KB; un campo con tipo equivocado es `DATOS_INVALIDOS`.
+- **Obligatorios para crear la cuenta:** el correo es lo único que usa Cognito (más la contraseña, que llega en la confirmación). `userName` se usa para saludar en el correo y `phoneNumber` se guarda en `Users`. El resto de campos solo sirve para crear el contacto de Comercial si el front no lo guardó antes con `/registerContact`; está en revisión reducirlos cuando el front confirme qué guarda por su lado. Hoy son obligatorios `userName`, `email` válido, `phoneNumber` y `autorizaDatos: true`. Los demás son opcionales. Textos de hasta 200 caracteres; cuerpo de hasta 16 KB; un campo con tipo equivocado es `DATOS_INVALIDOS`.
 - El correo se pasa a minúsculas.
 - **Responde 202 con el mismo cuerpo exista o no el correo** (para que nadie descubra qué correos están registrados). Si el correo ya tiene cuenta no se manda código: se manda un aviso de "este correo ya tiene una cuenta".
 - Máximo 3 solicitudes por correo por hora; pasado el límite sigue respondiendo 202 pero no envía nada.
@@ -237,6 +249,9 @@ Usa **los mismos nombres de campo del formulario público de contacto** (`/regis
 | 400 | `DATOS_INVALIDOS` | Falta un obligatorio, `autorizaDatos` no es `true`, tipo equivocado o cuerpo demasiado grande |
 
 **El correo** trae el código, su vigencia (15 minutos), el enlace `{URL_REGISTRO}?solicitud=<solicitudId>` y el aviso "si no fuiste tú, ignora este correo". El enlace **no lleva el código ni el correo**. `URL_REGISTRO` hoy es `https://www.logigho.com/registro` en PreProd; el equipo de front define la ruta final y se cambia con una variable, sin redesplegar código.
+
+!!! warning "`solicitudId` es solo el valor del parámetro, no la dirección completa"
+    El enlace del correo es `https://www.logigho.com/registro?solicitud=0Am4r9F-...`. El front debe tomar **solo el valor del parámetro `solicitud`** (en Angular: `route.snapshot.queryParamMap.get('solicitud')`) y enviarlo tal cual en el cuerpo. Si se envía la dirección completa, el servidor no encuentra la solicitud y responde `410 SOLICITUD_VENCIDA` (a propósito no distingue entre «no existe» y «venció»). Ese error no gasta intentos del código.
 
 ### `POST /autenticacion/registro/solicitudes/reenvio`
 
@@ -271,6 +286,67 @@ Crea la cuenta (Cognito y `Users` con rol `Red social`) y actualiza o crea la fi
 | 410 | `SOLICITUD_VENCIDA` | Venció (15 minutos), no existe o la clave del código fue retirada |
 | 429 | `DEMASIADOS_INTENTOS` | Solicitud bloqueada por 5 códigos incorrectos: empezar de nuevo |
 | 500 | `ERROR_INTERNO` | Fallo inesperado |
+
+## Recuperación de contraseña (olvidé mi contraseña y cambio desde el perfil)
+
+Rutas **públicas** (sin `Token`) y un solo flujo para dos pantallas: «Olvidé mi contraseña» (en el ingreso) y «Cambiar contraseña» (en el perfil). Decisión 2026-11-03: **no se pide la contraseña actual**; el factor es el código de un solo uso que llega al correo de la cuenta. Es tan seguro como el resto del sistema porque quien controla el correo ya puede recuperar la cuenta, y contra quien solo tiene una sesión abierta el código basta. Desde el perfil, el front llama a las mismas rutas con el correo del usuario.
+
+```mermaid
+sequenceDiagram
+  participant P as Persona
+  participant F as Front
+  participant A as API
+  P->>F: escribe su correo
+  F->>A: POST /autenticacion/recuperacion/solicitudes
+  A-->>F: 202 (siempre igual)
+  A->>P: correo con código y enlace ?solicitud=id
+  P->>F: abre el enlace, escribe código y contraseña nueva
+  F->>A: POST /autenticacion/recuperacion/confirmaciones
+  A-->>F: 200 contraseña actualizada
+  A->>P: correo de aviso del cambio
+  F->>A: login directo contra Cognito con la contraseña nueva
+```
+
+### `POST /autenticacion/recuperacion/solicitudes`
+
+```json
+{ "email": "ana@tienda.com" }
+```
+
+- **Responde 202 con el mismo cuerpo exista o no la cuenta** (no revela qué correos están registrados). Si la cuenta existe, guarda la solicitud y manda el código al correo. Si no existe, no hace nada.
+- El `solicitudId` **no** viaja en la respuesta: solo llega en el enlace del correo, `{URL_RECUPERACION}?solicitud=<solicitudId>`. `URL_RECUPERACION` hoy es `https://www.logigho.com/recuperar`; el equipo de front define la ruta final y se cambia con una variable.
+- Límites: 60 segundos entre envíos y 3 por hora por correo; pasado el límite sigue respondiendo 202 sin enviar nada.
+- Las cuentas creadas con una red social (Google, etc.) no tienen contraseña propia: el cambio falla con `500` en la confirmación. Pendiente decidir el mensaje (backlog).
+
+| Código HTTP | `Codigo` | Cuándo |
+|---|---|---|
+| 202 | `OK` | «Si existe una cuenta con ese correo, recibirás un código.» |
+| 400 | `DATOS_INVALIDOS` | Falta `email`, no tiene forma de correo o el cuerpo no es válido |
+
+### `POST /autenticacion/recuperacion/confirmaciones`
+
+```json
+{ "solicitudId": "kT3...", "codigo": "123456", "contrasena": "Nueva#2026y" }
+```
+
+Pone la contraseña nueva en la cuenta que pidió el código, **cierra todas sus sesiones** (refresh tokens) y manda un correo de aviso del cambio. El front debe llevar a la pantalla de ingreso. El `id_token` ya emitido sigue aceptándose hasta que venza (hasta 60 minutos; observación M-215).
+
+| Código HTTP | `Codigo` | Cuándo |
+|---|---|---|
+| 200 | `OK` | Contraseña actualizada |
+| 400 | `POLITICA_CONTRASENA` | La nueva no cumple (`Motivos`). **No gasta intento** |
+| 400 | `CODIGO_INVALIDO` | Código incorrecto; máximo **5 intentos**, después se bloquea |
+| 400 | `DATOS_INVALIDOS` | Falta `solicitudId`, `codigo` o `contrasena` |
+| 409 | `SOLICITUD_YA_USADA` | Ese código ya se usó |
+| 410 | `SOLICITUD_VENCIDA` | Venció (15 minutos), no existe, es de otro tipo (un código de registro no sirve aquí) o la cuenta ya no existe: pedir uno nuevo |
+| 429 | `DEMASIADOS_INTENTOS` | Bloqueada por 5 códigos incorrectos: pedir uno nuevo |
+| 500 | `ERROR_INTERNO` | Fallo inesperado |
+
+Reglas para el front:
+- Pantalla «olvidé mi contraseña»: pide el correo y muestra siempre «Si existe una cuenta, te enviamos un código».
+- Pantalla del enlace: toma **solo el valor** del parámetro `solicitud`, guárdalo en memoria (no en `localStorage`) y quítalo de la barra con `history.replaceState`.
+- «Reenviar código»: vuelve a llamar a `solicitudes` con el correo (hay 60 s de espera y máximo 3 por hora). Cada solicitud genera un código y un enlace nuevos; los anteriores siguen valiendo hasta que venzan, así que la persona debe usar el correo más reciente.
+- `contrasena` nunca va a logs ni a la auditoría genérica (`RUTAS_SIN_AUDITORIA`: agrega `recuperacion/solicitudes` y `recuperacion/confirmaciones`).
 
 ## Asignación de acceso por Comercial (vista de clientes)
 

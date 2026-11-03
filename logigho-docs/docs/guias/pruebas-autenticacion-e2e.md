@@ -77,12 +77,15 @@ La colección se corre **en orden** con el Runner (`Run collection`). Cada petic
 - [ ] Variables de producción cargadas en la Library y runtime `dotnet10` en las tres lambdas nuevas.
 - [ ] Iker da la instrucción explícita de producción. Después: observar una semana (`[ERROR]`, 401 y 403 inesperados) antes de cerrar la siguiente ruta.
 
-## 7. Registro con código, cambio de contraseña con código y asignación de acceso
+## 7. Registro con código, recuperación de contraseña y asignación de acceso
 
-Pruebas en **PreProd** (`https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/PreProd`). La columna *Resultado* es lo observado el **2026-11-02**; *Pendiente* son las pruebas que necesitan leer el correo o un token de Comercial/Administrador y se hacen con Bruno o Postman con los pasos de la columna *Cómo*.
+Pruebas en **PreProd** (`https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/PreProd`). La columna *Resultado* es lo observado el **2026-11-02 y 2026-11-03** (con curl y con Bruno); *Pendiente* son las pruebas que necesitan un token de Comercial/Administrador o leer varios correos. Se hacen con Bruno o Postman con los pasos de la columna *Cómo*.
 
 !!! note "SES en sandbox"
-    Solo llegan correos a direcciones verificadas: `ikeracevedowrk+registro1@gmail.com`, `+registro2` y `+prueba1tienda`. Cada correo admite 3 solicitudes por hora; para repetir una prueba se usa otro alias o se espera la hora.
+    Solo llegan correos a direcciones verificadas (`ikeracevedowrk+registro1@gmail.com`, `+registro2`, `+prueba1tienda`, `acevedo_0413@hotmail.com`) o a cualquier dirección de un dominio verificado (`logigho.com`). Para habilitar otro correo: `python tools/ses-preprod/habilitar_correo.py correo@ejemplo.com` (Iker) y abrir el enlace de AWS. Cada correo admite 3 solicitudes por hora; para repetir una prueba se usa otro alias (`+test1`, `+test2`...) o se espera la hora. Los correos pueden caer en *Correo no deseado* (M-224).
+
+!!! tip "Cómo se hace en Bruno"
+    Variables del entorno: `restUrl` (la base del API), `correo`, `clientId`, `clavePerfiles` (contraseña de prueba que cumpla la política) y `token`. En la petición de inicio de sesión (`POST https://cognito-idp.us-east-1.amazonaws.com/`, headers `X-Amz-Target: AWSCognitoIdentityProviderService.InitiateAuth` y `Content-Type: application/x-amz-json-1.1`) un script *Post Response* guarda el token: `bru.setEnvVar("token", res.body.AuthenticationResult.IdToken);`. Las rutas con sesión llevan el header `Token: {{token}}`. En el campo `solicitudId` va **solo** el valor del parámetro `?solicitud=` del enlace del correo, no la dirección completa.
 
 ### 7.1 Ejecutadas
 
@@ -97,30 +100,32 @@ Pruebas en **PreProd** (`https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/
 | 7 | Solicitud válida (`registro1`) | formulario completo | 202; en base una fila `PENDIENTE` con firma, sin código, con `borrarEn` a +24 h | 202; fila con `otpHmac`, `otpClaveId`, `intentos 0`, TTL +24 h | OK |
 | 8 | El correo se envía | misma solicitud, log de la lambda | `registro.otp.enviado` | **Falló dos veces** (`registro.ses.fallo`): SES en sandbox exige permiso sobre la identidad del destinatario. Se corrigió la política (Terraform) y a la tercera: `registro.otp.enviado` | Corregido |
 | 9 | Límite por correo | 4.ª solicitud de `registro1` en la hora | 202 igual, sin fila nueva, evento `registro.solicitud.limitada` | 202; siguen 3 filas; evento registrado | OK |
-| 10 | Correo que ya tiene cuenta | solicitud con `prueba1tienda` | 202 idéntico, **no** se crea solicitud (se envía el aviso de cuenta existente) | 202; 0 filas creadas | OK |
+| 10 | Correo que ya tiene cuenta | solicitud con un correo registrado | 202 idéntico, **no** se crea solicitud; llega el aviso «tu correo ya tiene una cuenta» | 202; 0 filas creadas; el aviso llegó (Hotmail y Gmail) | OK |
 | 11 | Rutas protegidas sin token y con token falso | `GET roles-asignables`, `GET users`, `POST createUser`, `POST cambio-pass` | 401 en ambos casos | 401 / 401 en las cuatro | OK |
-| 12 | Asignar acceso sin token | `POST /autenticacion/usuarios/{id}/acceso` con `{}` | 401 | **400** (validaba el cuerpo antes que la identidad). Corregido en el PR 577. **Verificado tras el despliegue: 401 / 401** | OK |
-| 13 | Prueba de humo del CD | `curl -X GET -d '{}'` a `/users` | 401 | **403**: CloudFront rechaza un GET con cuerpo antes de llegar a la lambda. GET sin cuerpo = 401. Corregido en el PR 576. **Verificado: el CD 677 terminó en verde con la prueba de humo** | OK |
-| 14 | Rol `Red social` existe | lectura de `Roles` en PreProd y producción | existe, activo | existe en ambos (`Usuario con unico permiso a la red social`) | OK |
+| 12 | Asignar acceso sin token | `POST /autenticacion/usuarios/{id}/acceso` con `{}` | 401 | **400** (validaba el cuerpo antes que la identidad). Corregido en el PR 577 | Corregido |
+| 13 | Prueba de humo del CD | `curl -X GET -d '{}'` a `/users` | 401 | **403**: CloudFront rechaza un GET con cuerpo antes de llegar a la lambda. GET sin cuerpo = 401. Corregido en el PR 576 | Corregido |
+| 14 | Rol `Red social` existe | lectura de `Roles` en PreProd y producción | existe, activo | existe en ambos | OK |
 | 15 | Índices de `RegistroSolicitudes` | creados en PreProd | `solicitudHash` único, `email`+`creadoEn`, TTL `borrarEn` | 3 índices creados | OK |
-| 15b | Tras el despliegue (CD 677): `cambio-pass/codigo` sin token y con token falso | `POST /cambio-pass/codigo` | 401 y 401 | 401 y 401 | OK |
-| 15c | Tras el despliegue: `cambio-pass` sin token y con token falso | `POST /cambio-pass` | 401 y 401 | 401 y 401 | OK |
-| 15d | Tras el despliegue: preflight de `cambio-pass/codigo` | `OPTIONS` con `Origin` | 200 | 200 | OK |
-| 15e | Tras el despliegue: solicitud de `registro2` | formulario completo | 202 y correo enviado | 202; eventos `registro.solicitud.recibida` y `registro.otp.enviado`, sin `registro.ses.fallo` | OK |
+| 16 | El correo con el código llega bien | Abrir el correo de la prueba 7 (Gmail y Hotmail) | Remitente `Equipo Seguridad LogiGho`, logo, código de 6 dígitos, enlace `?solicitud=...`, 15 minutos, «si no fuiste tú, ignora» | Correcto en ambos. En Hotmail llegó a *Correo no deseado* | OK (spam: M-224) |
+| 17 | Confirmar con código incorrecto | `POST .../confirmaciones` con otro código | 400 `CODIGO_INVALIDO`, `intentos` = 1 | 400 `CODIGO_INVALIDO`; el código bueno siguió sirviendo | OK |
+| 18 | Contraseña débil | código correcto + `corta` | 400 `POLITICA_CONTRASENA` con motivos, sin gastar intento | 400, motivos `Corta, SinMayuscula, SinNumero, SinSimbolo` | OK |
+| 19 | Confirmación correcta | código del correo + contraseña válida | 201 `ACTIVO`; en `Users` roles `["Red social"]`, tiendas vacías; `RegisterContact` «Registrado en plataforma» con `userId` (sin duplicar) | 201 `ACTIVO` (con `registro1` y con `acevedo_0413+test2@hotmail.com`); `Users` con `["Red social"]` y `[]`; una sola fila en `RegisterContact` | OK |
+| 20 | Código ya usado | repetir la 19 | 409 `SOLICITUD_YA_USADA` | 409 `SOLICITUD_YA_USADA` | OK |
+| 21 | Login del usuario nuevo | `InitiateAuth` USER_PASSWORD_AUTH | `id_token`; `GET /users` con ese token = 200 | `id_token` recibido; `GET /users` 200 | OK |
+| 22 | `Red social` no administra nada | `GET /autenticacion/roles-asignables` con el token del usuario nuevo | 403 `PROHIBIDO` | 403 `PROHIBIDO` (y sin token, 401 `NO_AUTORIZADO`) | OK |
+| 22b | **`Red social` no lee a los demás** | `GET /users` con el token del usuario nuevo, con y sin `?page=2&email=x` | Solo su propio registro | **Antes del PR 578: 49 KB** (la página completa de usuarios: falla grave, M-199 subido a prioridad A). **Después: 401 bytes**, el mismo con y sin filtro | Corregido (PR 578) |
+| 32 | Pedir código de cambio de contraseña con sesión (**obsoleta**) | `POST /cambio-pass/codigo` con token | 200 con `solicitudId`; otra petición en menos de 60 s = 429 | 200 con `solicitudId`; la segunda 429 `DEMASIADAS_SOLICITUDES`; llegó el correo | OK |
+| 33 | Cambiar contraseña con código (**obsoleta**) | `POST /cambio-pass` con actual, nueva, código y `solicitudId` | 200; la contraseña vieja falla y la nueva funciona | 200; login con la vieja `NotAuthorizedException`; con la nueva, `id_token` | OK |
+| 34 | Código malo, `solicitudId` ajeno, contraseña actual incorrecta (**obsoleta**) | `POST /cambio-pass` | 400 `CODIGO_INVALIDO` / 410 `CODIGO_VENCIDO` / 403 `CLAVE_ACTUAL_INVALIDA` (no consume el código) | Los tres como se esperaba | OK |
+| 35 | Sin código (**obsoleta**) | `POST /cambio-pass` sin `Codigo` | 400 `DATOS_INVALIDOS` | 400 | OK |
+| 36 | Token anterior tras el cambio (M-215) | `GET /users` con el `id_token` previo | Documentar | **200**: el token sigue valiendo hasta vencer (60 min); lo que se revoca son los *refresh tokens* | Documentado |
 
-### 7.2 Pendientes (necesitan el correo o un token de Comercial/Administrador)
+### 7.2 Pendientes
 
-Se hacen en este orden, con `registro2` y `prueba1tienda` para no agotar el límite de `registro1`.
+Se hacen en este orden, con alias nuevos y verificados para no agotar el límite por hora.
 
 | # | Prueba | Cómo | Esperado |
 |---|---|---|---|
-| 16 | El correo llega bien | Abrir el correo de la prueba 7 | Remitente `Equipo Seguridad LogiGho`, logo, código de 6 dígitos, enlace `?solicitud=...`, 15 minutos, "si no fuiste tú, ignora este correo", sin errores de formato |
-| 17 | Confirmar con código incorrecto | `POST .../confirmaciones` con otro código | 400 `CODIGO_INVALIDO` y `intentos` = 1 en base |
-| 18 | Contraseña débil | código correcto + `corta` | 400 `POLITICA_CONTRASENA` y **no** sube `intentos` |
-| 19 | Confirmación correcta | código del correo + `Segura#2026x` | 201 `ACTIVO`; en `Users` roles `["Red social"]`, tiendas vacías; `RegisterContact` con `estado "Registrado en plataforma"` y `userId` (sin duplicar) |
-| 20 | Código ya usado | repetir la 19 | 409 `SOLICITUD_YA_USADA` |
-| 21 | Login del usuario nuevo | `InitiateAuth` USER_PASSWORD_AUTH con el correo | `id_token`; `GET /users` con ese token = 200 |
-| 22 | `Red social` no administra nada | `GET /autenticacion/roles-asignables` con el token del usuario nuevo | 403 `PROHIBIDO` |
 | 23 | Reenvío | `POST .../reenvio` antes de 60 s; luego después | 429 `DEMASIADAS_SOLICITUDES`; luego 202 y el código viejo da `CODIGO_INVALIDO` |
 | 24 | Bloqueo por 5 intentos | 5 códigos malos y luego el correcto | el 6.º responde 429 `DEMASIADOS_INTENTOS` |
 | 25 | Vencimiento | confirmar pasados 15 minutos | 410 `SOLICITUD_VENCIDA` |
@@ -130,17 +135,26 @@ Se hacen en este orden, con `registro2` y `prueba1tienda` para no agotar el lím
 | 29 | Rol que Comercial no puede dar | `{"roles":["Administrador"]}` | 403 `ROL_NO_PERMITIDO` con `Motivos` |
 | 30 | Comercial no toca a un administrador | `usuarioId` de un `Administrador` | 403 `USUARIO_PROTEGIDO` |
 | 31 | Nadie se asigna a sí mismo | `usuarioId` propio | 403 `AUTO_ASIGNACION_NO_PERMITIDA` |
-| 32 | Pedir código de cambio de contraseña | `POST /cambio-pass/codigo` con token | 200 con `solicitudId`; llega el correo; otra petición en menos de 60 s = 429 |
-| 33 | Cambiar contraseña con código | `POST /cambio-pass` con actual, nueva, código y `solicitudId` | 200; el login con la contraseña vieja falla y con la nueva funciona |
-| 34 | Código de cambio incorrecto o ajeno | código malo / `solicitudId` de otra cuenta | 400 `CODIGO_INVALIDO` / 410 `CODIGO_VENCIDO`; la contraseña no cambia |
-| 35 | Sin código | `POST /cambio-pass` sin `Codigo` | 400 `DATOS_INVALIDOS` |
-| 36 | Token anterior tras el cambio (M-215) | usar el `id_token` previo al cambio | Documentar el resultado: hoy se acepta hasta vencer |
+| 37 | Recuperación: pedir el código (cuenta existente) | `POST /autenticacion/recuperacion/solicitudes` con `{"email":"<cuenta>"}` | 202; llega el correo con código y enlace `?solicitud=...`; en base una fila `RECUPERACION` con `cuentaSub` |
+| 38 | Recuperación: cuenta que no existe | mismo endpoint con un correo sin cuenta | 202 con el **mismo cuerpo**; no llega correo; no se crea fila |
+| 39 | Recuperación: correo inválido o cuerpo roto | `{}` o `{"email":"no es correo"}` | 400 `DATOS_INVALIDOS` |
+| 40 | Recuperación: límites | otra solicitud antes de 60 s; 4.ª en la hora | 202 sin enviar nada (evento `recuperacion.solicitud.limitada`) |
+| 41 | Recuperación: confirmar con código incorrecto | `POST .../recuperacion/confirmaciones` con otro código | 400 `CODIGO_INVALIDO` y un intento gastado |
+| 42 | Recuperación: contraseña débil | código correcto + `corta` | 400 `POLITICA_CONTRASENA`, sin gastar intento |
+| 43 | Recuperación correcta | código del correo + contraseña nueva | 200; llega el correo de aviso del cambio; el login con la contraseña vieja falla y con la nueva funciona; el *refresh token* anterior ya no sirve |
+| 44 | Recuperación: código ya usado | repetir la 43 | 409 `SOLICITUD_YA_USADA` |
+| 45 | Recuperación: bloqueo | 5 códigos malos y luego el correcto | 429 `DEMASIADOS_INTENTOS` |
+| 46 | Un código de registro no recupera contraseñas | confirmar la recuperación con el `solicitudId` y código de un registro | 410 `SOLICITUD_VENCIDA` |
+| 47 | `solicitudId` mal formado | enviar la dirección completa del enlace en vez del parámetro | 410 `SOLICITUD_VENCIDA` sin gastar intentos |
 
 ### 7.3 Antes de producción
 
-- [ ] Pruebas 16 a 36 en verde y registradas aquí.
-- [ ] Front construido sobre estos endpoints y probado con ellos en PreProd.
-- [ ] SES fuera del sandbox en producción y DMARC en modo vigilancia (opcional, sin buzón de reportes).
+- [ ] Pruebas 23 a 31 y 37 a 47 en verde y registradas aquí.
+- [ ] Front construido sobre estos endpoints y probado con ellos en PreProd (con su `environment.preprod.ts` apuntando al pool, client y API de PreProd).
+- [ ] Rutas `/cambio-pass` y `/cambio-pass/codigo` retiradas o confirmadas sin uso.
+- [ ] SES fuera del sandbox en producción (M-225), y DMARC, SPF con SES y MAIL FROM propio para que no caiga en spam (M-224).
+- [ ] Texto del aviso «tu correo ya tiene una cuenta» y logo de los correos revisados (M-226).
+- [ ] `GET /users` revisado para el resto de roles (M-199) antes de abrir el registro al público.
 - [ ] Rol `Red social` verificado en producción (ya existe), `ROLES_ASIGNABLES_COMERCIAL` y demás variables en la Library de producción.
 - [ ] Índices de `RegistroSolicitudes` creados en DocumentDB (comprobar TTL y único, criterio CA21 de la spec).
 - [ ] Iker da la instrucción explícita de producción; en producción cada paso lleva su visto bueno.

@@ -31,7 +31,7 @@ El backend nuevo vive en la cuenta de **PreProd** de AWS. Para probar el flujo c
 ## Reglas que valen para todo el front
 
 1. **La identidad va en el header `Token`** con el `id_token` de la sesión (`sessionStorage.getItem('id_token')`). `headersecurity` ya no autoriza nada en las rutas de cuentas.
-2. **Nunca mandes a auditoría un cuerpo con contraseñas.** `ConsumoGenericoService.insertarGenerico` copia el cuerpo a la colección de auditoría salvo para las rutas de `RUTAS_SIN_AUDITORIA`. `cambio-pass` ya está en esa lista; agrega también `cambio-pass/codigo`, `registro/confirmaciones` y `recuperacion/confirmaciones`, y cualquier otra ruta con contraseñas o códigos.
+2. **Nunca mandes a auditoría un cuerpo con contraseñas.** `ConsumoGenericoService.insertarGenerico` copia el cuerpo a la colección de auditoría salvo para las rutas de `RUTAS_SIN_AUDITORIA`. `cambio-pass` ya está en esa lista; agrega también `registro/confirmaciones` y `recuperacion/confirmaciones`, y cualquier otra ruta con contraseñas o códigos.
 3. **Decide la UX con `Codigo`, no con el texto ni con el estado HTTP solo.** El cuerpo de error es `{ Error, Codigo, Mensaje, Motivos }`. `HttpErrorResponse.message` de Angular es genérico; el detalle está en `error.error.Mensaje`.
 4. **No pidas el rol al servidor para decidir permisos de seguridad.** Ocultar un botón es UX; el servidor es quien manda.
 
@@ -40,7 +40,7 @@ El backend nuevo vive en la cuenta de **PreProd** de AWS. Para probar el flujo c
 | Archivo | Cambio |
 |---|---|
 | `register-service.service.ts` | `createUser` manda `Token`. Los tres sitios que lo llaman no cambian |
-| `cambio-contrasena.component.*` | Campo **Contraseña actual** y cuerpo `{ ContrasenaActual, Contrasena }`. **Queda obsoleto**: el flujo nuevo no pide contraseña actual ni usa `/cambio-pass` (ver la vista 4) |
+| `cambio-contrasena.component.*` | Campo **Contraseña actual** y cuerpo `{ ContrasenaActual, Contrasena }`. **Hay que migrarlo**: el flujo nuevo no pide contraseña actual ni usa `/cambio-pass` (ver la vista 4). Desde el PR 577 el modal actual ya no funciona en PreProd |
 | `consumo-generico.service.ts` | `cambio-pass` agregado a `RUTAS_SIN_AUDITORIA` |
 | Pruebas | `register-service`, `consumo-generico` y `cambio-contrasena` cubren Token, cuerpo y no-auditoría |
 
@@ -55,18 +55,13 @@ El backend nuevo vive en la cuenta de **PreProd** de AWS. Para probar el flujo c
 | `PROHIBIDO` (403) | `createUser`, `users` | "No tienes permiso para esta acción" |
 | `ROL_NO_PERMITIDO` (403) | `createUser`, `POST users` | "No puedes asignar estos roles" y mostrar `Motivos` |
 | `PRIVILEGIOS_NO_PERMITIDOS` (403) | `PUT users` | "Solo un administrador cambia roles y tiendas" |
-| `POLITICA_CONTRASENA` (400) | `createUser`, `cambio-pass`, confirmación OTP | Marcar cada requisito de `Motivos` que falla (tabla en el contrato) |
-| `CLAVE_ACTUAL_INVALIDA` (403) | `cambio-pass` (obsoleta) | "La contraseña actual no es correcta" |
-| `NUEVA_IGUAL_ACTUAL` (400) | `cambio-pass` (obsoleta) | "Elige una contraseña distinta" |
-| `DEMASIADOS_INTENTOS` (429) | `cambio-pass`, confirmación del registro | "Demasiados intentos": pedir un código nuevo o empezar de nuevo |
+| `POLITICA_CONTRASENA` (400) | `createUser`, confirmación del registro y de la recuperación | Marcar cada requisito de `Motivos` que falla (tabla en el contrato) |
+| `DEMASIADOS_INTENTOS` (429) | confirmación del registro y de la recuperación | "Demasiados intentos": pedir un código nuevo o empezar de nuevo |
 | `DEMASIADAS_SOLICITUDES` (429) | pedir/reenviar código | "Espera un momento antes de pedir otro código" (60 s entre envíos, 3 por hora) |
-| `CODIGO_INVALIDO` (400) | `cambio-pass`, confirmación del registro | "El código no es correcto" (máximo 5 intentos) |
-| `CODIGO_VENCIDO` (410) | `cambio-pass` (obsoleta) | "El código venció" y ofrecer pedir otro |
+| `CODIGO_INVALIDO` (400) | confirmación del registro y de la recuperación | "El código no es correcto" (máximo 5 intentos) |
 | `SOLICITUD_VENCIDA` / `SOLICITUD_NO_DISPONIBLE` (410) | registro y recuperación | "La solicitud venció" y volver a empezar. También sale si se mandó mal el `solicitudId` (por ejemplo la dirección completa en vez del parámetro) |
 | `SOLICITUD_YA_USADA` (409) | registro y recuperación | "Este código ya se usó" |
 | `CORREO_YA_REGISTRADO` (409) | registro | "Ya tienes una cuenta: ingresa" |
-| `CUENTA_SIN_CORREO` (409) | `cambio-pass/codigo` | "Tu cuenta no tiene correo registrado; comunícate con soporte" |
-| `CORREO_NO_ENVIADO` (503) | `cambio-pass/codigo` | "No pudimos enviar el código; intenta de nuevo" |
 | `AUTO_ASIGNACION_NO_PERMITIDA` / `USUARIO_PROTEGIDO` (403) | asignar acceso | "No puedes cambiar el acceso de este usuario" |
 | `NO_ENCONTRADO` (404) | asignar acceso | "Ese usuario ya no existe" |
 | `USUARIO_DUPLICADO` (409) | `createUser` | "Ya existe un usuario con ese correo" |
@@ -109,7 +104,7 @@ El backend nuevo vive en la cuenta de **PreProd** de AWS. Para probar el flujo c
 
 ## Vista 4. Olvidé mi contraseña y Cambiar contraseña (un solo flujo)
 
-Decisión 2026-11-03: **no se pide la contraseña actual**. El factor de seguridad es un código de 6 dígitos que llega al correo de la cuenta, y es el mismo servicio para quien olvidó su contraseña y para quien la cambia desde el perfil. Las rutas `/cambio-pass` y `/cambio-pass/codigo` quedan **obsoletas**: no construyan pantallas nuevas sobre ellas.
+Decisión 2026-11-03: **no se pide la contraseña actual**. El factor de seguridad es un código de 6 dígitos que llega al correo de la cuenta, y es el mismo servicio para quien olvidó su contraseña y para quien la cambia desde el perfil. Las rutas `/cambio-pass` y `/cambio-pass/codigo` quedan **reemplazadas**: **migren el modal de cambiar contraseña a este flujo**. Las rutas viejas se eliminarán cuando termine la migración.
 
 Pantallas:
 

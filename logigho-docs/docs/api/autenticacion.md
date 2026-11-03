@@ -70,7 +70,7 @@ Cuando falla, la respuesta es `400 POLITICA_CONTRASENA` y `Motivos` lista una o 
 | Al **crear**, asignar roles que no son de administración | Todos los de la primera fila |
 | Al crear, asignar `Administrador`, `Comercial`, `CEO` o `Desarrollador` | Solo `Administrador` y `Desarrollador` |
 | Dar acceso (roles y tiendas) a **cualquier** cliente desde la vista de clientes de Comercial | `Administrador`, `Desarrollador` (todos los roles) y `Comercial`/`CEO` (solo los de la lista configurable `ROLES_ASIGNABLES_COMERCIAL`: hoy `Tienda`, `Inversionista`, `Proveedor`, `Dropshipping`) |
-| Cambiar o recuperar la contraseña | Cualquier persona con acceso al correo de la cuenta, **sin sesión y sin la contraseña actual**: recibe un código al correo (sección *Recuperación de contraseña*). El cambio con sesión y contraseña actual (`/cambio-pass`) queda **obsoleto** |
+| Cambiar o recuperar la contraseña | Cualquier persona con acceso al correo de la cuenta, **sin sesión y sin la contraseña actual**: recibe un código al correo (sección *Recuperación de contraseña*). El cambio con sesión y contraseña actual (`/cambio-pass`) se **reemplazó** por este flujo y se eliminará |
 | Editar los propios datos de contacto | Cualquier usuario autenticado |
 
 Las listas salen de las variables `ROLES_ADMINISTRACION` y `ROLES_GESTION_PRIVILEGIOS` de cada lambda; si faltan, nadie puede nada. Los nombres de rol se comparan exactos (sin ignorar mayúsculas).
@@ -117,55 +117,12 @@ Requiere header `Token` de una persona con rol de administración.
 
 No se envía correo a la persona creada: `createUser` no manda mensajes. Cognito no le pide cambiar la contraseña en el primer ingreso.
 
-## Cambio de contraseña con código al correo (obsoleto)
+## Cambio de contraseña (reemplazado)
 
-!!! warning "Obsoleto desde 2026-11-03: usa la *Recuperación de contraseña*"
-    Se decidió un solo flujo para «olvidé mi contraseña» y «cambiar contraseña» desde el perfil, sin contraseña actual (ver *Recuperación de contraseña* y la decisión en `decisiones.md`). Estas dos rutas siguen activas en PreProd para no romper pruebas ya hechas y se retirarán cuando el front confirme que no las usa. **No construyas pantallas nuevas sobre ellas.**
+El cambio de contraseña con sesión y contraseña actual (`POST /cambio-pass/codigo` y `POST /cambio-pass`) **ya no es parte del contrato**. Se reemplazó el 2026-11-03 por la [Recuperación de contraseña](#recuperacion-de-contrasena-olvide-mi-contrasena-y-cambio-desde-el-perfil), que sirve igual para «olvidé mi contraseña» y para «cambiar contraseña» desde el perfil, sin contraseña actual.
 
-Dos pasos, los dos con header `Token`. Solo cambia **la contraseña de quien tiene la sesión**; el código viaja **únicamente por correo** al correo registrado de la cuenta (se lee de `Users`, nunca del cuerpo).
-
-### Paso 1. `POST /cambio-pass/codigo` — pedir el código
-
-Sin cuerpo. Envía un código de 6 dígitos (vigencia **15 minutos**) y devuelve el identificador de la solicitud.
-
-```json
-{ "Error": false, "Codigo": "OK", "Mensaje": "Te enviamos un código al correo de tu cuenta.", "Motivos": null, "solicitudId": "kT3...(43 caracteres)" }
-```
-
-| Código HTTP | `Codigo` | Cuándo |
-|---|---|---|
-| 200 | `OK` | Código enviado; guarda `solicitudId` en memoria para el paso 2 |
-| 401 | `NO_AUTORIZADO` | Token ausente, falso o vencido |
-| 409 | `CUENTA_SIN_CORREO` | La cuenta no tiene correo registrado: pedir ayuda a soporte |
-| 429 | `DEMASIADAS_SOLICITUDES` | Menos de 60 segundos desde el último código, o 3 en la última hora |
-| 503 | `CORREO_NO_ENVIADO` | SES no pudo enviarlo; reintentar en unos minutos |
-
-### Paso 2. `POST /cambio-pass` — cambiar la contraseña
-
-```json
-{ "ContrasenaActual": "La que tiene hoy", "Contrasena": "Nueva#2026x", "Codigo": "123456", "SolicitudId": "kT3..." }
-```
-
-| Código HTTP | `Codigo` | Cuándo |
-|---|---|---|
-| 200 | `OK` | Contraseña cambiada y sesiones anteriores cerradas |
-| 400 | `DATOS_INVALIDOS` | Falta algún dato (incluidos `Codigo` y `SolicitudId`) |
-| 400 | `POLITICA_CONTRASENA` | La nueva no cumple (`Motivos`). **No gasta intento del código** |
-| 400 | `NUEVA_IGUAL_ACTUAL` | La nueva es igual a la actual. No gasta intento |
-| 400 | `CODIGO_INVALIDO` | Código incorrecto (máximo **5 intentos** por código) |
-| 401 | `NO_AUTORIZADO` | Token ausente, falso o vencido |
-| 403 | `CLAVE_ACTUAL_INVALIDA` | La contraseña actual no es correcta (el código **no** se consume: puede reintentar) |
-| 410 | `CODIGO_VENCIDO` | Venció, ya se usó, o lo pidió otra cuenta: pedir uno nuevo |
-| 429 | `DEMASIADOS_INTENTOS` | 5 intentos fallidos con el código (pedir uno nuevo) o demasiados intentos con la contraseña actual |
-| 500 | `ERROR_INTERNO` | Fallo inesperado |
-
-Después de un cambio exitoso Cognito revoca los *refresh tokens*: **el front debe cerrar la sesión local y pedir ingreso con la contraseña nueva**. El `id_token` ya emitido sigue siendo aceptado hasta que venza (máximo 60 minutos en PreProd; observación M-215 pendiente de confirmar).
-
-!!! danger "No registrar estos cuerpos"
-    El cuerpo del paso 2 lleva dos contraseñas y un código. El front **no debe** mandarlo a la auditoría genérica (`insertarGenerico` copia el cuerpo a la colección de auditoría). La ruta `cambio-pass` ya está excluida en `RUTAS_SIN_AUDITORIA`; agrega también `cambio-pass/codigo`.
-
-!!! warning "Cambio de contrato"
-    Antes `POST /cambio-pass` bastaba con la contraseña actual. Ahora **sin `Codigo` y `SolicitudId` responde 400**. Es lo acordado (M-214).
+!!! warning "Para el equipo de front: migrar"
+    El modal actual de cambiar contraseña llama a `/cambio-pass`. Hay que **migrarlo al flujo de recuperación** (dos pantallas: pedir el código y escribir código y contraseña nueva). Las dos rutas viejas siguen respondiendo en PreProd solo mientras el front migra, y **se eliminarán** (rutas y código) cuando termine la migración. Desde el PR 577 `POST /cambio-pass` exige además `Codigo` y `SolicitudId`, así que el modal actual ya no funciona en PreProd.
 
 ## `/users` — usuarios (GET, POST, PUT)
 

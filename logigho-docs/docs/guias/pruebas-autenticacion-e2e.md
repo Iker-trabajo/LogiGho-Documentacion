@@ -119,8 +119,16 @@ Pruebas en **PreProd** (`https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/
 | 34 | Código malo, `solicitudId` ajeno, contraseña actual incorrecta (**obsoleta**) | `POST /cambio-pass` | 400 `CODIGO_INVALIDO` / 410 `CODIGO_VENCIDO` / 403 `CLAVE_ACTUAL_INVALIDA` (no consume el código) | Los tres como se esperaba | OK |
 | 35 | Sin código (**obsoleta**) | `POST /cambio-pass` sin `Codigo` | 400 `DATOS_INVALIDOS` | 400 | OK |
 | 36 | Token anterior tras el cambio (M-215) | `GET /users` con el `id_token` previo | Documentar | **200**: el token sigue valiendo hasta vencer (60 min); lo que se revoca son los *refresh tokens* | Documentado |
+| 37 | Recuperación: pedir el código (cuenta existente) | `POST /autenticacion/recuperacion/solicitudes` con `{"email":"<cuenta>"}` | 202; llega el correo con código y enlace `?solicitud=...`; en base una fila `RECUPERACION` con `cuentaSub` | Probado en Bruno por Iker (2026-11-03): respondió como se esperaba | OK |
+| 38 | Recuperación: cuenta que no existe | mismo endpoint con un correo sin cuenta | 202 con el **mismo cuerpo**; no llega correo; no se crea fila | Probado en Bruno por Iker (2026-11-03): respondió como se esperaba | OK |
+| 41 | Recuperación: confirmar con código incorrecto | `POST .../recuperacion/confirmaciones` con otro código | 400 `CODIGO_INVALIDO` y un intento gastado | Probado en Bruno por Iker (2026-11-03): respondió como se esperaba | OK |
+| 42 | Recuperación: contraseña débil | código correcto + `corta` | 400 `POLITICA_CONTRASENA`, sin gastar intento | Probado en Bruno por Iker (2026-11-03): respondió como se esperaba | OK |
+| 43 | Recuperación correcta | código del correo + contraseña nueva | 200; llega el correo de aviso del cambio; el login con la contraseña vieja falla y con la nueva funciona; el *refresh token* anterior ya no sirve | Probado en Bruno por Iker (2026-11-03): respondió como se esperaba | OK |
+| 44 | Recuperación: código ya usado | repetir la 43 | 409 `SOLICITUD_YA_USADA` | Probado en Bruno por Iker (2026-11-03): respondió como se esperaba | OK |
 
 ### 7.2 Pendientes
+
+La recuperación (PR 579) se probó en Bruno el 2026-11-03 con las pruebas 37, 38, 41, 42, 43 y 44; quedan las de abajo.
 
 Se hacen en este orden, con alias nuevos y verificados para no agotar el límite por hora.
 
@@ -135,21 +143,15 @@ Se hacen en este orden, con alias nuevos y verificados para no agotar el límite
 | 29 | Rol que Comercial no puede dar | `{"roles":["Administrador"]}` | 403 `ROL_NO_PERMITIDO` con `Motivos` |
 | 30 | Comercial no toca a un administrador | `usuarioId` de un `Administrador` | 403 `USUARIO_PROTEGIDO` |
 | 31 | Nadie se asigna a sí mismo | `usuarioId` propio | 403 `AUTO_ASIGNACION_NO_PERMITIDA` |
-| 37 | Recuperación: pedir el código (cuenta existente) | `POST /autenticacion/recuperacion/solicitudes` con `{"email":"<cuenta>"}` | 202; llega el correo con código y enlace `?solicitud=...`; en base una fila `RECUPERACION` con `cuentaSub` |
-| 38 | Recuperación: cuenta que no existe | mismo endpoint con un correo sin cuenta | 202 con el **mismo cuerpo**; no llega correo; no se crea fila |
 | 39 | Recuperación: correo inválido o cuerpo roto | `{}` o `{"email":"no es correo"}` | 400 `DATOS_INVALIDOS` |
 | 40 | Recuperación: límites | otra solicitud antes de 60 s; 4.ª en la hora | 202 sin enviar nada (evento `recuperacion.solicitud.limitada`) |
-| 41 | Recuperación: confirmar con código incorrecto | `POST .../recuperacion/confirmaciones` con otro código | 400 `CODIGO_INVALIDO` y un intento gastado |
-| 42 | Recuperación: contraseña débil | código correcto + `corta` | 400 `POLITICA_CONTRASENA`, sin gastar intento |
-| 43 | Recuperación correcta | código del correo + contraseña nueva | 200; llega el correo de aviso del cambio; el login con la contraseña vieja falla y con la nueva funciona; el *refresh token* anterior ya no sirve |
-| 44 | Recuperación: código ya usado | repetir la 43 | 409 `SOLICITUD_YA_USADA` |
 | 45 | Recuperación: bloqueo | 5 códigos malos y luego el correcto | 429 `DEMASIADOS_INTENTOS` |
 | 46 | Un código de registro no recupera contraseñas | confirmar la recuperación con el `solicitudId` y código de un registro | 410 `SOLICITUD_VENCIDA` |
 | 47 | `solicitudId` mal formado | enviar la dirección completa del enlace en vez del parámetro | 410 `SOLICITUD_VENCIDA` sin gastar intentos |
 
 ### 7.3 Antes de producción
 
-- [ ] Pruebas 23 a 31 y 37 a 47 en verde y registradas aquí.
+- [ ] Pruebas 23 a 31, 39, 40 y 45 a 47 en verde y registradas aquí (37, 38, 41 a 44 ya probadas).
 - [ ] Front construido sobre estos endpoints y probado con ellos en PreProd (con su `environment.preprod.ts` apuntando al pool, client y API de PreProd).
 - [ ] Rutas `/cambio-pass` y `/cambio-pass/codigo` retiradas o confirmadas sin uso.
 - [ ] SES fuera del sandbox en producción (M-225), y DMARC, SPF con SES y MAIL FROM propio para que no caiga en spam (M-224).

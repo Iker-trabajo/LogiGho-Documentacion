@@ -128,8 +128,24 @@ Pruebas en **PreProd** (`https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/
 | 39 | Recuperación: correo inválido o cuerpo roto | `{}` o `{"email":"no es correo"}` | 400 `DATOS_INVALIDOS` | Ejecutada con curl el 2026-11-03: respondió como se esperaba (400, 202 con evento recuperacion.solicitud.limitada, 410 sin gastar intentos) | OK |
 | 40 | Recuperación: límites | otra solicitud antes de 60 s; 4.ª en la hora | 202 sin enviar nada (evento `recuperacion.solicitud.limitada`) | Ejecutada con curl el 2026-11-03: respondió como se esperaba (400, 202 con evento recuperacion.solicitud.limitada, 410 sin gastar intentos) | OK |
 | 47 | `solicitudId` mal formado | enviar la dirección completa del enlace en vez del parámetro | 410 `SOLICITUD_VENCIDA` sin gastar intentos | Ejecutada con curl el 2026-11-03: respondió como se esperaba (400, 202 con evento recuperacion.solicitud.limitada, 410 sin gastar intentos) | OK |
+| 24 | Bloqueo por 5 intentos | 5 códigos malos y luego el correcto | el 6.º responde 429 `DEMASIADOS_INTENTOS` | Reenvío OK (202) y 5 códigos malos: 400 `CODIGO_INVALIDO` ×5; el sexto 429 `DEMASIADOS_INTENTOS` | OK |
+| 26 | Dos confirmaciones a la vez | dos peticiones simultáneas con el código correcto | una responde 201 y la otra 409; un solo usuario creado | Una petición 201 `ACTIVO` y la otra 409 `SOLICITUD_YA_USADA`; un solo usuario en `Users` | OK |
+| 27 | Roles asignables de Comercial | `GET /autenticacion/roles-asignables` con token de Comercial | 200 con `Tienda, Inversionista, Proveedor, Dropshipper` | 200 con `Dropshipper, Inversionista, Proveedor, Tienda`. **Hallazgo:** la variable decía `Dropshipping` pero el rol se llama `Dropshipper`; se corrigió en la lambda, la Library y Terraform | OK |
+| 28 | Comercial asigna acceso | `POST .../usuarios/{userId}/acceso` con `{"roles":["Tienda"]}` al usuario de la 19 | 200; el usuario queda solo con `Tienda` (se quita `Red social`); fila en `LogAuditoria` | 200; `test2` pasó de `Red social` a solo `Tienda` (se quitó `Red social`) | OK |
+| 29 | Rol que Comercial no puede dar | `{"roles":["Administrador"]}` | 403 `ROL_NO_PERMITIDO` con `Motivos` | 403 `ROL_NO_PERMITIDO` | OK |
+| 30 | Comercial no toca a un administrador | `usuarioId` de un `Administrador` | 403 `USUARIO_PROTEGIDO` | 403 `USUARIO_PROTEGIDO` | OK |
+| 31 | Nadie se asigna a sí mismo | `usuarioId` propio | 403 `AUTO_ASIGNACION_NO_PERMITIDA` | 403 `AUTO_ASIGNACION_NO_PERMITIDA` | OK |
+| 45 | Recuperación: bloqueo | 5 códigos malos y luego el correcto | 429 `DEMASIADOS_INTENTOS` | 5 códigos malos 400 `CODIGO_INVALIDO`; el sexto 429 `DEMASIADOS_INTENTOS` | OK |
+| 46 | Un código de registro no recupera contraseñas | confirmar la recuperación con el `solicitudId` y código de un registro | 410 `SOLICITUD_VENCIDA` | 410 `SOLICITUD_VENCIDA` en las dos direcciones (código de registro en recuperación y al revés) | OK |
+| 48 | Rutas viejas: crear usuario sin permiso | `POST /createUser` con token de `Tienda`; sin token; Comercial pidiendo `Administrador` | 403 `PROHIBIDO`; 401 `NO_AUTORIZADO`; 403 `ROL_NO_PERMITIDO` | Los tres como se esperaba | OK |
+| 49 | Rutas viejas: crear usuarios con Administrador | `POST /createUser` con token de Administrador (Comercial y Tienda de prueba) | 200 | 200 en los dos; sus cuentas entraron con la contraseña generada | OK |
+| 50 | Rutas viejas: editar con `PUT /users` | Comercial cambia roles; Administrador cambia `email` | 403 `PRIVILEGIOS_NO_PERMITIDOS`; 400 `CAMPOS_PROTEGIDOS` | Los dos como se esperaba | OK |
+| 51 | Rutas viejas: `GET /users` | con token de `Tienda`; sin token | 200 (hoy ve todos: M-199); 401 | 200 y 401 | OK |
 
 ### 7.2 Pendientes
+
+!!! note "`/registerContact` y `/obtenerTokenAuth` no existen en el API de PreProd"
+    El REST de PreProd `8u5isw5u30` solo trae las rutas de autenticación (`/createUser`, `/users`, `/cambio-pass`, `/autenticacion/...`). No tiene `/registerContact` ni `/obtenerTokenAuth`, así que esas dos rutas no se pueden probar en PreProd hasta decidir cómo se montan (M-231). En el front, `registerContact` y el resto de rutas apuntan a otro API.
 
 La recuperación (PR 579) se probó el 2026-11-03: 37, 38, 41 a 44 en Bruno y 39, 40 y 47 con curl; quedan las de abajo.
 
@@ -140,16 +156,7 @@ Se hacen en este orden, con alias nuevos y verificados para no agotar el límite
 | # | Prueba | Cómo | Esperado |
 |---|---|---|---|
 | 23 | Reenvío | `POST .../reenvio` antes de 60 s; luego después | 429 `DEMASIADAS_SOLICITUDES`; luego 202 y el código viejo da `CODIGO_INVALIDO` |
-| 24 | Bloqueo por 5 intentos | 5 códigos malos y luego el correcto | el 6.º responde 429 `DEMASIADOS_INTENTOS` |
 | 25 | Vencimiento | confirmar pasados 15 minutos | 410 `SOLICITUD_VENCIDA` |
-| 26 | Dos confirmaciones a la vez | dos peticiones simultáneas con el código correcto | una responde 201 y la otra 409; un solo usuario creado |
-| 27 | Roles asignables de Comercial | `GET /autenticacion/roles-asignables` con token de Comercial | 200 con `Tienda, Inversionista, Proveedor, Dropshipping` |
-| 28 | Comercial asigna acceso | `POST .../usuarios/{userId}/acceso` con `{"roles":["Tienda"]}` al usuario de la 19 | 200; el usuario queda solo con `Tienda` (se quita `Red social`); fila en `LogAuditoria` |
-| 29 | Rol que Comercial no puede dar | `{"roles":["Administrador"]}` | 403 `ROL_NO_PERMITIDO` con `Motivos` |
-| 30 | Comercial no toca a un administrador | `usuarioId` de un `Administrador` | 403 `USUARIO_PROTEGIDO` |
-| 31 | Nadie se asigna a sí mismo | `usuarioId` propio | 403 `AUTO_ASIGNACION_NO_PERMITIDA` |
-| 45 | Recuperación: bloqueo | 5 códigos malos y luego el correcto | 429 `DEMASIADOS_INTENTOS` |
-| 46 | Un código de registro no recupera contraseñas | confirmar la recuperación con el `solicitudId` y código de un registro | 410 `SOLICITUD_VENCIDA` |
 
 ### 7.3 Antes de producción
 

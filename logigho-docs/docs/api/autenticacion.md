@@ -69,7 +69,7 @@ Cuando falla, la respuesta es `400 POLITICA_CONTRASENA` y `Motivos` lista una o 
 | Dar o cambiar roles y tiendas de usuarios **existentes** | `Administrador`, `Desarrollador` |
 | Al **crear**, asignar roles que no son de administración | Todos los de la primera fila |
 | Al crear, asignar `Administrador`, `Comercial`, `CEO` o `Desarrollador` | Solo `Administrador` y `Desarrollador` |
-| Dar acceso (roles y tiendas) a **cualquier** cliente desde la vista de clientes de Comercial | `Administrador`, `Desarrollador` (todos los roles) y `Comercial`/`CEO` (solo los de la lista configurable `ROLES_ASIGNABLES_COMERCIAL`: hoy `Tienda`, `Inversionista`, `Proveedor`, `Dropshipping`) |
+| Dar acceso (roles y tiendas) a **cualquier** cliente desde la vista de clientes de Comercial | `Administrador`, `Desarrollador` (todos los roles) y `Comercial`/`CEO` (solo los de la lista configurable `ROLES_ASIGNABLES_COMERCIAL`: hoy `Tienda`, `Inversionista`, `Proveedor`, `Dropshipper`) |
 | Cambiar o recuperar la contraseña | Cualquier persona con acceso al correo de la cuenta, **sin sesión y sin la contraseña actual**: recibe un código al correo (sección *Recuperación de contraseña*). El cambio con sesión y contraseña actual (`/cambio-pass`) se **reemplazó** por este flujo y se eliminará |
 | Editar los propios datos de contacto | Cualquier usuario autenticado |
 
@@ -314,7 +314,7 @@ Para que Comercial convierta a una persona registrada (`Red social`) en un clien
 Devuelve los roles que **quien consulta** puede dar. Úsalo para llenar el selector.
 
 ```json
-{ "Error": false, "Codigo": "OK", "Mensaje": "", "Motivos": null, "Roles": ["Tienda", "Inversionista", "Proveedor", "Dropshipping"] }
+{ "Error": false, "Codigo": "OK", "Mensaje": "", "Motivos": null, "Roles": ["Tienda", "Inversionista", "Proveedor", "Dropshipper"] }
 ```
 
 Para `Administrador` y `Desarrollador` son todos los roles activos; para `Comercial` y `CEO`, solo los de la lista configurable `ROLES_ASIGNABLES_COMERCIAL` (nunca roles de administración). Errores: `401 NO_AUTORIZADO`, `403 PROHIBIDO`.

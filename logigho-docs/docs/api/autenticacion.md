@@ -122,7 +122,7 @@ No se envía correo a la persona creada: `createUser` no manda mensajes. Cognito
 El cambio de contraseña con sesión y contraseña actual (`POST /cambio-pass/codigo` y `POST /cambio-pass`) **ya no es parte del contrato**. Se reemplazó el 2026-11-03 por la [Recuperación de contraseña](#recuperacion-de-contrasena-olvide-mi-contrasena-y-cambio-desde-el-perfil), que sirve igual para «olvidé mi contraseña» y para «cambiar contraseña» desde el perfil, sin contraseña actual.
 
 !!! warning "Para el equipo de front: migrar"
-    El modal actual de cambiar contraseña llama a `/cambio-pass`. Hay que **migrarlo al flujo de recuperación** (dos pantallas: pedir el código y escribir código y contraseña nueva). Las dos rutas viejas siguen respondiendo en PreProd solo mientras el front migra, y **se eliminarán** (rutas y código) cuando termine la migración. Desde el PR 577 `POST /cambio-pass` exige además `Codigo` y `SolicitudId`, así que el modal actual ya no funciona en PreProd.
+    El modal actual de cambiar contraseña llama a `/cambio-pass`. Hay que **migrarlo al flujo de recuperación** (dos pantallas: pedir el código y escribir código y contraseña nueva). Las dos rutas viejas siguen respondiendo en PreProd solo mientras el front termina sus pruebas, y **se eliminarán** (rutas y código) cuando esas pruebas pasen. El front (rama `feature/inicio-sesion-la-red`) ya usa solo las rutas de recuperación para recuperar y cambiar la contraseña. Desde el PR 577 `POST /cambio-pass` exige además `Codigo` y `SolicitudId`, así que el modal actual ya no funciona en PreProd.
 
 ## `/users` — usuarios (GET, POST, PUT)
 
@@ -205,10 +205,10 @@ Usa **los mismos nombres de campo del formulario público de contacto** (`/regis
 | 202 | `OK` | "Si el correo puede registrarse, recibirás un código." |
 | 400 | `DATOS_INVALIDOS` | Falta un obligatorio, `autorizaDatos` no es `true`, tipo equivocado o cuerpo demasiado grande |
 
-**El correo** trae el código, su vigencia (15 minutos), el enlace `{URL_REGISTRO}?solicitud=<solicitudId>` y el aviso "si no fuiste tú, ignora este correo". El enlace **no lleva el código ni el correo**. `URL_REGISTRO` hoy es `https://www.logigho.com/registro` en PreProd; el equipo de front define la ruta final y se cambia con una variable, sin redesplegar código.
+**El correo** trae el código, su vigencia (15 minutos), el enlace `{URL_REGISTRO}?solicitud=<solicitudId>` y el aviso "si no fuiste tú, ignora este correo". El enlace **no lleva el código ni el correo**. `URL_REGISTRO` hoy es `https://www.logigho.com/app/registro` en PreProd; las pantallas del front viven bajo `/app`; si la ruta cambia, se cambia con una variable de la lambda, sin redesplegar código.
 
 !!! warning "`solicitudId` es solo el valor del parámetro, no la dirección completa"
-    El enlace del correo es `https://www.logigho.com/registro?solicitud=0Am4r9F-...`. El front debe tomar **solo el valor del parámetro `solicitud`** (en Angular: `route.snapshot.queryParamMap.get('solicitud')`) y enviarlo tal cual en el cuerpo. Si se envía la dirección completa, el servidor no encuentra la solicitud y responde `410 SOLICITUD_VENCIDA` (a propósito no distingue entre «no existe» y «venció»). Ese error no gasta intentos del código.
+    El enlace del correo es `https://www.logigho.com/app/registro?solicitud=0Am4r9F-...`. El front debe tomar **solo el valor del parámetro `solicitud`** (en Angular: `route.snapshot.queryParamMap.get('solicitud')`) y enviarlo tal cual en el cuerpo. Si se envía la dirección completa, el servidor no encuentra la solicitud y responde `410 SOLICITUD_VENCIDA` (a propósito no distingue entre «no existe» y «venció»). Ese error no gasta intentos del código.
 
 ### `POST /autenticacion/registro/solicitudes/reenvio`
 
@@ -271,7 +271,7 @@ sequenceDiagram
 ```
 
 - **Responde 202 con el mismo cuerpo exista o no la cuenta** (no revela qué correos están registrados). Si la cuenta existe, guarda la solicitud y manda el código al correo. Si no existe, no hace nada.
-- El `solicitudId` **no** viaja en la respuesta: solo llega en el enlace del correo, `{URL_RECUPERACION}?solicitud=<solicitudId>`. `URL_RECUPERACION` hoy es `https://www.logigho.com/recuperar`; el equipo de front define la ruta final y se cambia con una variable.
+- El `solicitudId` **no** viaja en la respuesta: solo llega en el enlace del correo, `{URL_RECUPERACION}?solicitud=<solicitudId>`. `URL_RECUPERACION` hoy es `https://www.logigho.com/app/recuperar`; el equipo de front define la ruta final y se cambia con una variable.
 - Límites: 60 segundos entre envíos y 3 por hora por correo; pasado el límite sigue respondiendo 202 sin enviar nada.
 - Las cuentas creadas con una red social (Google, etc.) no tienen contraseña propia: el cambio falla con `500` en la confirmación. Pendiente decidir el mensaje (backlog).
 

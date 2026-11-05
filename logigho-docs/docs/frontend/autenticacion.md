@@ -79,7 +79,7 @@ El backend nuevo vive en la cuenta de **PreProd** de AWS. Para probar el flujo c
 ### Pantallas
 
 1. **Formulario.** Los campos de hoy del contacto más la autorización de datos. El front puede seguir guardando el contacto con `/registerContact` como hoy y luego llamar a `POST /autenticacion/registro/solicitudes` con los mismos datos; al confirmar, la fila se actualiza a "Registrado en plataforma" **sin duplicarse**. La solicitud responde **siempre 202** con el mismo mensaje exista o no el correo: la pantalla no puede decir "ese correo ya existe". Pasa a la pantalla 2 ("Revisa tu correo").
-2. **Código y contraseña.** Se abre desde el enlace del correo `{URL_REGISTRO}?solicitud=<solicitudId>`. Hay que definir la ruta final de esta pantalla y avisar para cambiar la variable (hoy `https://www.logigho.com/registro`). El `solicitudId` viaja **solo en la URL**: toma **solo el valor del parámetro** `solicitud` (`route.snapshot.queryParamMap.get('solicitud')`), nunca la dirección completa (con la dirección completa el servidor responde `SOLICITUD_VENCIDA`); guárdalo en memoria, no en `localStorage`, y bórralo de la barra con `history.replaceState`. Campos: código de 6 dígitos y contraseña (con confirmación y la política del contrato). `POST .../confirmaciones`.
+2. **Código y contraseña.** Se abre desde el enlace del correo `{URL_REGISTRO}?solicitud=<solicitudId>`. La pantalla vive en `/app/registro` (acordado con el front el 2026-11-04); si la ruta cambia, avisen para cambiar la variable. El `solicitudId` viaja **solo en la URL**: toma **solo el valor del parámetro** `solicitud` (`route.snapshot.queryParamMap.get('solicitud')`), nunca la dirección completa (con la dirección completa el servidor responde `SOLICITUD_VENCIDA`); guárdalo en memoria, no en `localStorage`, y bórralo de la barra con `history.replaceState`. Campos: código de 6 dígitos y contraseña (con confirmación y la política del contrato). `POST .../confirmaciones`.
 3. **Reenvío.** Botón "Reenviar código" deshabilitado 60 segundos; `POST .../solicitudes/reenvio` con el `solicitudId`.
 4. **Resultado.** `201` con `estado: "ACTIVO"`: ya puede iniciar sesión con su correo y su contraseña. Entra con el rol **`Red social`** (solo la red social) hasta que Comercial le asigne el acceso real. El menú que ve debe salir de sus roles como hoy.
 
@@ -109,7 +109,7 @@ Decisión 2026-11-03: **no se pide la contraseña actual**. El factor de segurid
 Pantallas:
 
 1. **Pedir el código.** Campo de correo (en el perfil ya se conoce: ofrece "Enviar código a tu correo" con el correo enmascarado). `POST /autenticacion/recuperacion/solicitudes` con `{ "email": "..." }`. Responde **siempre 202** con el mismo mensaje: la pantalla dice "Si existe una cuenta con ese correo, te enviamos un código" y nunca confirma si el correo existe.
-2. **Código y contraseña nueva.** Se abre desde el enlace del correo `{URL_RECUPERACION}?solicitud=<solicitudId>` (hoy `https://www.logigho.com/recuperar`; avisen la ruta final para cambiar la variable). Toman **solo el valor** del parámetro `solicitud`, lo guardan en memoria y lo quitan de la barra. Campos: código de 6 dígitos y contraseña nueva con confirmación (política del contrato). `POST /autenticacion/recuperacion/confirmaciones` con `{ "solicitudId", "codigo", "contrasena" }`.
+2. **Código y contraseña nueva.** Se abre desde el enlace del correo `{URL_RECUPERACION}?solicitud=<solicitudId>` (`https://www.logigho.com/app/recuperar`, acordado con el front el 2026-11-04; si la ruta cambia, avisen para cambiar la variable). Toman **solo el valor** del parámetro `solicitud`, lo guardan en memoria y lo quitan de la barra. Campos: código de 6 dígitos y contraseña nueva con confirmación (política del contrato). `POST /autenticacion/recuperacion/confirmaciones` con `{ "solicitudId", "codigo", "contrasena" }`.
 3. **Resultado.** `200`: la contraseña cambió y **se cerraron todas las sesiones** del usuario. Cierra la sesión local y manda a la pantalla de ingreso. Le llega además un correo de aviso del cambio.
 4. **Reenviar código.** Vuelve a llamar al paso 1 con el correo (60 s de espera, máximo 3 por hora). Los códigos anteriores siguen valiendo hasta que venzan; se debe usar el correo más reciente.
 
@@ -129,6 +129,11 @@ Hoy esa vista lista `RegisterContact`. Al registrarse una persona, su fila queda
 4. Manejar `403 ROL_NO_PERMITIDO` (mostrar `Motivos`), `403 USUARIO_PROTEGIDO`, `404` y `401`.
 
 El front **no decide** quién puede qué: oculta lo que no corresponde por UX, pero el servidor es quien manda.
+
+## Estado de la migración (2026-11-04)
+
+- La rama `feature/inicio-sesion-la-red` ya usa **solo** las dos rutas de recuperación para recuperar y cambiar la contraseña; ya no llama a `/cambio-pass`, `/cambio-pass/codigo` ni a Cognito directo para eso. Cuando sus pruebas pasen, backend elimina las rutas viejas (M-232).
+- El login ya no tiene botones de redes sociales. **Pendiente de acordar:** el mensaje para las cuentas creadas antes con una red social, que hoy reciben `500` al confirmar la recuperación (M-229).
 
 ## Un usuario con solo `Red social` en el front
 

@@ -121,7 +121,7 @@ Las define el pipeline (Library) y se aplican al desplegar. **Ninguna lleva secr
 | `REGISTRO_TIPO_USUARIO` | registro | `custom:TipoUsuario` de Cognito (por defecto `N/A`; sin relevancia funcional) |
 | `SES_REMITENTE`, `SES_CONFIGURATION_SET` | registro, cambio-pass | Remitente `Equipo Seguridad LogiGho <no-reply@logigho.com>` y su configuration set |
 | `URL_REGISTRO` | registro | Página del front a la que apunta el enlace del correo (`?solicitud=<id>`) |
-| `URL_RECUPERACION` | registro | Página del front del enlace del correo de recuperación (por defecto `https://www.logigho.com/recuperar`) |
+| `URL_RECUPERACION` | registro | Página del front del enlace del correo de recuperación (por defecto `https://www.logigho.com/app/recuperar`) |
 | `OTP_SECRETO_ID`, `OTP_VIGENCIA_MINUTOS` | registro, cambio-pass | Nombre del secreto de claves y vigencia del código (tope 15) |
 
 ## Despliegue y reversión

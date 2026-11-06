@@ -67,3 +67,47 @@ lambda (invocaciones/errores/duración) y estado de todas las alarmas.
 > No hay alarmas ni gráficos de API Gateway: el REST es compartido por toda la plataforma y sus métricas por stage mezclan
 > todas las rutas. El webhook se vigila con las métricas que publica la propia lambda. Un 403 que API Gateway da por API key
 > inválida no llega a la lambda; se detecta porque no llegan callbacks (`guias-sin-callback`).
+
+
+---
+
+# Historia 027: Distancias y Reportes
+
+Las dos funciones nuevas comparten el namespace `Logigho/NovedadesInter`, el tema SNS `Novedades-Inter-Alarmas-<entorno>` y las etiquetas de la
+función original. Observado: `modules/novedades-inter/funciones-distancias-reportes.tf` y `alarmas.tf` (Terraform `main`, PR 621).
+
+## Alertas de Slack (las manda la propia función)
+
+| Función | Alerta | Significa | Qué hacer |
+| ------- | ------ | --------- | --------- |
+| Distancias | **Google Maps está fallando: se cortó la corrida de distancias** | `FALLAS_SEGUIDAS_PARA_CORTAR` fallas seguidas de Google o de escrituras | Revisar la llave, las cuotas y el estado de Google; lo pendiente se retoma en la siguiente corrida |
+| Reportes | **No se pudieron generar los reportes de novedades Inter (corrida …)** | Falló la lectura, el Excel o la subida a Slack | Revisar los logs; se reintenta en el próximo reporte (la corrida queda `Fallida`) |
+| Reportes | **Los reportes se entregaron, pero no se pudo registrar la corrida** | Los archivos llegaron, pero no se escribió `ReportesNovedadesInter` | Las «Nuevas» del próximo reporte pueden repetirse; revisar Mongo |
+
+Los avisos de Reportes van al canal de reportes (`SLACK_CANAL_REPORTES`) con el bot; la alerta de Distancias, al webhook de alertas.
+
+## Métricas (namespace `Logigho/NovedadesInter`, dimensiones `Entorno` y `Operacion`)
+
+| Operación | Métricas |
+| --------- | -------- |
+| `distancias` | `GuiasSeleccionadas`, `GuiasProcesadas`, `GuiasConError`, `Geocodificaciones`, `Rutas`, `LlamadasGoogle`, `PendientesPorTope`, `PendientesPorTiempo`, `CandadoOcupado`, `CorridaCortada`, `CorridaInterrumpida` |
+| `reportes` | `ReportesExitosos`, `ReportesFallidos`, `ReportesNoRegistrados`, `FilasReporte1Nuevas`, `FilasReporte1Acumulado`, `FilasReporte2Nuevas`, `FilasReporte2Acumulado`, `ComandoSlackFirmaRechazada`, `ComandoSlackUsuarioNoPermitido` |
+
+## Alarmas de CloudWatch nuevas (4 por entorno)
+
+Nombres tal como están en Terraform (`<entorno>` = `preprod` o `prod`); todas envían a SNS al pasar a alarma y al volver a OK, con `treat_missing_data = notBreaching` y periodo de 300 s.
+
+| Alarma | Métrica | Umbral |
+| ------ | ------- | ------ |
+| `Novedades-Inter-<entorno>-distancias-errores` | `AWS/Lambda` `Errors` de `ApiLambdaNovedadesInterDistancias` (Sum) | mayor que 0 |
+| `Novedades-Inter-<entorno>-reportes-errores` | `AWS/Lambda` `Errors` de `ApiLambdaNovedadesInterReportes` (Sum) | mayor que 0 |
+| `Novedades-Inter-<entorno>-distancias-cerca-del-timeout` | `AWS/Lambda` `Duration` (Maximum) | mayor que 270 000 ms (90 % de 300 s) |
+| `Novedades-Inter-<entorno>-reportes-cerca-del-timeout` | `AWS/Lambda` `Duration` (Maximum) | mayor que 270 000 ms (90 % de 300 s) |
+
+- Con las 10 existentes de la función original, PreProd tiene **14 alarmas**, todas en estado OK el 2026-11-06 (observado en la validación). En producción
+  se suma `corrida-ausente`; **pendiente** hasta que haya despliegue.
+- **Brecha conocida:** `CorridaCortada` de Distancias se emite como métrica y avisa por Slack, pero la alarma `corrida-cortada` existente mira
+  `Operacion = solicitar`; no hay alarma de CloudWatch para la de Distancias. Tampoco hay alarma para `ReportesFallidos` ni para `ComandoSlackFirmaRechazada`.
+  Se detectan por el aviso de Slack y por las métricas.
+- **Dashboard:** `Novedades-Inter-<entorno>` no se extendió con gráficos de las funciones nuevas (observado: sin referencias en `dashboard.tf`). Las métricas se ven en CloudWatch.
+- El Scheduler de reportes no tiene alarma propia: si no corre, se nota porque no llega el reporte (hipótesis; **pendiente** decidir si se agrega una alarma de ausencia).

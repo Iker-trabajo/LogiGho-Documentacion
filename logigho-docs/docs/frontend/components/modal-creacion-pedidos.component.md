@@ -90,6 +90,7 @@ Validación de IDs pegados a mano (modo valor-declarado)
 
 | Fecha | Autor | Cambio |
 |---|---|---|
+| 2026-11-06 | Yadilton Torres | La lista de ciudades muestra "VILLA DEL ROSARIO" cuando la base trae "LA PARADA" (`nombreCiudad()`); solo cambia el nombre visible, el código DANE sigue igual. |
 | 2026-09-09 | Iker Acevedo | Paso 3 (Cotización) extraído a `PasoCotizacionComponent`, con switch con/sin recaudo aplicando a las 3 transportadoras. Paso 4 (Guía) corrige bug de Envía forzado a Crédito y centraliza la regla de forma de pago en `reglas-modalidad-pago.ts`. |
 | 2026-08-19 | Adalberto González | Integración con Product HUB: productos privados con autorización vigente amplían el catálogo visible, sin afectar las reglas de público/privado-propio ya existentes |
 

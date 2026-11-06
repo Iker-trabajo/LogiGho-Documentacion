@@ -135,6 +135,25 @@ El front **no decide** quién puede qué: oculta lo que no corresponde por UX, p
 - La rama `feature/inicio-sesion-la-red` ya usa **solo** las dos rutas de recuperación para recuperar y cambiar la contraseña; ya no llama a `/cambio-pass`, `/cambio-pass/codigo` ni a Cognito directo para eso. Cuando sus pruebas pasen, backend elimina las rutas viejas (M-232).
 - El login ya no tiene botones de redes sociales. **Pendiente de acordar:** el mensaje para las cuentas creadas antes con una red social, que hoy reciben `500` al confirmar la recuperación (M-229).
 
+## Implementación en el front (2026-11-06)
+
+Las vistas 1, 2 y 4 ya están construidas y probadas en PreProd en la rama `feature/inicio-sesion-la-red` (commit `afbbd61b`), con `environment.preprod.ts` apuntando al pool `us-east-1_NtFz4uKGk`, al client `37n1vom76u3godto2losctoh2v` y al API `8u5isw5u30`. La vista 5 (asignar acceso) también está en la vista de clientes.
+
+| Vista | Documentación |
+|---|---|
+| 1 y 2. Registro y código | [Registro "La Red"](views/pages/registro/registro.md) y [Mapa "La Red"](views/pages/registro/la-red-mapa.md) |
+| 3 y 4. Ingreso, recuperar y cambiar contraseña | [Login, recuperación y cambio de contraseña](components/login.md) |
+| Piezas comunes | [Avisos, logo, botones y redes](components/la-red-piezas-comunes.md) |
+| Correos | [Correos de autenticación](../guias/correos-autenticacion.md) |
+
+**Lo que ya cumple de las reglas de esta guía:**
+- **Sin auditoría:** las rutas con códigos o contraseñas usan `insertarGenericoSinAuditoria` (`RegistroRepository`, `RecuperacionRepository`, `AccesoClienteRepository`).
+- **El `solicitudId` no se guarda:** se toma solo del parámetro `?solicitud=`, se guarda en memoria y se borra de la barra con `history.replaceState`.
+- **Mensajes por `Codigo`:** la UX se decide por el `Codigo` de error, no por el texto ni solo por el estado HTTP.
+- **Campos del código:** `inputmode="numeric"` y `autocomplete="one-time-code"` en la primera casilla; las contraseñas usan `autocomplete="new-password"`.
+
+**Pruebas unitarias:** 38 pruebas de lo nuevo pasan (`avisos`, `rutas`, `ConfirmacionView`, `RecuperarContrasenaComponent` y `LoginComponent`).
+
 ## Un usuario con solo `Red social` en el front
 
 Quien se registra por autoservicio queda con el rol `Red social` hasta que Comercial le asigne acceso. Con ese rol **no puede administrar nada**: `GET /autenticacion/roles-asignables` responde `403 PROHIBIDO` y `GET /users` le devuelve **únicamente su propio registro** (sin importar el filtro o la página que mande). Si una pantalla de listados llama a `/users` para ese rol, solo verá su fila.

@@ -24,6 +24,20 @@ Todas las rutas siguientes viven bajo `/app/analytics` y requieren la sesión au
 
 ---
 
+## Rutas públicas de cuentas
+
+Viven en la raíz de `app.routes.ts`, sin `AuthGuard`. Publicadas van bajo `/app` (`https://www.logigho.com/app/registro`); en el servidor local, en la raíz (`http://localhost:4200/registro`). Los enlaces escritos a mano usan `rutaPublica()` para funcionar en los dos casos.
+
+| Ruta | Vista | Parámetros de URL | Para qué sirve |
+|---|---|---|---|
+| `/login` | `LoginComponent` | — | Iniciar sesión (Cognito directo). |
+| `/recuperar` | `LoginComponent` + `RecuperarContrasenaComponent` | `solicitud` (enlace del correo) | Pedir el código y poner la contraseña nueva. |
+| `/registro` | `RegistroComponent` (carga diferida) | `solicitud` (enlace del correo) | Pedir la cuenta y, desde el enlace, crear la contraseña. |
+
+El `solicitud` se lee una vez, se guarda solo en memoria y se borra de la barra de direcciones. Detalle en [Registro "La Red"](views/pages/registro/registro.md) y [Login y recuperación](components/login.md).
+
+---
+
 ## AuthGuard y la ruta `/export-runner`
 
 **Ubicación:** `src/app/core/application/services/guards/auth.guard.ts`
@@ -50,3 +64,4 @@ const isExportRunner = segments.length === 1 && segments[0].path === 'export-run
 |---|---|---|
 | 2026-09-21 | Iker Acevedo Vargas | Se documentaron las rutas completas de Analytics, incluyendo telemetría y sus restricciones de acceso. |
 | 2026-10-09 | Yadilton Torres | `AuthGuard`: solo la ruta exacta `/export-runner` entra sin sesión. Antes bastaba con que "export-runner" apareciera en cualquier parte de la URL, incluido el hash. |
+| 2026-11-06 | Yadilton Torres | Rutas públicas de cuentas: `/login`, `/recuperar` (nueva) y `/registro` con el parámetro `solicitud`. |

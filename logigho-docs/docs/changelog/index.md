@@ -24,6 +24,36 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-06] — Inicio de sesión, registro y contraseñas sobre "La Red" (PreProd)
+
+### Nuevas funcionalidades
+- **Registro por autoservicio** con mapa 3D de Colombia que reacciona a cada respuesta, caja animada que vuela al
+  mapa y deja el sello "Paquete enviado", y pantalla del código con **seis casillas reales** (escribir, pegar,
+  borrar), reenvío y mensajes por cada error.
+- **Recuperar contraseña** (`/recuperar`) y **cambio desde el perfil** con el código al correo, sin pedir la
+  contraseña actual.
+- **Avisos de lo que va pasando** (arriba a la derecha): en proceso, éxito y error; lo que queda debajo se oculta
+  y vuelve.
+- **"Síguenos en nuestras redes"** en el pie del login y el registro (Linktree), que parpadea más fuerte al pasar
+  por un país vecino.
+- **Correos nuevos** con forma de guía de envío para SES (cuatro plantillas).
+
+### Cambios
+- Login sobre el mismo mapa, con logo animado, botones nuevos, puerta de bodega al entrar y camioncito que
+  termina su viaje antes de entrar o mostrar el error. Sin botones de redes sociales ni ventanas SweetAlert.
+- Ajustes para celular: barra "Atrás / Continuar" pegada al final de la tarjeta, toques sin efectos pegados,
+  autocompletado oscuro, muesca del iPhone y pantallas desde 320 px.
+- `environment.preprod.ts` apunta al pool, client y API de PreProd.
+- Crear pedidos: "La Parada" se muestra como Villa del Rosario.
+
+### Documentación
+- [Registro "La Red"](../frontend/views/pages/registro/registro.md), [Mapa "La Red"](../frontend/views/pages/registro/la-red-mapa.md),
+  [Login y recuperación](../frontend/components/login.md), [Piezas comunes](../frontend/components/la-red-piezas-comunes.md)
+  y [Correos de autenticación](../guias/correos-autenticacion.md).
+- 38 pruebas unitarias nuevas o actualizadas del front, todas en verde.
+
+---
+
 ## [2026-10-30] — Métricas de entrega por ciudad y transportadora (producción)
 
 ### Nuevas funcionalidades

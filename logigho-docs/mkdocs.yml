@@ -241,7 +241,13 @@ nav:
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
-      - Autenticacion y registro: frontend/autenticacion.md
+      - Autenticacion y registro:
+          - Guia para el front: frontend/autenticacion.md
+          - Registro "La Red": frontend/views/pages/registro/registro.md
+          - Mapa "La Red" (escena WebGL): frontend/views/pages/registro/la-red-mapa.md
+          - Login, recuperacion y cambio de contrasena: frontend/components/login.md
+          - Piezas comunes (avisos, logo, botones, redes): frontend/components/la-red-piezas-comunes.md
+          - Correos de autenticacion (SES): guias/correos-autenticacion.md
       - Crear un modulo por base de datos: frontend/crear-modulo-db.md
       - Vistas:
           - Efectividad por Ciudad (Entregas): frontend/views/metricas-efectividad-ciudad.md

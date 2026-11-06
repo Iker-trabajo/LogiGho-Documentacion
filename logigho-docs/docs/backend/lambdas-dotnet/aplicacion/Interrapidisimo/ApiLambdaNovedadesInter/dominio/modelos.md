@@ -79,3 +79,96 @@ mismo seguimiento casi a la vez sin pisarse. Nunca se reemplaza el documento.
 | `ExtractorMotivoNovedad` | Del JSON de ws-inter saca motivo, geo, huella y texto |
 | `SeguimientoNovedad` | Documento de la colección anterior |
 | `PedidoInterNovedad` | Los 6 campos de `PedidosInter` que se leen |
+
+---
+
+## Campos nuevos de `SeguimientoNovedadesInter` (historia 027, spec 012)
+
+Los escribe **solo** la función [Distancias](../ApiLambdaNovedadesInterDistancias.md), con `$set` parcial de estos cuatro campos
+(nunca reescribe el documento: el callback de ws-inter puede estar tocando el mismo seguimiento). Reglas en
+[Reglas de la distancia](reglas-distancia.md). Observado: `Dominio/Entidades/Distancias.cs`, `DistanciasRepositorio.cs`.
+
+```jsonc
+{
+  "DireccionPedido": {                      // geocodificación de la dirección del pedido (una por guía)
+    "HuellaDireccion": "sha256…",           // regla + dirección + ciudad + departamento normalizados
+    "Latitud": 4.6, "Longitud": -74.08,     // ejemplo inventado
+    "TipoUbicacion": "ROOFTOP",             // ROOFTOP | RANGE_INTERPOLATED | GEOMETRIC_CENTER | APPROXIMATE
+    "CoincidenciaParcial": false,
+    "Localidades": ["Bogotá"],              // opcional: locality / administrative_area_level_2 del resultado
+    "ConfirmacionDireccion": "Confirmada",  // opcional: Confirmada | NoConfirmada | ausente
+    "Estado": "Encontrada",                 // Encontrada | NoEncontrada | Error
+    "GeocodificadaEn": ISODate
+  },
+  "Distancias": [                           // una por intento; tope de 50, igual que Historial
+    {
+      "HuellaGeo": "4.610000,-74.070000",   // "lat,lng" a 6 decimales: llave de la caché de rutas
+      "FechaIntento": ISODate,
+      "LatitudNovedad": 4.61, "LongitudNovedad": -74.07,
+      "Metros": 640, "MetrosLineaRecta": 410, "Modo": "DRIVE",
+      "Color": "rojo",                      // verde | amarillo | rojo | null
+      "Estado": "Calculada",                // Calculada | SinGeo | DireccionNoEncontrada | BajaConfianza | Error
+      "UrlRuta": "https://www.google.com/maps/dir/?api=1&origin=…&destination=…&travelmode=driving",
+      "CalculadaEn": ISODate
+    }
+  ],
+  "DistanciaUltima": { /* copia de la entrada que corresponde a UltimoMotivo */ },
+  "HuellaDistancias": "<HuellaMotivos>|v3"  // versión de la regla con la que se calculó
+}
+```
+
+| Campo | Significado |
+| ----- | ----------- |
+| `DireccionPedido` | Resultado de geocodificar `PedidosInter.Direccion + Ciudad`. Es dato personal derivado: no se loguea ni sale en los Excel. Solo se repite si cambia `HuellaDireccion` |
+| `DireccionPedido.Localidades` | Opcional (`BsonIgnoreIfNull`). Con ellas se valida que la ciudad del resultado sea la del pedido |
+| `DireccionPedido.ConfirmacionDireccion` | Opcional. Resultado de la segunda geocodificación, solo para guías con ruta roja. No se repite mientras la dirección no cambie |
+| `Distancias[]` | Un resultado por intento (cada entrada de `Historial` más el último motivo). Sin coordenada: `Estado = SinGeo` |
+| `DistanciaUltima` | Copia de la distancia del intento que corresponde a `UltimoMotivo`; es lo que lee la vista (columna) y el reporte 1 |
+| `HuellaDistancias` | `"{HuellaMotivos}\|v3"`. Si es distinta de esa expresión, la guía es **pendiente** y se recalcula. Si no se pudo completar (Google falló, falta el pedido) no se fija y se reintenta |
+
+`origin` del enlace es la dirección del pedido; `destination`, el punto del mensajero. Valores con `InvariantCulture` (punto decimal).
+
+## Colección `ReportesNovedadesInter` (nueva)
+
+La escribe solo la función [Reportes](../ApiLambdaNovedadesInterReportes.md): un documento por corrida. De la última `Exitosa` sale la frontera de «Nuevas».
+
+```jsonc
+{
+  "_id": ObjectId("…"),
+  "FechaInicio": ISODate, "FechaFin": ISODate,
+  "Origen": "programado",                 // programado | slack
+  "UsuarioSlack": "U0000EJEMPLO",         // solo si Origen = slack (id inventado)
+  "Estado": "Exitosa",                    // Exitosa | Fallida
+  "FilasReporte1": { "Nuevas": 3, "Acumulado": 40 },
+  "FilasReporte2": { "Nuevas": 7, "Acumulado": 120 },
+  "Error": null                           // causa corta si Fallida
+}
+```
+
+## Colección `CandadosNovedadesInter` (nueva)
+
+Candado entre corridas de Distancias: `{ "_id": "distancias", "Dueno": "<id de la corrida>", "ExpiraEn": ISODate }`. Se toma con un `upsert` atómico y se libera
+al terminar; vence a los 15 min por si la función muere sin liberarlo.
+
+## Índices nuevos (mejora M-256)
+
+Los crea Iker en prod (en PreProd puede la IA). Comandos y orden en el [runbook](../infraestructura/runbook.md#d-historia-027-distancias-y-reportes).
+
+| Colección | Índice | Para qué |
+| --------- | ------ | -------- |
+| `CandadosNovedadesInter` | `{ ExpiraEn: 1 }` con `expireAfterSeconds: 0` | TTL: limpia candados vencidos (el código ya comprueba el vencimiento, así que funciona aunque tarde) |
+| `ReportesNovedadesInter` | `{ Estado: 1, FechaInicio: -1 }` | Hallar la última corrida `Exitosa` |
+| `SeguimientoNovedadesInter` | `{ HuellaMotivos: 1 }` | **Condicional:** solo si el `explain` lo pide. Hoy la selección de pendientes lee una proyección mínima y compara en memoria |
+
+## Clases nuevas (`Dominio/`)
+
+| Clase | Responsabilidad |
+| ----- | --------------- |
+| `ReglaColorDistancia` | Metros → verde / amarillo / rojo (250 y 500) |
+| `ReglaConfianzaGeocodificacion` | `ROOFTOP`/`RANGE_INTERPOLATED` + ciudad igual a la del pedido |
+| `ReglaConfirmacionDireccion` | Segunda geocodificación a ≤ 150 m |
+| `ValidadorCoordenada`, `Haversine` | Defensa de coordenadas y línea recta de referencia |
+| `SanitizadorDireccion`, `VersionReglaGeocodificacion`, `TextoGeografico` | Limpieza de la dirección, versión de la regla (`v3`), huellas y enlaces |
+| `NormalizadorTexto`, `ListaMotivosExcluidos` | Clave de comparación de motivos y los 8 excluidos |
+| `FiltroReporte1`, `FiltroReporte2` | Qué guías entran a cada reporte |
+| `DireccionPedido`, `DistanciaIntento`, `CorridaReporte` | Entidades de las secciones anteriores |

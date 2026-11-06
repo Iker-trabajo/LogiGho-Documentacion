@@ -121,14 +121,21 @@ nav:
                   - Lambda: backend/lambdas-dotnet/aplicacion/interrapidismo/ApiLambaProcesoAutomaticoInter/ApiLambaProcesoAutomaticoInter.md
               - ApiLambdaNovedadesInter:
                   - Lambda: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInter.md
+                  - Distancias (función): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInterDistancias.md
+                  - Reportes (función): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInterReportes.md
                   - Solicitar novedades (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/solicitar-novedades-usecase.md
                   - Recibir resultado (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/recibir-resultado-usecase.md
                   - Modelos de Dominio: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/modelos.md
+                  - Reglas de la distancia: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/reglas-distancia.md
+                  - Reglas de los reportes: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/reglas-reportes.md
                   - Webhook y contrato ws-inter: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/webhook-ws-inter.md
                   - Observabilidad y monitoreo: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/observabilidad.md
                   - Runbook (puesta en marcha y operación): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/runbook.md
+                  - App de Slack (reportes): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/slack-app.md
                   - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-001-una-lambda-paso-en-la-step-y-dos-colecciones.md
                   - Webhook en el REST del entorno (ADR-002): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-002-webhook-en-el-rest-del-entorno-con-api-key.md
+                  - Distancias y reportes en el mismo proyecto (ADR-003): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-003-distancias-y-reportes-en-el-mismo-proyecto.md
+                  - Regla de geocodificación v2/v3 (ADR-004): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-004-regla-de-geocodificacion-v2-v3-y-confirmacion-del-rojo.md
               - ApiLambdaLiquidacionesLogighoAOT:
                   - Vision general: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/overview.md
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/ApiLambdaLiquidacionesLogighoAOT.md
@@ -346,6 +353,7 @@ nav:
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
               - Logistica:
                   - Inventario nuevo (pantallas): frontend/views/logistica/inventario/inventario-front.md
+                  - Novedades (distancia a la dirección): frontend/views/logistica/novedades/novedades-distancia.md
                   - Directiva ayuda flotante: frontend/views/gestion-datos/export-data/directives/ayuda-flotante-directive.md
               - Tienda:
                   - Portafolio:
@@ -428,6 +436,7 @@ nav:
       - Como documentar: guias/como-documentar.md
       - Operacion de Inventario: guias/inventario-operacion.md
       - Pruebas E2E de autenticacion: guias/pruebas-autenticacion-e2e.md
+      - Pruebas de novedades (distancia y reportes): guias/novedades-distancia-reportes-pruebas.md
 
   - Plantillas:
       - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md
@@ -443,3 +452,4 @@ nav:
       - Historial: changelog/index.md
       - Liberacion de Inventario (oct 2026): changelog/inventario-2026-10.md
       - Liberacion de Metricas de entrega (oct 2026): changelog/metricas-2026-10.md
+      - Novedades Inter, distancia y reportes (nov 2026): changelog/novedades-2026-11.md

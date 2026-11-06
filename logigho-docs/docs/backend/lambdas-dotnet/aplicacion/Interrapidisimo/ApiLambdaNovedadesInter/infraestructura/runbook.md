@@ -260,3 +260,102 @@ la corrida se reintenta sola cada 3 h y nada se pierde (las guías pendientes se
 - **Step de producción**: `agregar_novedades_a_step_function.py revertir --archivo …`.
 - **Apagar solo esta función** sin tocar nada más: en la Step, quitar el estado con `revertir`, o dejar el disparador de PreProd deshabilitado.
 - `MotivoNovedadInter` en `PedidosInter` es un campo extra: no rompe nada si se deja.
+
+
+---
+
+## D. Historia 027: distancias y reportes
+
+Qué se enciende y en qué orden para las dos funciones nuevas (`ApiLambdaNovedadesInterDistancias` y `ApiLambdaNovedadesInterReportes`).
+Nada se ejecuta solo: Terraform, el pipeline y los scripts los lanza una persona. **PreProd está hecha y validada (2026-11-06).
+Producción: todo lo de abajo está pendiente** y cada paso es una escritura; en prod se avanza paso a paso con el OK de Iker.
+
+| Pieza | Dónde vive | Quién la crea |
+| ----- | ---------- | ------------- |
+| 2 funciones, roles, logs, 4 alarmas, Scheduler | `modules/novedades-inter` desde `environments/<env>/novedades` | `terraform apply` (Iker) |
+| Ruta `POST /novedades-inter/reportes/slack` | `modules/novedades-reportes-slack`; en PreProd desde `environments/preprod/datos`, en prod desde `environments/prod/novedades` | `terraform apply` (Iker); en prod el deployment lo publica el CLI |
+| Rama de Distancias en la Step | PreProd: `environments/preprod/procesos-automaticos`. Prod: `pipelines/novedades/scripts/agregar_distancias_a_step_function.py` | PreProd: Terraform. Prod: script (Iker) |
+| Código y variables | `pipelines/novedades/{cd-preprod,cd-prod}.yml` (lista de 3 funciones) | Pipeline de Azure DevOps |
+| App de Slack y comando | [App de Slack](slack-app.md) | Iker (consola de Slack) |
+| Índices | Sección D3 | `mongosh` (Iker; en PreProd puede la IA) |
+
+### D1. Orden de puesta en marcha
+
+1. **Terraform `novedades`** (`environments/<env>/novedades`): crea las dos funciones, sus roles (Reportes con permiso de autoinvocarse), logs, las 4 alarmas, el rol de
+   despliegue con las 3 funciones y el Scheduler. El Scheduler nace **apagado** en ambos entornos (`reportes_programados_habilitados = false`). Revisar el plan: solo recursos nuevos.
+2. **Ruta del comando de Slack.** PreProd: `environments/preprod/datos` (`terraform output novedades_url_comando_slack`). El orden seguido en PreProd fue `novedades`, `datos`, `procesos-automaticos` (spec 012, estado 2026-11-06). **Discrepancia:** el comentario de `environments/preprod/datos/main.tf` dice «aplicar ANTES environments/preprod/novedades»; la ruta apunta a la función por nombre, así que lo seguro es que la función exista primero. Prod: viene en `environments/prod/novedades` (`terraform output url_comando_slack`).
+   En prod, antes del apply, confirmar que el REST `7elgyten88` no tenga ya un recurso `/novedades-inter` (el módulo del webhook y el de la ruta de Slack lo declaran por separado: si choca, hay que importarlo o pasar su id).
+   En prod, anotar el deployment actual del stage y publicar con el CLI (sección B, 3b); reversión con `update-stage`.
+3. **Terraform `procesos-automaticos`** (PreProd): rama nueva en `Step_Procesos_Logigho`. En prod se usa el script de la sección D5.
+4. **Crear la App de Slack** y el comando con la URL del paso 2 ([App de Slack](slack-app.md)); sacar el token del bot y el signing secret, **cifrarlos con AES** (A3) y guardarlos en el variable group.
+5. **Variable group** `novedades-inter-<env>-secretos`: agregar las variables nuevas (D2).
+6. **CD de las 3 funciones** (`cd-preprod.yml` desde una rama `release/*`; `cd-prod.yml` desde `main` con aprobación del Environment `produccion`). Publica el zip una sola vez, respalda el código actual de cada función, agrega las variables sensibles (aditivo), publica y verifica.
+7. **Índices** (D3) y, en prod, verificar con `explain` la lectura de pendientes sobre DocumentDB antes de liberar.
+8. **Relleno**: las corridas de Distancias lo hacen solas por tandas de `MAX_GUIAS_DISTANCIA_POR_CORRIDA` (1500). Para forzar una: Step Functions, `Start execution`, o invocar la función con `{"origen":"step"}`. En producción el relleno cubre todas las novedades (Iker 2026-11-06). Vigilar `LlamadasGoogle`, `PendientesPorTope` y el costo en Google.
+9. **Probar el comando** (`/reporte-novedades`, en PreProd `/reporte-novedades-pruebas`) y verificar que llegan los 2 archivos al canal.
+10. **Encender el Scheduler** (solo prod, Iker 2026-11-06): segundo `apply` con `reportes_programados_habilitados = true`, cuando el pipeline ya publicó código y variables. Verificar la expresión `cron(0 8 ? * TUE,FRI *)` en `America/Bogota`.
+
+### D2. Variables nuevas del variable group (solo nombres)
+
+| Variable | ¿Cifrada? | Función | Notas |
+| -------- | --------- | ------- | ----- |
+| `GOOGLE_MAPS_API_KEY` | Sí (AES) | Distancias | Llave de servidor (Geocoding + Routes); con tope diario de cuotas en GCP |
+| `SLACK_BOT_TOKEN` | Sí (AES) | Reportes | Token del bot de la App «LogiGho» |
+| `SLACK_SIGNING_SECRET` | Sí (AES) | Reportes | Valida la firma del comando |
+| `SLACK_CANAL_REPORTES` | No | Reportes | ID del canal (`C…`), uno por entorno |
+| `SLACK_USUARIOS_PERMITIDOS` | No | Reportes | IDs de usuario de Slack separados por `;` o `,` |
+| `SLACK_WEBHOOK_ALERTAS` | Sí (AES) | Distancias (prod) y función original | Opcional en PreProd; en prod el CD se la pasa a Distancias y a la función original |
+| `MAX_GUIAS_DISTANCIA_POR_CORRIDA`, `CONCURRENCIA_GOOGLE`, `FALLAS_SEGUIDAS_PARA_CORTAR`, `MOTIVOS_EXCLUIDOS_REPORTE2`, `ZONA_HORARIA` | No | Opcionales | Tienen valor por defecto en el código; el CD no las pasa |
+
+- El CD pasa a cada función solo las claves que le corresponden (`claves:` en el YAML). Las variables son **aditivas**: para cambiar una ya publicada,
+  `quitar-variables` y volver a correr el CD.
+- Los valores **nunca** se escriben en la documentación ni en git.
+- Observado: el CD de prod no pasa `SLACK_WEBHOOK_ALERTAS` a Reportes (el código de Reportes la lista como opcional, pero `claves` no la incluye). El `aws-lambda-reportes.json` la menciona. Revisar si se desea alerta inmediata desde Reportes (hoy sus avisos van por el bot al canal).
+
+### D3. Índices (mejora M-256)
+
+```javascript
+use LogighoDB
+db.CandadosNovedadesInter.createIndex({ ExpiraEn: 1 }, { name: "ttl_expira_en", expireAfterSeconds: 0 })
+db.ReportesNovedadesInter.createIndex({ Estado: 1, FechaInicio: -1 }, { name: "ix_estado_fecha_inicio" })
+// Solo si el explain de la selección de pendientes lo pide:
+// db.SeguimientoNovedadesInter.createIndex({ HuellaMotivos: 1 }, { name: "ix_huella_motivos" })
+```
+
+Los nombres de índice son una propuesta (la mejora M-256 fija las claves, no los nombres). Si el índice TTL no existe, el candado igual funciona (el código comprueba el vencimiento).
+En prod los crea Iker; en PreProd puede hacerlo la IA.
+
+### D4. La Step en PreProd
+
+La rama de PreProd llama a `ApiLambdaNovedadesInterDistancias` con `{"origen":"step"}`, `TimeoutSeconds: 330` y un `Catch` que termina en éxito. El rol de la Step de PreProd
+puede invocar las dos funciones (observado: `step_procesos_logigho.tf`).
+
+### D5. Step de producción (script, lo ejecuta Iker)
+
+```bash
+export AWS_PROFILE=<perfil prod>
+python3 pipelines/novedades/scripts/agregar_distancias_a_step_function.py ensayo     # no escribe nada
+python3 pipelines/novedades/scripts/agregar_distancias_a_step_function.py aplicar    # respaldo + política IAM + rama nueva en 'Parallel Init'
+# reversión:
+python3 pipelines/novedades/scripts/agregar_distancias_a_step_function.py revertir --archivo respaldo-step-<fecha>.json
+```
+
+`aplicar` guarda el respaldo, agrega una política (`InvocarLambdaNovedadesInterDistancias`) que solo permite invocar esa función y añade la rama con `Retry` y un `Catch` que cae en
+un `Pass` que termina la rama en éxito. Antes deben existir la función (Terraform) y su primer despliegue.
+
+### D6. Operación de las funciones nuevas
+
+- **Reporte a mano:** el comando de Slack o invocar `ApiLambdaNovedadesInterReportes` con `{"origen":"programado"}`. El comando solo funciona para los IDs de `SLACK_USUARIOS_PERMITIDOS`.
+- **Candado ocupado:** si Distancias devuelve `CandadoOcupado`, hay otra corrida vigente; el candado vence solo a los 15 min.
+- **Cambiar la regla de geocodificación:** subir `VersionReglaGeocodificacion.Actual` recalcula todo una vez; avisar antes del costo en Google.
+
+### D7. Reversión
+
+| Qué | Cómo |
+| --- | ---- |
+| Reportes programados | Scheduler a `DISABLED` (`reportes_programados_habilitados = false` y apply) o desde la consola. El comando de Slack sigue funcionando |
+| Rama de Distancias | PreProd: quitar la rama en Terraform. Prod: `agregar_distancias_a_step_function.py revertir` |
+| Código | El CD imprime el comando de reversión de cada función (respaldo en `s3://logigho-artefactos-<env>/respaldo/<función>/`) |
+| Ruta del comando | Prod: `update-stage` al deployment anterior anotado |
+| Columna en el front | Revert del PR del front |
+| Campos nuevos en Mongo | No afectan a nadie; se pueden ignorar o borrar con `$unset` (lo hace Iker) |

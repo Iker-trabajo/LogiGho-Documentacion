@@ -24,6 +24,17 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-06] — Novedades Inter: distancia a la dirección y reportes por Slack (PreProd)
+
+### Nuevas funcionalidades
+- Funciones `ApiLambdaNovedadesInterDistancias` (metros por calle entre la dirección del pedido y el punto del mensajero, con color) y `ApiLambdaNovedadesInterReportes` (dos Excel por Slack, martes y viernes 8:00 y comando `/reporte-novedades`).
+- Vista de novedades con columna de distancia, filtro, etiquetas «Sin dirección» y «Dirección por validar» y pestaña «Comparar con dirección».
+
+### Documentación
+- Detalle, pendientes de producción y PR en [Novedades, noviembre 2026](novedades-2026-11.md).
+
+---
+
 ## [2026-10-30] — Métricas de entrega por ciudad y transportadora (producción)
 
 ### Nuevas funcionalidades

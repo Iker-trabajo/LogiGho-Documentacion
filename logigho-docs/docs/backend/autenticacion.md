@@ -88,6 +88,24 @@ Un solo motor en `Autenticacion.Nucleo`, usado por el registro, la recuperación
 2. Los códigos ya emitidos siguen validando con `anterior`; los nuevos usan `actual`. Pasados 15 minutos se puede quitar `anterior`.
 3. La lambda recarga el secreto sola en 5 minutos; no hace falta redesplegar. Rotar cuando se sospeche una filtración y, como rutina, cada 90 días (M-168).
 
+## Correos
+
+Cuatro correos, todos con el diseño "guía de envío" del equipo de front (HTML y texto plano, sin respuesta posible):
+
+| Correo | Cuándo | Asunto |
+|---|---|---|
+| Código de registro | `POST /autenticacion/registro/solicitudes` y su reenvío | Tu guía de activación de LogiGho |
+| Cuenta existente | Solicitud de registro con un correo que ya tiene cuenta | Tu correo ya tiene su lugar en LogiGho |
+| Código de recuperación | `POST /autenticacion/recuperacion/solicitudes` (solo si la cuenta existe) | Tu guía de seguridad de LogiGho |
+| Contraseña cambiada | Después de `POST /autenticacion/recuperacion/confirmaciones` exitoso | Tu cuenta de LogiGho quedó protegida |
+
+- Las plantillas viven en `Autenticacion.Nucleo/Plantillas/` (`01`–`04`, `.html` y `.txt`) y se rellenan con `{{variable}}`. Para cambiar el diseño se reemplazan esos archivos; no hay que tocar código. Si una plantilla pide una variable que el código no entrega, la lambda falla en vez de enviar el correo a medias.
+- En el HTML todo valor (nombre, enlace) se codifica; en el texto va tal cual.
+- El nombre sale del `username` de la cuenta (en la recuperación se lee de Users al pedir el código y se guarda en la solicitud para el aviso). Sin nombre se usa "Cliente LogiGho".
+- La fecha del aviso va en hora de Colombia (UTC-5), formato `5 nov 2026 · 1:06 p. m.`.
+- Las dos imágenes (`logo-tinta.png`, `codigo-barras.png`) se leen de `CORREO_URL_IMAGENES`. Si no cargan, el correo se entiende igual (se ve el texto "LogiGho").
+- El correo de cambio con sesión (`/cambio-pass`, obsoleto) conserva su texto antiguo hasta que se retire.
+
 ## Logs que se esperan
 
 | Lambda | Líneas |
@@ -121,6 +139,7 @@ Las define el pipeline (Library) y se aplican al desplegar. **Ninguna lleva secr
 | `REGISTRO_TIPO_USUARIO` | registro | `custom:TipoUsuario` de Cognito (por defecto `N/A`; sin relevancia funcional) |
 | `SES_REMITENTE`, `SES_CONFIGURATION_SET` | registro, cambio-pass | Remitente `Equipo Seguridad LogiGho <no-reply@logigho.com>` y su configuration set |
 | `URL_REGISTRO` | registro | Página del front a la que apunta el enlace del correo (`?solicitud=<id>`) |
+| `CORREO_URL_IMAGENES` | registro, cambio-pass | Carpeta pública HTTPS con `logo-tinta.png` y `codigo-barras.png` de los correos. Opcional: por defecto `https://www.logigho.com/assets/images/correos`. Las direcciones `/app/login` y `/app/recuperar` de los botones van fijas en el código |
 | `URL_RECUPERACION` | registro | Página del front del enlace del correo de recuperación (por defecto `https://www.logigho.com/app/recuperar`) |
 | `OTP_SECRETO_ID`, `OTP_VIGENCIA_MINUTOS` | registro, cambio-pass | Nombre del secreto de claves y vigencia del código (tope 15) |
 

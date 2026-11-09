@@ -56,8 +56,9 @@ Calidad de la geocodificación en Colombia (spec 012 §8). El criterio original 
 
 Fuente: spec 012 §7 y `docs/architecture/dominios/novedades.md` del workspace (verificación del 2026-11-08). Los casos de código se prueban con tests de `ApiLambdaNovedadesInter.Tests` (711 pruebas el 2026-11-07 según la ficha del dominio; los nombres de clase por criterio son los de la spec).
 
-!!! warning "Discrepancia observada el 2026-11-09"
-    En el árbol de `main` de `Lambdas_NET_LogiGho` (commit `993ee006`, PR 635) el proyecto `ApiLambdaNovedadesInter.Tests` solo trae los tests de la función original (parser, solicitar, recibir, reglas, infraestructura, integración). Las clases de test de la historia 027 (por ejemplo `FirmaEvidenciaTests`, commit `efa9c609`) existen en las ramas `feature/novedades-*`, pero `git ls-tree HEAD` no las lista. Hipótesis: el merge del PR 635 no las incluyó. Hay que confirmarlo con Iker antes de dar los CA de código por cubiertos en `main`.
+!!! note "Verificado el 2026-11-09"
+    Las clases de test de la historia 027 (por ejemplo `FirmaEvidenciaTests`) sí están en `origin/main` de `Lambdas_NET_LogiGho` (PR 635, commit `993ee006`); se comprobó con `git ls-tree` sobre `origin/main`. La suite de la rama `feature/novedades-reportes-v8` pasó 958 de 958 antes del merge (observado por Iker el 2026-11-07/08).
+
 
 | CA | Qué se prueba | Cómo | Estado |
 | -- | ------------- | ---- | ------ |

@@ -305,6 +305,9 @@ Producción: todo lo de abajo está pendiente** y cada paso es una escritura; en
 | `SLACK_CANAL_REPORTES` | No | Reportes | ID del canal (`C…`), uno por entorno |
 | `SLACK_USUARIOS_PERMITIDOS` | No | Reportes | IDs de usuario de Slack separados por `;` o `,` |
 | `SLACK_WEBHOOK_ALERTAS` | Sí (AES) | Distancias (prod) y función original | Opcional en PreProd; en prod el CD se la pasa a Distancias y a la función original |
+| `EVIDENCIAS_SECRETO_FIRMA` | Sí (**AES256**) | Reportes | v8. Clave HMAC de los enlaces de imágenes; ver D9 |
+| `URL_EVIDENCIAS` | No | Reportes | v8. URL https de `GET /novedades/evidencia` (salida `url_evidencias` de Terraform), sin query |
+| `EVIDENCIAS_BUCKET` | No | Reportes | v8. Bucket de las fotos (`wsinter-evidencias-prod` en prod) |
 | `MAX_GUIAS_DISTANCIA_POR_CORRIDA`, `CONCURRENCIA_GOOGLE`, `FALLAS_SEGUIDAS_PARA_CORTAR`, `MOTIVOS_EXCLUIDOS_REPORTE2`, `ZONA_HORARIA` | No | Opcionales | Tienen valor por defecto en el código; el CD no las pasa |
 
 - El CD pasa a cada función solo las claves que le corresponden (`claves:` en el YAML). Las variables son **aditivas**: para cambiar una ya publicada,
@@ -347,7 +350,9 @@ un `Pass` que termina la rama en éxito. Antes deben existir la función (Terraf
 
 - **Reporte a mano:** el comando de Slack o invocar `ApiLambdaNovedadesInterReportes` con `{"origen":"programado"}`. El comando solo funciona para los IDs de `SLACK_USUARIOS_PERMITIDOS`.
 - **Candado ocupado:** si Distancias devuelve `CandadoOcupado`, hay otra corrida vigente; el candado vence solo a los 15 min.
-- **Cambiar la regla de geocodificación:** subir `VersionReglaGeocodificacion.Actual` recalcula todo una vez; avisar antes del costo en Google.
+- **Cambiar la regla de geocodificación:** subir `VersionReglaGeocodificacion.Actual` recalcula todo una vez; avisar antes del costo en Google. Subir `VersionReglaRuta.Actual` recalcula solo las rutas (sin geocodificar).
+- **Argumentos del comando (v6):** `/reporte-novedades completo` y `/reporte-novedades desde AAAA-MM-DD` cambian qué es «Nuevas»; un argumento inválido responde la ayuda y no genera nada.
+- **Empezar los reportes de cero:** `tools/reportes-novedades/limpiar_ejecuciones_reportes.py` (lo ejecuta Iker) borra `ReportesNovedadesInter`.
 
 ### D7. Reversión
 
@@ -359,3 +364,34 @@ un `Pass` que termina la rama en éxito. Antes deben existir la función (Terraf
 | Ruta del comando | Prod: `update-stage` al deployment anterior anotado |
 | Columna en el front | Revert del PR del front |
 | Campos nuevos en Mongo | No afectan a nadie; se pueden ignorar o borrar con `$unset` (lo hace Iker) |
+
+### D8. Reprocesar por tandas (backfill)
+
+Cuándo: después de subir una versión de regla, de agregar un campo que se completa en lo ya procesado (como `DireccionMensajero`, v8) o si quedaron guías `Error`/pendientes. **No es otro proceso**: Distancias ya selecciona
+las guías pendientes (huella distinta, mínimo por evaluar o falta la dirección del mensajero) y las atiende por tandas. Cada paso en prod es una escritura en Mongo y gasta Google: **Iker lo ejecuta, con su OK por paso**.
+
+1. **Medir antes** (solo lectura): contar pendientes con el script de lectura del workspace (`tools/db-lectura`, siempre con `--proyeccion`, sin datos personales) y estimar el costo (referencia: ~8 100 geocodificaciones inversas ≈ USD 40 una vez; ~3 600 rutas por la recarga de la v6).
+2. **Revisar topes:** `MAX_GUIAS_DISTANCIA_POR_CORRIDA` es 1 500 por defecto (la tanda); el presupuesto de una corrida es 240 s y la función tiene 300 s. Si Google corta por cuota (M-268), bajar `CONCURRENCIA_GOOGLE` (4 por defecto) antes de seguir.
+3. **Lanzar una tanda:** Step Functions `Start execution` con `{}`, o invocar `ApiLambdaNovedadesInterDistancias` con `{"modo":"backfill"}` (el modo solo queda anotado en el log; la selección es la misma). Ejemplo con el CLI:
+
+```powershell
+aws lambda invoke --function-name ApiLambdaNovedadesInterDistancias --payload '{"modo":"backfill"}' --cli-binary-format raw-in-base64-out salida-distancias.json
+```
+
+4. **Leer el resumen** (`[RESULT] fin` o el JSON de salida): `GuiasSeleccionadas`, `GuiasProcesadas`, `GuiasConError`, `PendientesPorTope`, `PendientesPorTiempo`, `LlamadasGoogle`, `CorridaCortada`, `CandadoOcupado`.
+5. **Repetir por tandas de 1 500** hasta que `PendientesPorTope` y `PendientesPorTiempo` sean 0. Si sale `CandadoOcupado`, hay otra corrida vigente: esperar (el candado vence solo a los 15 min). Si `CorridaCortada`, revisar la llave, las cuotas y el aviso de Slack antes de reintentar.
+6. **Comprobar idempotencia (CA5):** una corrida extra debe dar `LlamadasGoogle = 0`.
+
+Reversión: los campos nuevos no afectan a nadie; se pueden ignorar o borrar con `$unset` (lo hace Iker).
+
+### D9. Rotar `EVIDENCIAS_SECRETO_FIRMA`
+
+**Efecto:** invalida **todos** los enlaces de imagen de los Excel ya enviados (responden 403 hasta que se regeneren los reportes). El valor **nunca** se imprime, se pega en el chat ni va a git ni a `docs/`.
+Mejora **M-274**: evaluar una segunda clave «anterior» para rotar sin romper los Excel viejos (hoy no existe: **hipótesis** de diseño, no implementada).
+
+1. **Avisar** a quienes usan los reportes: los Excel viejos perderán las imágenes; los nuevos funcionarán.
+2. **Generar** el valor nuevo en tu máquina con un generador seguro y **cifrarlo con AES256** igual que los demás secretos (sección A3), sin mostrarlo en pantalla ni en el historial del terminal.
+3. **Variable group** `novedades-inter-prod-secretos`: reemplazar `EVIDENCIAS_SECRETO_FIRMA` por el valor cifrado.
+4. **Publicar:** las variables del pipeline son aditivas, así que se aplica `quitar-variables` y se vuelve a correr el CD de las 3 funciones (`cd-prod.yml` desde `main`, con aprobación del Environment `produccion`) para que la función de Reportes reciba la clave nueva.
+5. **Verificar sin imprimir valores:** generar un reporte (`/reporte-novedades`) y abrir un «Ver imagen» del archivo nuevo (debe redirigir a la foto). Un enlace de un Excel anterior debe dar 403 (`Prohibido`), y sin parámetros 400.
+6. **Reversión:** volver a poner el valor anterior en el variable group y repetir el paso 4 (los Excel viejos vuelven a abrir). Si el valor anterior no se guardó cifrado en un lugar seguro, no hay reversión: guardarlo antes del paso 3.

@@ -86,12 +86,17 @@ función original. Observado: `modules/novedades-inter/funciones-distancias-repo
 
 Los avisos de Reportes van al canal de reportes (`SLACK_CANAL_REPORTES`) con el bot; la alerta de Distancias, al webhook de alertas.
 
+Desde la v8 un fallo al consultar `AuditoriaCambioEntregaInter` también deja la corrida de Reportes `Fallida` con el aviso «No se pudieron generar los reportes…» (mejor ningún reporte que uno con guías que ya están en oficina).
+Una falla de servicio de la geocodificación inversa cuenta como falla seguida de Google (puede cortar la corrida de Distancias).
+
 ## Métricas (namespace `Logigho/NovedadesInter`, dimensiones `Entorno` y `Operacion`)
 
 | Operación | Métricas |
 | --------- | -------- |
-| `distancias` | `GuiasSeleccionadas`, `GuiasProcesadas`, `GuiasConError`, `Geocodificaciones`, `Rutas`, `LlamadasGoogle`, `PendientesPorTope`, `PendientesPorTiempo`, `CandadoOcupado`, `CorridaCortada`, `CorridaInterrumpida` |
-| `reportes` | `ReportesExitosos`, `ReportesFallidos`, `ReportesNoRegistrados`, `FilasReporte1Nuevas`, `FilasReporte1Acumulado`, `FilasReporte2Nuevas`, `FilasReporte2Acumulado`, `ComandoSlackFirmaRechazada`, `ComandoSlackUsuarioNoPermitido` |
+| `distancias` | `GuiasSeleccionadas`, `GuiasProcesadas`, `GuiasConError`, `Geocodificaciones`, `Rutas`, `GeocodificacionesInversas` (v8), `LlamadasGoogle`, `PendientesPorTope`, `PendientesPorTiempo`, `CandadoOcupado`, `CorridaCortada`, `CorridaInterrumpida` |
+| `reportes` | `ReportesExitosos`, `ReportesFallidos`, `ReportesNoRegistrados`, `FilasReporte1Nuevas`, `FilasReporte1Acumulado`, `FilasReporte2Nuevas`, `FilasReporte2Acumulado`, `FilasReporte2DescartadasOficina` (v8), `ComandoSlackFirmaRechazada`, `ComandoSlackUsuarioNoPermitido` |
+
+`RutasCarro` y `Confirmaciones` **no** son métricas EMF: solo salen en el log `[RESULT] fin` y en el resumen de la corrida (observado: `DistanciasHandler.cs`); `LlamadasGoogle` las suma.
 
 ## Alarmas de CloudWatch nuevas (4 por entorno)
 
@@ -111,3 +116,19 @@ Nombres tal como están en Terraform (`<entorno>` = `preprod` o `prod`); todas e
   Se detectan por el aviso de Slack y por las métricas.
 - **Dashboard:** `Novedades-Inter-<entorno>` no se extendió con gráficos de las funciones nuevas (observado: sin referencias en `dashboard.tf`). Las métricas se ven en CloudWatch.
 - El Scheduler de reportes no tiene alarma propia: si no corre, se nota porque no llega el reporte (hipótesis; **pendiente** decidir si se agrega una alarma de ausencia).
+
+## Endpoint de evidencias (v8)
+
+Logs de la ruta [`GET /novedades/evidencia`](evidencia-endpoint.md) (`operacion=evidencia`), un resultado fijo por petición en el campo `evento`: `ok` (nivel `[RESULT]`), `parametros_ausentes` (400), `clave_invalida` y `firma_invalida` (403),
+`metodo-no-permitido` (405), `sin_configuracion` y `error_presignado` (500, solo el tipo de la excepción). Las funciones de la historia 027 escriben **líneas de texto** `[NIVEL] modulo=… operacion=… corridaId=… evento=… clave=valor`
+(observado: `LogTexto.cs`), no JSON como la función original. **Nunca** el secreto, la firma, la clave ni la URL prefirmada. Búsqueda útil en Logs Insights del grupo
+`/aws/lambda/ApiLambdaNovedadesInterReportes`:
+
+```
+fields @timestamp, @message | filter @message like /operacion=evidencia/ and @message like /evento=(firma_invalida|clave_invalida|parametros_ausentes)/ | sort @timestamp desc
+```
+
+(La consulta sigue el formato del código; **hipótesis**: no se ejecutó en CloudWatch.)
+
+**Brechas conocidas (observado: sin referencias en `alarmas.tf` ni `dashboard.tf`):** la ruta no emite métricas EMF ni tiene alarma; un pico de `firma_invalida` (enlaces rotos tras rotar el secreto, o intentos de adivinar) solo se ve en los logs.
+La protección contra abuso es el límite del método (burst 50, rate 20) en el stage. Se suma a la mejora **M-264** (alarma de `CorridaCortada` de Distancias y gráficos de las funciones nuevas).

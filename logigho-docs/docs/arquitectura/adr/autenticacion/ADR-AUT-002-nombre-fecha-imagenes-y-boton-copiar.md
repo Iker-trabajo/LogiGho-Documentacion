@@ -34,15 +34,17 @@ Cuatro decisiones pequeñas que salen de pasar los correos al diseño de front (
 
 Está cubierto con pruebas (cambio de día, medianoche, mediodía).
 
-## 3. Las imágenes viven en el sitio de front, en una carpeta configurable
+## 3. Las imágenes viajan dentro del correo (cid), sin hosting
 
-**Contexto.** El correo necesita tres imágenes por dirección pública HTTPS: `logo-tinta.png`, `codigo-barras.png` e `icono-copiar.png`. Los correos no pueden llevar imágenes pegadas de forma fiable (Gmail y Outlook las bloquean o recortan).
+**Contexto.** El correo necesita tres imágenes: `logo-tinta.png`, `codigo-barras.png` e `icono-copiar.png`. La primera versión las leía de una carpeta del sitio de front (`www.logigho.com/assets/images/correos/`); front no las había publicado (la dirección devolvía la página del front) y los correos de PreProd salieron con imágenes rotas.
 
-**Elegido.** Carpeta `https://www.logigho.com/assets/images/correos/`, en el sitio que ya publica el logo del correo anterior. La carpeta se puede mover con la variable `CORREO_URL_IMAGENES` sin tocar código. Si una imagen no carga, el correo se sigue entendiendo (se ve el texto "LogiGho" y el código está en las casillas). Decide Iker (2026-11-09): las suben desde front.
+**Elegido (2026-11-09, Iker pidió resolverlo sin depender de nadie).** Las imágenes van **dentro del mensaje**: el HTML las referencia como `cid:logo-tinta` y el mensaje (`multipart/related`) las lleva adjuntas con su `Content-ID`. Se guardan embebidas en la dll junto a las plantillas y se envían por SES como mensaje crudo (`Content.Raw`). Pesan ~10 KB en total.
 
-**Descartado.** *Bucket público en AWS (S3/CloudFront):* infraestructura nueva y un recurso público más que vigilar, para tres PNG que no cambian. *Imágenes embebidas en base64:* Gmail las bloquea y suben el peso del correo, que es lo que más pesa en el spam.
+**Por qué.** No dependen de un despliegue de front, de un bucket público ni de que el cliente de correo descargue nada de internet; el correo se ve igual en PreProd y producción desde el primer día. Es el método estándar de los correos con diseño.
 
-**Pendiente.** Hasta que front publique los tres PNG, los correos de PreProd salen con el logo en texto y un hueco (M-235).
+**Descartado.** *Carpeta en el sitio de front:* dependencia de otro equipo y de su ciclo de despliegue; imágenes rotas si cambia o borra la ruta. *Bucket público en AWS (S3/CloudFront):* infraestructura nueva y un recurso público más que vigilar para tres PNG fijos. *Base64 dentro del HTML (`data:`):* Gmail y Outlook lo bloquean.
+
+**Contras aceptados.** Algunos clientes muestran las imágenes en línea como adjuntos o piden "mostrar imágenes" (Outlook); cambiar una imagen exige desplegar la lambda. Si algún día se quiere cambiar a direcciones públicas, basta con volver a poner URLs en las variables `logo_tinta_url`, `img_barras_url` e `icono_copiar_url`.
 
 ## 4. Un solo botón de copiar, de adorno
 

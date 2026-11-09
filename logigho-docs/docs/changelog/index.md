@@ -24,6 +24,20 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-08] — Novedades Inter: reportes v8, dirección del mensajero, imágenes firmadas y front (producción)
+
+### Nuevas funcionalidades
+- Distancia por calle = mínimo entre a pie y carro; colores sin cambio (≤250 verde, 251–500 amarillo, >500 rojo).
+- Dirección en texto del mensajero (`DireccionMensajero`, geocodificación inversa, una vez por punto): 8 112 guías calculadas, ~USD 40 una sola vez.
+- Reporte 1 con filtro de estado en sus 4 hojas; reporte 2 sin guías de `AuditoriaCambioEntregaInter`; columnas de dirección del mensajero, días desde la primera novedad e «Imagen novedad N» («Ver imagen», máximo 10).
+- Ruta `GET /novedades/evidencia` con enlaces fijos firmados (HMAC-SHA256) y bucket privado.
+- Front (PR 637): dirección del repartidor desde el backend, mapa sin Routes API, periodo de cerradas 7/30/90/todo con cursor por `_id`, filtro de distancia múltiple, Estado Logigho e Interrapidísimo.
+
+### Documentación
+- Detalle en [Novedades, noviembre 2026](novedades-2026-11.md), ADR-005 y ADR-006 y runbook D8 y D9.
+
+---
+
 ## [2026-11-06] — Novedades Inter: distancia a la dirección y reportes por Slack (PreProd)
 
 ### Nuevas funcionalidades

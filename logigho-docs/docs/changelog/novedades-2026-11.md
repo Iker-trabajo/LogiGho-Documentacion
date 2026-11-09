@@ -1,5 +1,7 @@
 # Liberación: Novedades Inter, distancia y reportes por Slack (noviembre 2026)
 
+> Actualizado 2026-11-09: la sección «Versiones v4 a v8» al final resume lo posterior al 2026-11-06. El estado de abajo es el del 2026-11-06.
+
 **Estado:** construida y validada en **PreProd** el 2026-11-06. **Producción: pendiente** (no hay funciones, ruta, Step ni Scheduler de esta historia en prod). El Scheduler de PreProd está apagado a propósito.
 
 Documentación técnica: [Distancias](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInterDistancias.md) · [Reportes](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInterReportes.md) · [Reglas de la distancia](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/reglas-distancia.md) · [Reglas de los reportes](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/reglas-reportes.md) · [Vista](../frontend/views/logistica/novedades/novedades-distancia.md) · [Pruebas](../guias/novedades-distancia-reportes-pruebas.md).
@@ -50,3 +52,31 @@ M-256 (índices), M-257 (lectura completa por corrida), M-258 (guías sin direcc
 ## Documentación
 
 - Páginas nuevas de las dos funciones, reglas de distancia y de reportes, ADR-003 y ADR-004, App de Slack, vista del front, guía de pruebas y variables de entorno.
+
+## Versiones v4 a v8 (2026-11-06 a 2026-11-08)
+
+Marcas: **observado** (ficha del dominio y código), **Iker** (fecha), **hipótesis**.
+
+| Versión | Fecha | Qué cambia |
+|---|---|---|
+| v4 | 2026-11-06 | `MotivoValidacion` visible en el front; regla de geocodificación `v4` |
+| v5 | 2026-11-06 | Ruta a pie (`walk1`) y distancias > 50 km a «Por revisar (más de 50 km)» |
+| v6 | 2026-11-07 | Distancia = mínimo entre a pie y carro; reportes con Estado Inter, direcciones y comando `/reporte-novedades completo` y `desde AAAA-MM-DD` |
+| v7 | 2026-11-07 | Reporte 1 separa «Agencia u oficina» (367 de 1 038 guías, 35 %) |
+| v8 | 2026-11-07 (desplegada en prod 2026-11-08) | Dirección del mensajero, filtro de estado del reporte 1, auditoría de oficina en el reporte 2, imágenes con enlace firmado |
+
+### Producción (2026-11-08)
+- Lambdas PR 635 y Terraform PR 636. Módulo `novedades-evidencias`; el deployment del stage `Produccion` se publica por CLI (fuera de Terraform) y la ruta lleva límite burst 50 / rate 20.
+- El `depends_on` se retiró del módulo del comando de Slack para que Terraform no proponga reemplazar la integración y el permiso en vivo.
+- Variables nuevas: `EVIDENCIAS_SECRETO_FIRMA` (cifrada AES256), `URL_EVIDENCIAS`, `EVIDENCIAS_BUCKET`.
+- Verificado: dirección del mensajero al 100 % en los Excel, enlaces con 302 (firma válida), 403 (alterada) y 400 (sin firma), 0 guías del reporte 2 en la auditoría de oficina.
+- Scheduler (martes y viernes 8:00 Bogotá) **apagado** (M-271).
+
+### Front (PR 637, 2026-11-08)
+Dirección del repartidor desde el backend, mapa sin Routes API, periodo de cerradas 7/30/90/todo, cursor por `_id` (tandas de 3 000; ~4,9 s para 17 124 cerradas con 3 cursores), filtro de distancia múltiple, panel con Estado Logigho y Estado Interrapidísimo; las cifras dependen de `tiendas_asignadas`.
+
+### Mejoras abiertas
+M-264 (alarma de `CorridaCortada` y dashboard), M-267 (comparar departamento), M-268 (limitador de Routes), M-270 (carrera con la Step), M-271 (Scheduler), M-272 (costo del ciclo de 3 h), M-274 (rotación del secreto), M-275 (PreProd sin fotos), M-276 a M-280 (front).
+
+### Documentación
+[Distancias](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInterDistancias.md) · [Reportes](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInterReportes.md) · [Ruta de evidencias](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/evidencia-endpoint.md) · [ADR-005](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-005-enlaces-fijos-firmados-para-las-imagenes-de-novedades.md) · [ADR-006](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-006-direccion-del-mensajero-guardada-por-geocodificacion-inversa.md) · [Vista](../frontend/views/logistica/novedades/novedades-distancia.md) · [Pruebas](../guias/novedades-distancia-reportes-pruebas.md).

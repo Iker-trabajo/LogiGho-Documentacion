@@ -45,11 +45,15 @@ documentación. Fuente: `pipelines/novedades/cd-preprod.yml`, `cd-prod.yml` y lo
 | `SLACK_USUARIOS_PERMITIDOS` | Reportes | No | IDs de usuario de Slack que pueden usar el comando, separados por `;` o `,` |
 | `MOTIVOS_EXCLUIDOS_REPORTE2` | Reportes | No (opcional) | Reemplaza la lista de 8 motivos excluidos del reporte 2 (separada por `;`) |
 | `ZONA_HORARIA` | Reportes | No (opcional) | `America/Bogota` por defecto |
+| `EVIDENCIAS_SECRETO_FIRMA` | Reportes | Sí (**AES256**) | v8. Clave HMAC-SHA256 de los enlaces fijos de imágenes. Sin ella los Excel salen sin columnas de imagen. Rotarla invalida los enlaces ya enviados ([runbook D9](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/runbook.md#d9-rotar-evidencias_secreto_firma)) |
+| `URL_EVIDENCIAS` | Reportes | No | v8. URL https base de [`GET /novedades/evidencia`](../backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/evidencia-endpoint.md), sin query (salida `url_evidencias` de Terraform) |
+| `EVIDENCIAS_BUCKET` | Reportes | No | v8. Bucket privado de las fotos (`wsinter-evidencias-prod` en prod) |
+| `EVIDENCIAS_REGION` | Reportes | No (opcional) | v8. Región del bucket para la presignación; por defecto `AWS_REGION` |
 
-Frontend (rama `feature/novedades-llave-embed`, pendiente de merge):
+Frontend (llave en `preprod` desde los PR 628 y 637; actualizado 2026-11-09):
 
 | Variable | Descripción | Archivo |
 |---|---|---|
-| `googleMapsEmbedKey` | Llave de **navegador** de Maps Embed API, restringida por dominio y por API (pública por diseño). Vacía = la pestaña «Comparar con dirección» no muestra el mapa de ruta | `environments/environment.ts` y `environment.preprod.ts` |
+| `googleMapsEmbedKey` | Llave de **navegador** de Google Maps, restringida por dominio y por API (pública por diseño). La vista la usa para cargar la Maps JavaScript API (mapa propio) y, solo en intentos anteriores al último, la geocodificación inversa del navegador. Vacía = la vista usa los iframes de siempre. **No se pide ninguna ruta a Google desde el navegador** (decisión 2026-11-08) | `environments/environment.ts` y `environment.preprod.ts` |
 
 Para cambiar una variable ya publicada: `quitar-variables` y volver a correr el CD (las variables del pipeline son aditivas).

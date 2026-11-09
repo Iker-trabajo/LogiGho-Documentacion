@@ -105,6 +105,7 @@ Cuatro correos, todos con el diseño "guía de envío" del equipo de front (HTML
 - La fecha del aviso va en hora de Colombia (UTC-5), formato `5 nov 2026 · 1:06 p. m.`.
 - Las tres imágenes (`logo-tinta.png`, `codigo-barras.png`, `icono-copiar.png`) se leen de `CORREO_URL_IMAGENES`. Si no cargan, el correo se entiende igual (se ve el texto "LogiGho").
 - El correo de cambio con sesión (`/cambio-pass`, obsoleto) conserva su texto antiguo hasta que se retire.
+- **Por qué así:** dónde viven las plantillas, de dónde sale el nombre, por qué la fecha va en UTC-5, dónde van las imágenes y por qué el botón de copiar no copia solo están razonados, con las alternativas descartadas, en [Decisiones de Autenticación (ADR)](../arquitectura/adr/autenticacion/index.md).
 
 ## Logs que se esperan
 

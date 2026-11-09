@@ -76,6 +76,10 @@ nav:
       - Rutas y autorizacion: arquitectura/rutas-y-autorizacion.md
       - Flujo API Gateway: arquitectura/api-gateway.md
       - Seguridad y accesos (propuesta): arquitectura/seguridad-accesos.md
+      - Decisiones de Autenticacion (ADR):
+          - Indice: arquitectura/adr/autenticacion/index.md
+          - ADR-AUT-001 Plantillas de correo dentro de la lambda: arquitectura/adr/autenticacion/ADR-AUT-001-plantillas-de-correo-dentro-de-la-lambda.md
+          - ADR-AUT-002 Nombre, fecha, imagenes y boton de copiar: arquitectura/adr/autenticacion/ADR-AUT-002-nombre-fecha-imagenes-y-boton-copiar.md
       - Decisiones de Inventario (ADR):
           - Indice: arquitectura/adr/inventario/index.md
           - ADR-INV-001 Clave unica e indice sparse: arquitectura/adr/inventario/ADR-INV-001-clave-unica-e-indice-sparse.md

@@ -103,7 +103,7 @@ Cuatro correos, todos con el diseño "guía de envío" del equipo de front (HTML
 - En el HTML todo valor (nombre, enlace) se codifica; en el texto va tal cual.
 - El nombre sale del `username` de la cuenta (en la recuperación se lee de Users al pedir el código y se guarda en la solicitud para el aviso). Sin nombre se usa "Cliente LogiGho".
 - La fecha del aviso va en hora de Colombia (UTC-5), formato `5 nov 2026 · 1:06 p. m.`.
-- Las dos imágenes (`logo-tinta.png`, `codigo-barras.png`) se leen de `CORREO_URL_IMAGENES`. Si no cargan, el correo se entiende igual (se ve el texto "LogiGho").
+- Las tres imágenes (`logo-tinta.png`, `codigo-barras.png`, `icono-copiar.png`) se leen de `CORREO_URL_IMAGENES`. Si no cargan, el correo se entiende igual (se ve el texto "LogiGho").
 - El correo de cambio con sesión (`/cambio-pass`, obsoleto) conserva su texto antiguo hasta que se retire.
 
 ## Logs que se esperan
@@ -139,7 +139,7 @@ Las define el pipeline (Library) y se aplican al desplegar. **Ninguna lleva secr
 | `REGISTRO_TIPO_USUARIO` | registro | `custom:TipoUsuario` de Cognito (por defecto `N/A`; sin relevancia funcional) |
 | `SES_REMITENTE`, `SES_CONFIGURATION_SET` | registro, cambio-pass | Remitente `Equipo Seguridad LogiGho <no-reply@logigho.com>` y su configuration set |
 | `URL_REGISTRO` | registro | Página del front a la que apunta el enlace del correo (`?solicitud=<id>`) |
-| `CORREO_URL_IMAGENES` | registro, cambio-pass | Carpeta pública HTTPS con `logo-tinta.png` y `codigo-barras.png` de los correos. Opcional: por defecto `https://www.logigho.com/assets/images/correos`. Las direcciones `/app/login` y `/app/recuperar` de los botones van fijas en el código |
+| `CORREO_URL_IMAGENES` | registro, cambio-pass | Carpeta pública HTTPS con `logo-tinta.png`, `codigo-barras.png` e `icono-copiar.png` de los correos. Opcional: por defecto `https://www.logigho.com/assets/images/correos`. Las direcciones `/app/login` y `/app/recuperar` de los botones van fijas en el código |
 | `URL_RECUPERACION` | registro | Página del front del enlace del correo de recuperación (por defecto `https://www.logigho.com/app/recuperar`) |
 | `OTP_SECRETO_ID`, `OTP_VIGENCIA_MINUTOS` | registro, cambio-pass | Nombre del secreto de claves y vigencia del código (tope 15) |
 

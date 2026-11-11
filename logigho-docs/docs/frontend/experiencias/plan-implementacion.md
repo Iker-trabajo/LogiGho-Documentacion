@@ -102,6 +102,11 @@ y el cambio de shell manteniendo la URL. Si la prueba falla, se ajusta el diseñ
 
 El store de la F2 cambia de `localStorage` al API sin que ninguna vista se entere.
 
+> **Actualización 2026-11-10 (backend F4 construido):** el contrato final, los códigos de error y la receta de consumo están en
+> [API de Preferencias](../../api/preferencias.md). Diferencias respecto a esta tabla: la identidad también se verifica dentro de la
+> Lambda (no solo en el gateway), `beta` la ven los usuarios con el rol `Experiencia`, y las rutas se publican por el mismo mecanismo
+> que las demás APIs (ver [ADR-001 del backend](../../backend/core/preferencias-usuario/ADR-001-identidad-y-catalogo-del-servidor.md)).
+
 **Listo cuando:** en PreProd un usuario guarda su experiencia y la encuentra en otro navegador; las pruebas de
 seguridad pasan.
 

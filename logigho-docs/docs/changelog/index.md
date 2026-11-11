@@ -24,6 +24,17 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-10] — Preferencias de usuario y administración de experiencias: backend del Sistema de Experiencias (PreProd en curso)
+
+### Nuevas funcionalidades
+- `GET/PUT /preferencias/mia`: la experiencia visual de cada usuario y las que puede usar (la decide el servidor).
+- `/experiencias`: administración del catálogo (solo desarrollo) y Lambda en Native AOT (spec 014).
+
+### Documentación
+- Contrato para el equipo de front y operación: [API de Preferencias](../api/preferencias.md); detalle en [preferencias-2026-11](preferencias-2026-11.md).
+
+---
+
 ## [2026-11-08] — Novedades Inter: reportes v8, dirección del mensajero, imágenes firmadas y front (producción)
 
 ### Nuevas funcionalidades

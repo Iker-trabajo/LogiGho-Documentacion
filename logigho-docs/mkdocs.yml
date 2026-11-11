@@ -252,6 +252,14 @@ nav:
           - Operacion y despliegue: backend/metricas/operacion.md
           - Liberacion de oct 2026: changelog/metricas-2026-10.md
 
+      - Core (preferencias de usuario):
+          - Ficha de la Lambda y operacion: backend/core/preferencias-usuario/index.md
+          - Arquitectura (ADR-001): backend/core/preferencias-usuario/ADR-001-identidad-y-catalogo-del-servidor.md
+          - Contrato de la API (preferencias): api/preferencias.md
+          - Contrato de la API (administración de experiencias): api/experiencias.md
+          - Catálogo en BD y Native AOT (ADR-002): backend/core/preferencias-usuario/ADR-002-catalogo-en-base-de-datos-y-aot.md
+          - Cambios de nov 2026: changelog/preferencias-2026-11.md
+
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
@@ -435,6 +443,8 @@ nav:
       - Manejo de errores: api/errores.md
       - Inventario: api/inventario.md
       - Metricas (entrega por ciudad): api/metricas.md
+      - Preferencias de usuario (experiencias): api/preferencias.md
+      - Administración de experiencias (solo desarrollo): api/experiencias.md
 
   - Guias:
       - Setup local: guias/setup-local.md

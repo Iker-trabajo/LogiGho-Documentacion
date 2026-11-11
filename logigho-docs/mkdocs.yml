@@ -294,6 +294,9 @@ nav:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
               - Campana de Notificaciones: frontend/components/campana-notificaciones.md
+              - Accesos en LOGI (formulario): frontend/components/accesos-logi.md
+              - Lista de opciones: frontend/components/lista-opciones.md
+              - Filtro de fechas: frontend/components/filtro-fechas.md
               - Paso Cotizacion (Modal Pedidos): frontend/components/paso-cotizacion.md
               - Importacion Pauta: frontend/components/importacion-pauta.md
               - Importacion Facturas Inter: frontend/components/importacion-facturas.md
@@ -363,6 +366,12 @@ nav:
                       - Diagrama de flujo: frontend/views/dropshipping/product-hub/product-hub-flujo.md
                       - Modal Seleccion Tienda: frontend/views/dropshipping/product-hub/components/seleccion-tienda-modal.md
                       - Modal Solicitud: frontend/views/dropshipping/product-hub/components/solicitud-modal.md
+              - Comercial:
+                  - Panel comercial:
+                      - Componente: frontend/views/comercial/panel-comercial/panel-comercial.md
+                      - Campos de RegisterContact: frontend/views/comercial/panel-comercial/registercontact-campos.md
+                  - Seguimiento de clientes:
+                      - Componente: frontend/views/comercial/seguimiento-clientes/seguimiento-clientes.md
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
@@ -454,6 +463,7 @@ nav:
       - Operacion de Inventario: guias/inventario-operacion.md
       - Pruebas E2E de autenticacion: guias/pruebas-autenticacion-e2e.md
       - Pruebas de novedades (distancia y reportes): guias/novedades-distancia-reportes-pruebas.md
+      - PreProd, API HTTP y API REST: guias/apis-preprod-http-rest.md
 
   - Plantillas:
       - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md
@@ -470,3 +480,4 @@ nav:
       - Liberacion de Inventario (oct 2026): changelog/inventario-2026-10.md
       - Liberacion de Metricas de entrega (oct 2026): changelog/metricas-2026-10.md
       - Novedades Inter, distancia y reportes (nov 2026): changelog/novedades-2026-11.md
+      - Comercial, Panel y Accesos en LOGI (nov 2026): changelog/comercial-2026-11.md

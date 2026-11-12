@@ -201,6 +201,8 @@ Los valores que se repiten están en `estilos/_variables.scss`:
 Usuario entra a una ruta bajo /app
   → DefaultLayoutComponent
     → consulta users       → guarda tiendas y roles en sessionStorage
+         (si /users no trae al usuario o falla → metodoGenerico?coleccion=Users)
+    → revisarAccesos()     → formulario Accesos en LOGI y luego la guía de Red social
     → consulta module      → buildNavItems() según roles → navItems / visibleNavItems
     → validateModuleAccess() → si no tiene acceso a la ruta, va a login
     → cierra la barra (directiva)
@@ -217,6 +219,36 @@ Celular
   Elegir opción         → navega y cierra el cajón
   Deslizar a la izquierda → cierra el cajón
 ```
+
+---
+
+## Carga del usuario
+
+`fetchUsers()` consulta `users?email=<correo>` y guarda en `sessionStorage` `tiendas_asignadas`, `roles_asignados` y `tiendas_id`. Con eso arma `datosBienvenida` (nombre, correo, teléfono, documento, `autorizaDatos` y `tieneTienda`), verifica el estado de las tiendas, carga los módulos y llama a `verificarPermisos()`.
+
+**Respaldo:** si `/users` no trae al usuario o responde con error, se busca con `metodoGenerico?coleccion=Users&email=<correo>` (`usuarioPorGenerico`). Sin esto, la sesión se quedaba con los roles de la cuenta anterior y no se revisaban permisos ni el formulario.
+
+---
+
+## Formulario Accesos en LOGI y guía de Red social
+
+`verificarPermisos()` llama a `revisarAccesos()`:
+
+```
+¿tiene UN solo rol y es "Red social"? ──no──► nada (ni formulario ni guía)
+        │ sí
+¿sessionStorage accesos_logi_visto = true? ──sí──► guía
+        │ no
+RegisterContact.fechaAccesos existe? ──sí──► marca visto ► guía
+        │ no (o la consulta falló)
+formulario obligatorio ──al terminar──► cerrarAccesos() ► marca visto ► guía
+```
+
+- La marca `accesos_logi_visto` solo se pone cuando de verdad lo completó: mientras no lo llene, sale en cada recarga y en cada inicio de sesión.
+- La guía (`app-bienvenida-red-social`) también sale solo con el rol único Red social, una vez por sesión, y nunca encima del formulario.
+- `abrirAccesos()` lo abre desde el menú de la cuenta del [header](default-header.md).
+
+Ver [Accesos en LOGI](../components/accesos-logi.md).
 
 ---
 
@@ -242,11 +274,14 @@ npx ng test --include=src/app/layout/default-layout/sidebar-interaccion.directiv
 
 | Fecha | Autor | Cambio |
 |---|---|---|
+| 2026-11-11 | Yadilton Torres | Formulario Accesos en LOGI antes de la guía de Red social; respaldo de la carga del usuario por `metodoGenerico`; Panel comercial en el menú |
 | 2026-10-09 | Yadilton Torres | Rediseño del menú lateral: apertura sin parpadeo con la clase `abierta`, clic que no se pierde, barrita azul y subgrupos, buscador del menú con Ctrl + B y resultados agrupados, cajón completo en celular. El comportamiento pasó a la directiva `SidebarInteraccionDirective` y los estilos a la carpeta `estilos/` (7 archivos por tema). |
 
 ---
 
 ## Observaciones
+
+- **Panel comercial en el menú (TEMPORAL):** `/app/comercial/panel-comercial` está agregado a mano en el componente porque aún no está en la colección `module`. Su guard deja entrar solo a COO, CEO y Desarrollador. Cuando se registre el módulo, se quita esa línea.
 
 - **Dos valores deben ir sincronizados** entre el TS y el SCSS: la duración (`DURACION_ENCOGER_MS` = `$sidebar-duracion`) y el corte de celular (`CORTE_MOVIL` = `$corte-movil`). Si se cambia uno, cambiar el otro.
 - El orden de los `@use` en `default-layout.component.scss` se respeta al armar el CSS. Hoy ninguna regla de un archivo pisa a otra de otro archivo; si se agrega una que lo haga, tenerlo en cuenta.

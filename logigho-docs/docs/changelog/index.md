@@ -24,6 +24,19 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-11] — Comercial: Panel comercial, Seguimiento de clientes y formulario Accesos en LOGI
+
+### Nuevas funcionalidades
+- Panel comercial (une RegisterContact, Users y Tienda), formulario Accesos en LOGI obligatorio para Red social y notificación a Comercial y COO.
+
+### Cambios
+- Seguimiento de clientes reorganizado; en PreProd las llamadas se reparten entre la API HTTP y la REST.
+
+### Documentación
+- Detalle en [comercial-2026-11](comercial-2026-11.md).
+
+---
+
 ## [2026-11-10] — Preferencias de usuario y administración de experiencias: backend del Sistema de Experiencias (PreProd en curso)
 
 ### Nuevas funcionalidades

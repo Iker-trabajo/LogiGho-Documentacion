@@ -17,7 +17,10 @@ Tipo: servicio
 
 Maneja las notificaciones de la plataforma que se ven en la [campana del header](../components/campana-notificaciones.md): las consulta cada cierto tiempo, las envía, cambia su estado (NUEVA → LEIDA → HECHA), le envía la respuesta a quien la creó y trae el historial.
 
-Hoy lo usa la pantalla de [Exportación de datos](../views/gestion-datos/export-data/export-data.md): cuando el usuario necesita exportar más del límite, le escribe al equipo de desarrollo y el mensaje le llega a su campana. Cuando el equipo responde, la respuesta le llega a la campana de quien lo envió.
+Lo usan:
+
+- [Exportación de datos](../views/gestion-datos/export-data/export-data.md): cuando el usuario necesita exportar más del límite, le escribe al equipo de desarrollo y el mensaje le llega a su campana. Cuando el equipo responde, la respuesta le llega a la campana de quien lo envió.
+- [Accesos en LOGI](../components/accesos-logi.md): cuando una persona completa el formulario por primera vez, les llega a Comercial y COO; la respuesta le llega a la persona.
 
 ---
 
@@ -38,9 +41,9 @@ Hoy lo usa la pantalla de [Exportación de datos](../views/gestion-datos/export-
 
 | Campo | Tipo | Descripción |
 | --- | --- | --- |
-| `Tipo` | `string` | `SOLICITUD_EXPORTACION` o `SOLICITUD_RESUELTA` |
+| `Tipo` | `string` | `SOLICITUD_EXPORTACION`, `SOLICITUD_RESUELTA`, `NUEVO_REGISTRO_ACCESOS` o `REGISTRO_RESPONDIDO` |
 | `Mensaje` | `string` | Texto que escribió el usuario (en una respuesta, la respuesta) |
-| `Contexto` | `object` | Datos de la pantalla desde donde se envió, se llenan solos. En Exportación: `Coleccion`, `Formato`, `Rango`, `Registros`, `Columnas`, `Limite` |
+| `Contexto` | `object` | Datos de la pantalla desde donde se envió, se llenan solos. En Exportación: `Coleccion`, `Formato`, `Rango`, `Registros`, `Columnas`, `Limite`. En Accesos en LOGI: `Tienda`, `Nombre`, `Correo`, `Telefono`, `Ciudad`, `Tipo de negocio`, `Paquetes al mes` |
 | `CreadoPor` | `string` | Correo de quien la envió (`sessionStorage['emailaddress']`) |
 | `Roles` | `string[]` | Roles que la ven; vacío si va a personas |
 | `Usuarios` | `string[]` | Correos que la ven; vacío si va a roles |
@@ -65,6 +68,10 @@ Se configuran en `TIPOS_NOTIFICACION`. Para que un tipo le llegue a otros roles 
 | --- | --- | --- | --- | --- | --- |
 | `SOLICITUD_EXPORTACION` | Solicitud de exportación | `cilCloudDownload` / naranja | Rol `Desarrollador` | `responder` (respuesta obligatoria) | Queda `HECHA` y se crea una `SOLICITUD_RESUELTA` para quien la envió |
 | `SOLICITUD_RESUELTA` | Tu solicitud fue atendida | `cilTask` / verde | El correo de quien hizo la solicitud | `entendido` | Solo pasa al historial |
+| `NUEVO_REGISTRO_ACCESOS` | Nuevo registro en Accesos | `cilUser` / naranja | Roles `Comercial` y `COO` | `responder` (respuesta obligatoria) | Queda `HECHA` y se crea un `REGISTRO_RESPONDIDO` para la persona |
+| `REGISTRO_RESPONDIDO` | El equipo LOGI te respondió | `cilTask` / verde | El correo de la persona que llenó el formulario | `entendido` | Solo pasa al historial |
+
+La primera persona de Comercial o COO que responde un `NUEVO_REGISTRO_ACCESOS` lo cierra para todos.
 
 Un tipo desconocido se muestra como "Notificación" que solo se puede quitar.
 
@@ -108,7 +115,8 @@ marcarHecha(notificacion, respuesta)
        // si falla → vuelve a pendientes y lanza el error
   -> la pone de primera en el historial
   -> si el tipo tiene tipoRespuesta:
-       repositorio.insertar({ Tipo: SOLICITUD_RESUELTA, Usuarios: [CreadoPor], IdOrigen, Mensaje: respuesta, ... })
+       repositorio.insertar({ Tipo: tipoRespuesta, Usuarios: [CreadoPor], IdOrigen, Mensaje: respuesta, ... })
+       // SOLICITUD_EXPORTACION → SOLICITUD_RESUELTA; NUEVO_REGISTRO_ACCESOS → REGISTRO_RESPONDIDO
        // si solo falla esto → queda HECHA y lanza RespuestaNoEnviadaError(destinatario)
 ```
 
@@ -171,6 +179,7 @@ Los estilos son globales en `src/scss/_aviso-notificacion.scss` (importado en `s
 | 2026-10-21 | Yadilton Torres | Creación del servicio, repositorio y modelos de notificaciones (colección `NotificacionesPlataforma`) |
 | 2026-10-21 | Yadilton Torres | Respuestas: `SOLICITUD_RESUELTA` le llega a quien envió la solicitud; campos `Usuarios`, `IdOrigen`, `RespondidaPor`, `Respuesta` y `FechaRealizada` |
 | 2026-10-21 | Yadilton Torres | Historial con las últimas 20 `HECHA` y `AvisoNotificacionService` |
+| 2026-11-11 | Yadilton Torres | Tipos `NUEVO_REGISTRO_ACCESOS` (a Comercial y COO) y `REGISTRO_RESPONDIDO` para el formulario Accesos en LOGI |
 
 ---
 
@@ -179,4 +188,4 @@ Los estilos son globales en `src/scss/_aviso-notificacion.scss` (importado en `s
 - **La colección la debe crear el backend** con los índices sugeridos, y el filtro por rol debe hacerse en el servidor: hoy el frontend pide por `Roles` y `Usuarios`, pero cualquiera podría pedir otras desde el navegador.
 - **Localhost apunta a producción:** enviar desde localhost crea registros reales.
 - **El historial es por fecha de creación:** "últimas 20" se cuenta por `_id`, no por `FechaRealizada`.
-- **Los roles se comparan escritos como en la configuración** (ej. `Desarrollador`), porque la base compara mayúsculas exactas.
+- **Los roles se comparan escritos como en la configuración** (ej. `Desarrollador`, `Comercial`, `COO`), porque la base compara mayúsculas exactas.

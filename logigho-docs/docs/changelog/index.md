@@ -51,6 +51,52 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
   [Login y recuperación](../frontend/components/login.md), [Piezas comunes](../frontend/components/la-red-piezas-comunes.md)
   y [Correos de autenticación](../guias/correos-autenticacion.md).
 - 38 pruebas unitarias nuevas o actualizadas del front, todas en verde.
+## [2026-11-11] — Comercial: Panel comercial, Seguimiento de clientes y formulario Accesos en LOGI
+
+### Nuevas funcionalidades
+- Panel comercial (une RegisterContact, Users y Tienda), formulario Accesos en LOGI obligatorio para Red social y notificación a Comercial y COO.
+
+### Cambios
+- Seguimiento de clientes reorganizado; en PreProd las llamadas se reparten entre la API HTTP y la REST.
+
+### Documentación
+- Detalle en [comercial-2026-11](comercial-2026-11.md).
+
+---
+
+## [2026-11-10] — Preferencias de usuario y administración de experiencias: backend del Sistema de Experiencias (PreProd en curso)
+
+### Nuevas funcionalidades
+- `GET/PUT /preferencias/mia`: la experiencia visual de cada usuario y las que puede usar (la decide el servidor).
+- `/experiencias`: administración del catálogo (solo desarrollo) y Lambda en Native AOT (spec 014).
+
+### Documentación
+- Contrato para el equipo de front y operación: [API de Preferencias](../api/preferencias.md); detalle en [preferencias-2026-11](preferencias-2026-11.md).
+
+---
+
+## [2026-11-08] — Novedades Inter: reportes v8, dirección del mensajero, imágenes firmadas y front (producción)
+
+### Nuevas funcionalidades
+- Distancia por calle = mínimo entre a pie y carro; colores sin cambio (≤250 verde, 251–500 amarillo, >500 rojo).
+- Dirección en texto del mensajero (`DireccionMensajero`, geocodificación inversa, una vez por punto): 8 112 guías calculadas, ~USD 40 una sola vez.
+- Reporte 1 con filtro de estado en sus 4 hojas; reporte 2 sin guías de `AuditoriaCambioEntregaInter`; columnas de dirección del mensajero, días desde la primera novedad e «Imagen novedad N» («Ver imagen», máximo 10).
+- Ruta `GET /novedades/evidencia` con enlaces fijos firmados (HMAC-SHA256) y bucket privado.
+- Front (PR 637): dirección del repartidor desde el backend, mapa sin Routes API, periodo de cerradas 7/30/90/todo con cursor por `_id`, filtro de distancia múltiple, Estado Logigho e Interrapidísimo.
+
+### Documentación
+- Detalle en [Novedades, noviembre 2026](novedades-2026-11.md), ADR-005 y ADR-006 y runbook D8 y D9.
+
+---
+
+## [2026-11-06] — Novedades Inter: distancia a la dirección y reportes por Slack (PreProd)
+
+### Nuevas funcionalidades
+- Funciones `ApiLambdaNovedadesInterDistancias` (metros por calle entre la dirección del pedido y el punto del mensajero, con color) y `ApiLambdaNovedadesInterReportes` (dos Excel por Slack, martes y viernes 8:00 y comando `/reporte-novedades`).
+- Vista de novedades con columna de distancia, filtro, etiquetas «Sin dirección» y «Dirección por validar» y pestaña «Comparar con dirección».
+
+### Documentación
+- Detalle, pendientes de producción y PR en [Novedades, noviembre 2026](novedades-2026-11.md).
 
 ---
 

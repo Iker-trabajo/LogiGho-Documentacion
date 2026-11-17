@@ -24,7 +24,7 @@ Es la barra blanca de arriba en todas las pantallas internas. Contiene:
 - En celular, el icono del logo, que lleva al muro (`/app/muro-compartido`).
 - El botón **"Consultar guía"**, que abre el modal [Consultar Guía](../components/consulta-guia-modal.md).
 - Los botones de **notificaciones** (campana con punto rojo), **lista** y **mensajes**.
-- La **píldora del usuario**: "Bienvenido" + correo y el avatar con su inicial, que abre el menú de cuenta (perfil, wallet, cerrar sesión, etc.).
+- La **píldora del usuario**: "Bienvenido" + correo y el avatar con su inicial, que abre el menú de cuenta: Mi Perfil, **Accesos en LOGI**, Wallet y Cerrar sesión.
 
 Va dentro del layout con `position="sticky"`; la sombra al bajar la pone CoreUI con `cShadowOnScroll`.
 
@@ -55,6 +55,7 @@ default-header/
 | Elemento | Nombre | Tipo | Descripción |
 |---|---|---|---|
 | `@Input` | `sidebarId` | `string` | Id del sidebar que abre el botón ☰ (`sidebar1`) |
+| `@Output` | `abrirAccesos` | `void` | Se eligió "Accesos en LOGI" en el menú de cuenta; el [layout](default-layout.md) abre el formulario |
 | Propiedad | `emailaddress` | `string \| null` | Correo del usuario que se muestra en la píldora |
 | Propiedad | `profileInitial` | `string` | Inicial del correo que se muestra en el avatar |
 | Propiedad | `consultaGuiaAbierta` | `boolean` | Si el modal "Consultar guía" está abierto |
@@ -99,6 +100,7 @@ Clic en ☰                → abre/cierra el sidebar (escritorio) o el cajón (
 Clic en "Consultar guía" → consultaGuiaAbierta = true → <app-consulta-guia-modal>
 Cerrar el modal          → cerrarConsultaGuia()
 Clic en el avatar        → menú de cuenta → Cerrar sesión → logOut()
+                                          → Accesos en LOGI → abrirAccesos.emit() → layout abre el formulario
 ```
 
 ---
@@ -107,6 +109,7 @@ Clic en el avatar        → menú de cuenta → Cerrar sesión → logOut()
 
 | Fecha | Autor | Cambio |
 |---|---|---|
+| 2026-11-11 | Yadilton Torres | Opción "Accesos en LOGI" en el menú de cuenta (ver [Accesos en LOGI](../components/accesos-logi.md)) |
 | 2026-10-09 | Yadilton Torres | Botón "Consultar guía" con su modal (ver [Consultar Guía](../components/consulta-guia-modal.md)). |
 | 2026-10-09 | Yadilton Torres | Rediseño: barra blanca de 56 px, botones redondos lila, píldora de usuario con avatar y versión de celular (☰ y logo a la izquierda, acciones a la derecha). Las acciones ahora también se ven en celular. |
 

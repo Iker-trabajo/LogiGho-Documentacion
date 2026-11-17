@@ -79,3 +79,140 @@ mismo seguimiento casi a la vez sin pisarse. Nunca se reemplaza el documento.
 | `ExtractorMotivoNovedad` | Del JSON de ws-inter saca motivo, geo, huella y texto |
 | `SeguimientoNovedad` | Documento de la colección anterior |
 | `PedidoInterNovedad` | Los 6 campos de `PedidosInter` que se leen |
+
+---
+
+## Campos nuevos de `SeguimientoNovedadesInter` (historia 027, spec 012)
+
+Los escribe **solo** la función [Distancias](../ApiLambdaNovedadesInterDistancias.md), con `$set` parcial de estos campos (cuatro en la v1 de la historia; desde la v8 son cinco con `DireccionMensajero`)
+(nunca reescribe el documento: el callback de ws-inter puede estar tocando el mismo seguimiento). Reglas en
+[Reglas de la distancia](reglas-distancia.md). Observado: `Dominio/Entidades/Distancias.cs`, `DistanciasRepositorio.cs`.
+
+```jsonc
+{
+  "DireccionPedido": {                      // geocodificación de la dirección del pedido (una por guía)
+    "HuellaDireccion": "sha256…",           // regla + dirección + ciudad + departamento normalizados
+    "Latitud": 4.6, "Longitud": -74.08,     // ejemplo inventado
+    "TipoUbicacion": "ROOFTOP",             // ROOFTOP | RANGE_INTERPOLATED | GEOMETRIC_CENTER | APPROXIMATE
+    "CoincidenciaParcial": false,
+    "Localidades": ["Bogotá"],              // opcional: locality / administrative_area_level_2 del resultado
+    "ConfirmacionDireccion": "Confirmada",  // opcional: Confirmada | NoConfirmada | ausente
+    "DireccionGoogle": "…",                 // v4: formatted_address de la consulta principal (máx. 300). Dirección: dato personal
+    "MotivoValidacion": null,               // v4: Aproximada | CiudadDistinta | SinCiudad | NoEncontrada | NoConfirmada | DistanciaInverosimil (v5); null = aceptada
+    "DireccionGoogleConfirmacion": "…",     // v4: formatted_address de la segunda geocodificación (solo rojos)
+    "DistanciaConfirmacionMetros": 12,      // v4: Haversine entre las dos geocodificaciones
+    "Estado": "Encontrada",                 // Encontrada | NoEncontrada | Error
+    "GeocodificadaEn": ISODate
+  },
+  "Distancias": [                           // una por intento; tope de 50, igual que Historial
+    {
+      "HuellaGeo": "4.610000,-74.070000",   // "lat,lng" a 6 decimales: llave de la caché de rutas
+      "FechaIntento": ISODate,
+      "LatitudNovedad": 4.61, "LongitudNovedad": -74.07,
+      "Metros": 640,                        // v6: MÍNIMO entre a pie y carro (los que existan)
+      "MetrosLineaRecta": 410,
+      "MetrosCaminando": 640, "MetrosCarro": 880,   // v6, opcionales; MetrosCarro = el menor entre ida y vuelta
+      "ModoMinimoEvaluado": true,           // v6, opcional: ya se evaluó el mínimo (evita quedar pendiente para siempre)
+      "Modo": "WALK",                       // WALK | DRIVE: de dónde salió el mínimo (v5/v6; las guardadas por la v4 dicen DRIVE)
+      "Color": "rojo",                      // verde | amarillo | rojo | null
+      "Estado": "Calculada",                // Calculada | SinGeo | DireccionNoEncontrada | BajaConfianza (también > 50 km, con metros) | Error
+      "UrlRuta": "https://www.google.com/maps/dir/?api=1&origin=…&destination=…&travelmode=walking",   // walking o driving según Modo
+      "CalculadaEn": ISODate
+    }
+  ],
+  "DistanciaUltima": { /* copia de la entrada que corresponde a UltimoMotivo */ },
+  "HuellaDistancias": "<HuellaMotivos>|v4|walk1",  // versión de la regla (geocodificación|ruta) con la que se calculó
+  "DireccionMensajero": {                   // v8: geocodificación INVERSA del punto del último intento (una vez por guía y por punto)
+    "Texto": "…",                           // formatted_address (máx. 300); ausente si SinResultado o Error. Dato personal
+    "HuellaGeo": "4.610000,-74.070000",     // lat,lng a 6 decimales del punto geocodificado
+    "FechaCalculo": ISODate,
+    "Estado": "Calculada"                   // Calculada | SinResultado | Error
+  }
+}
+```
+
+| Campo | Significado |
+| ----- | ----------- |
+| `DireccionPedido` | Resultado de geocodificar `PedidosInter.Direccion + Ciudad`. Es dato personal derivado: no se loguea ni sale en los Excel. Solo se repite si cambia `HuellaDireccion` |
+| `DireccionPedido.Localidades` | Opcional (`BsonIgnoreIfNull`). Con ellas se valida que la ciudad del resultado sea la del pedido |
+| `DireccionPedido.ConfirmacionDireccion` | Opcional. Resultado de la segunda geocodificación, solo para guías con ruta roja. No se repite mientras la dirección no cambie |
+| `Distancias[]` | Un resultado por intento (cada entrada de `Historial` más el último motivo). Sin coordenada: `Estado = SinGeo` |
+| `DistanciaUltima` | Copia de la distancia del intento que corresponde a `UltimoMotivo`; es lo que lee la vista (columna) y el reporte 1 |
+| `HuellaDistancias` | `"{HuellaMotivos}\|v4\|walk1"`. Si es distinta de esa expresión, la guía es **pendiente** y se recalcula. Si no se pudo completar (Google falló, falta el pedido) no se fija y se reintenta |
+| `DireccionMensajero` | v8. Dirección en texto del punto del último intento. **No** sube ninguna versión: es pendiente aparte (`ReglaDireccionMensajero.Necesita`). Se escribe con un `$set` de un solo campo. `SinResultado` no se reintenta con la misma `HuellaGeo`; `Error` sí. Nunca se loguea |
+| `Distancias[].MetrosCaminando` / `MetrosCarro` / `ModoMinimoEvaluado` | v6. `Metros` es el mínimo de los dos modos; `Modo` dice cuál ganó (empate: `WALK`) |
+
+`origin` del enlace es la dirección del pedido; `destination`, el punto del mensajero. Valores con `InvariantCulture` (punto decimal).
+
+Observado: `Dominio/Entidades/Distancias.cs` (`DireccionPedido`, `DireccionMensajero`, `DistanciaIntento`) y `Dominio/Constantes/Constantes.cs` (`EstadoDireccionMensajero`, `MotivoValidacionDireccion`, `ModoRuta`).
+
+## Colección `ReportesNovedadesInter` (nueva)
+
+La escribe solo la función [Reportes](../ApiLambdaNovedadesInterReportes.md): un documento por corrida. De la última `Exitosa` sale la frontera de «Nuevas».
+
+```jsonc
+{
+  "_id": ObjectId("…"),
+  "FechaInicio": ISODate, "FechaFin": ISODate,
+  "Origen": "programado",                 // programado | slack
+  "UsuarioSlack": "U0000EJEMPLO",         // solo si Origen = slack (id inventado)
+  "Estado": "Exitosa",                    // Exitosa | Fallida
+  "FilasReporte1": { "Nuevas": 3, "Acumulado": 40 },
+  "FilasReporte2": { "Nuevas": 7, "Acumulado": 120 },
+  "Error": null,                          // causa corta si Fallida
+  "BaseNuevas": "normal"                  // v6, opcional: normal | completo | desde AAAA-MM-DD (qué base usó «Nuevas»)
+}
+```
+
+## Colección `CandadosNovedadesInter` (nueva)
+
+Candado entre corridas de Distancias: `{ "_id": "distancias", "Dueno": "<id de la corrida>", "ExpiraEn": ISODate }`. Se toma con un `upsert` atómico y se libera
+al terminar; vence a los 15 min por si la función muere sin liberarlo.
+
+## Índices nuevos (mejora M-256)
+
+Los crea Iker en prod (en PreProd puede la IA). Comandos y orden en el [runbook](../infraestructura/runbook.md#d-historia-027-distancias-y-reportes).
+
+| Colección | Índice | Para qué |
+| --------- | ------ | -------- |
+| `CandadosNovedadesInter` | `{ ExpiraEn: 1 }` con `expireAfterSeconds: 0` | TTL: limpia candados vencidos (el código ya comprueba el vencimiento, así que funciona aunque tarde) |
+| `ReportesNovedadesInter` | `{ Estado: 1, FechaInicio: -1 }` | Hallar la última corrida `Exitosa` |
+| `SeguimientoNovedadesInter` | `{ HuellaMotivos: 1 }` | **Condicional:** solo si el `explain` lo pide. Hoy la selección de pendientes lee una proyección mínima y compara en memoria |
+
+## Clases nuevas (`Dominio/`)
+
+| Clase | Responsabilidad |
+| ----- | --------------- |
+| `ReglaColorDistancia` | Metros → verde / amarillo / rojo (250 y 500) |
+| `ReglaConfianzaGeocodificacion` | `ROOFTOP`/`RANGE_INTERPOLATED` + ciudad igual a la del pedido |
+| `ReglaConfirmacionDireccion` | Segunda geocodificación a ≤ 150 m |
+| `ValidadorCoordenada`, `Haversine` | Defensa de coordenadas y línea recta de referencia |
+| `SanitizadorDireccion`, `VersionReglaGeocodificacion`, `TextoGeografico` | Limpieza de la dirección, versión de la regla (`v3`), huellas y enlaces |
+| `NormalizadorTexto`, `ListaMotivosExcluidos` | Clave de comparación de motivos y los 8 excluidos |
+| `FiltroReporte1`, `FiltroReporte2` | Qué guías entran a cada reporte |
+| `DireccionPedido`, `DistanciaIntento`, `CorridaReporte` | Entidades de las secciones anteriores |
+
+## Datos que solo lee Reportes (v8)
+
+| Fuente | Campos | Uso |
+| ------ | ------ | --- |
+| `AuditoriaCambioEntregaInter` (colección ajena, **solo lectura**) | `NumeroGuia` (texto de 12 dígitos; índice único `ux_numeroGuia`, observado en prod 2026-11-07: 9 379 documentos) | Reporte 2: descartar toda guía con registro (cambio a oficina o paso por oficina). Consulta `$in` por lotes de 1 000, proyección de ese único campo, solo para las candidatas |
+| `SeguimientoNovedadesInter.UltimaRespuesta.gestion_app[]` | Solo `orden` y `s3_key` (proyección de inclusión; no se lee la respuesta completa) | Columnas «Imagen novedad N» (hasta 10; claves `gestion-app/<guía>/<fecha>/<guía>-<n>.jpg`) |
+| `SeguimientoNovedadesInter.UltimaRespuesta` | `estado_actual` y `motivos[].fecha` | «Estado Inter» y «Días desde la primera novedad» |
+| `PedidosInter` | `IntentosEntrega`, `Estado` (Estado Logigho), `Direccion`, `FechaCarga` (texto `yyyy-MM-dd HH:mm:ss` en hora de Bogotá) | Filtros y columnas de los reportes |
+
+`FilaReporte` (record en `Distancias.cs`) junta el seguimiento con esos datos: `IntentosEntrega`, `EstadoLogigho`, `DireccionPedido`, `FechaCreacionPedidoUtc`, `PrimeraNovedadUtc`, `EstadoActualInter` e `ImagenesS3`.
+Su propiedad `EstadoInter` es `UltimaRespuesta.estado_actual` y, si viene vacío, `UltimoMotivo.EstadoInter`.
+
+## Clases nuevas de la v4 a la v8 (`Dominio/`)
+
+| Clase | Responsabilidad |
+| ----- | --------------- |
+| `ReglaDistanciaMinima` | Mínimo entre a pie y carro; cuándo pedir el carro (a pie > 250 m); cuándo una guía necesita evaluar el mínimo |
+| `ReglaDireccionMensajero` | Cuándo falta la dirección en texto del mensajero (marca independiente de `HuellaDistancias`) |
+| `VersionReglaRuta` | `walk1`: entra solo en `HuellaDistancias` |
+| `ClasificadorAgenciaOficina` | Reporte 1: separa «agencia u oficina» de «entrega a dirección» (v7) |
+| `FiltroEstadoReporte1`, `ListaEstadosInter` | Filtro de estado del reporte 1 (v8) y lista de Estados Inter del reporte 2 |
+| `FiltroReporte1PorRevisar` | Hoja «Por revisar (más de 50 km)» |
+| `FirmaEvidencia`, `EnlacesEvidencia` | Firma HMAC-SHA256 y validación de los enlaces de imágenes ([ADR-005](../adr/ADR-005-enlaces-fijos-firmados-para-las-imagenes-de-novedades.md)) |
+| `ArgumentoReporte`, `BaseNuevas`, `ResumenAutomaticoReporte` | Argumento del comando (`completo`, `desde AAAA-MM-DD`) y resumen del mensaje de Slack |

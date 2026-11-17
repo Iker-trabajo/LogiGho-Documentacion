@@ -76,6 +76,10 @@ nav:
       - Rutas y autorizacion: arquitectura/rutas-y-autorizacion.md
       - Flujo API Gateway: arquitectura/api-gateway.md
       - Seguridad y accesos (propuesta): arquitectura/seguridad-accesos.md
+      - Decisiones de Autenticacion (ADR):
+          - Indice: arquitectura/adr/autenticacion/index.md
+          - ADR-AUT-001 Plantillas de correo dentro de la lambda: arquitectura/adr/autenticacion/ADR-AUT-001-plantillas-de-correo-dentro-de-la-lambda.md
+          - ADR-AUT-002 Nombre, fecha, imagenes y boton de copiar: arquitectura/adr/autenticacion/ADR-AUT-002-nombre-fecha-imagenes-y-boton-copiar.md
       - Decisiones de Inventario (ADR):
           - Indice: arquitectura/adr/inventario/index.md
           - ADR-INV-001 Clave unica e indice sparse: arquitectura/adr/inventario/ADR-INV-001-clave-unica-e-indice-sparse.md
@@ -121,14 +125,24 @@ nav:
                   - Lambda: backend/lambdas-dotnet/aplicacion/interrapidismo/ApiLambaProcesoAutomaticoInter/ApiLambaProcesoAutomaticoInter.md
               - ApiLambdaNovedadesInter:
                   - Lambda: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInter.md
+                  - Distancias (función): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInterDistancias.md
+                  - Reportes (función): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/ApiLambdaNovedadesInterReportes.md
                   - Solicitar novedades (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/solicitar-novedades-usecase.md
                   - Recibir resultado (Caso de Uso): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/casos-uso/recibir-resultado-usecase.md
                   - Modelos de Dominio: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/modelos.md
+                  - Reglas de la distancia: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/reglas-distancia.md
+                  - Reglas de los reportes: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/dominio/reglas-reportes.md
                   - Webhook y contrato ws-inter: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/webhook-ws-inter.md
                   - Observabilidad y monitoreo: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/observabilidad.md
                   - Runbook (puesta en marcha y operación): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/runbook.md
+                  - App de Slack (reportes): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/slack-app.md
+                  - Ruta GET /novedades/evidencia: backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/infraestructura/evidencia-endpoint.md
                   - Arquitectura (ADR-001): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-001-una-lambda-paso-en-la-step-y-dos-colecciones.md
                   - Webhook en el REST del entorno (ADR-002): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-002-webhook-en-el-rest-del-entorno-con-api-key.md
+                  - Distancias y reportes en el mismo proyecto (ADR-003): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-003-distancias-y-reportes-en-el-mismo-proyecto.md
+                  - Regla de geocodificación v2/v3 (ADR-004): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-004-regla-de-geocodificacion-v2-v3-y-confirmacion-del-rojo.md
+                  - Enlaces fijos firmados para imágenes (ADR-005): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-005-enlaces-fijos-firmados-para-las-imagenes-de-novedades.md
+                  - Dirección del mensajero guardada (ADR-006): backend/lambdas-dotnet/aplicacion/Interrapidisimo/ApiLambdaNovedadesInter/adr/ADR-006-direccion-del-mensajero-guardada-por-geocodificacion-inversa.md
               - ApiLambdaLiquidacionesLogighoAOT:
                   - Vision general: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/overview.md
                   - Lambda: backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/ApiLambdaLiquidacionesLogighoAOT.md
@@ -238,6 +252,14 @@ nav:
           - Operacion y despliegue: backend/metricas/operacion.md
           - Liberacion de oct 2026: changelog/metricas-2026-10.md
 
+      - Core (preferencias de usuario):
+          - Ficha de la Lambda y operacion: backend/core/preferencias-usuario/index.md
+          - Arquitectura (ADR-001): backend/core/preferencias-usuario/ADR-001-identidad-y-catalogo-del-servidor.md
+          - Contrato de la API (preferencias): api/preferencias.md
+          - Contrato de la API (administración de experiencias): api/experiencias.md
+          - Catálogo en BD y Native AOT (ADR-002): backend/core/preferencias-usuario/ADR-002-catalogo-en-base-de-datos-y-aot.md
+          - Cambios de nov 2026: changelog/preferencias-2026-11.md
+
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
@@ -278,6 +300,9 @@ nav:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
               - Campana de Notificaciones: frontend/components/campana-notificaciones.md
+              - Accesos en LOGI (formulario): frontend/components/accesos-logi.md
+              - Lista de opciones: frontend/components/lista-opciones.md
+              - Filtro de fechas: frontend/components/filtro-fechas.md
               - Paso Cotizacion (Modal Pedidos): frontend/components/paso-cotizacion.md
               - Importacion Pauta: frontend/components/importacion-pauta.md
               - Importacion Facturas Inter: frontend/components/importacion-facturas.md
@@ -347,11 +372,18 @@ nav:
                       - Diagrama de flujo: frontend/views/dropshipping/product-hub/product-hub-flujo.md
                       - Modal Seleccion Tienda: frontend/views/dropshipping/product-hub/components/seleccion-tienda-modal.md
                       - Modal Solicitud: frontend/views/dropshipping/product-hub/components/solicitud-modal.md
+              - Comercial:
+                  - Panel comercial:
+                      - Componente: frontend/views/comercial/panel-comercial/panel-comercial.md
+                      - Campos de RegisterContact: frontend/views/comercial/panel-comercial/registercontact-campos.md
+                  - Seguimiento de clientes:
+                      - Componente: frontend/views/comercial/seguimiento-clientes/seguimiento-clientes.md
               - Gestion de datos:
                   - Export data: frontend/views/gestion-datos/export-data/export-data.md
                   - Export runner: frontend/views/gestion-datos/export-runner/export-runner.md
               - Logistica:
                   - Inventario nuevo (pantallas): frontend/views/logistica/inventario/inventario-front.md
+                  - Novedades (distancia a la dirección): frontend/views/logistica/novedades/novedades-distancia.md
                   - Directiva ayuda flotante: frontend/views/gestion-datos/export-data/directives/ayuda-flotante-directive.md
               - Tienda:
                   - Portafolio:
@@ -426,6 +458,8 @@ nav:
       - Manejo de errores: api/errores.md
       - Inventario: api/inventario.md
       - Metricas (entrega por ciudad): api/metricas.md
+      - Preferencias de usuario (experiencias): api/preferencias.md
+      - Administración de experiencias (solo desarrollo): api/experiencias.md
 
   - Guias:
       - Setup local: guias/setup-local.md
@@ -434,6 +468,8 @@ nav:
       - Como documentar: guias/como-documentar.md
       - Operacion de Inventario: guias/inventario-operacion.md
       - Pruebas E2E de autenticacion: guias/pruebas-autenticacion-e2e.md
+      - Pruebas de novedades (distancia y reportes): guias/novedades-distancia-reportes-pruebas.md
+      - PreProd, API HTTP y API REST: guias/apis-preprod-http-rest.md
 
   - Plantillas:
       - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md
@@ -449,3 +485,5 @@ nav:
       - Historial: changelog/index.md
       - Liberacion de Inventario (oct 2026): changelog/inventario-2026-10.md
       - Liberacion de Metricas de entrega (oct 2026): changelog/metricas-2026-10.md
+      - Novedades Inter, distancia y reportes (nov 2026): changelog/novedades-2026-11.md
+      - Comercial, Panel y Accesos en LOGI (nov 2026): changelog/comercial-2026-11.md

@@ -44,7 +44,20 @@ Para el proceso comercial completo (canal, estrategia, asesora, notas) está el 
 | `ROLES_PERMITIDOS` | CEO, COO, Administrador, Desarrollador, Comercial | Entrar a la pantalla |
 | `ROLES_CONTROL_TOTAL` | CEO, COO, Administrador, Desarrollador | Ver y cambiar Wallet y Apalancamiento |
 
-Los roles que Comercial puede poner o quitar a una cuenta son los de `ROLES_DE_COMERCIAL` (`views/comercial/roles-comercial.ts`). Los demás se ven bloqueados y se conservan al guardar.
+Los roles que Comercial puede poner o quitar a una cuenta son los de `ROLES_DE_COMERCIAL` (`views/comercial/roles-comercial.ts`): Backoffice, BPO, Carga Pedidos, Dropshipper, Externo, GLOBAL ACCOUNT, Logigho, Pedidos Masivo, Proveedor, Red social, Tienda y TiendaNW.
+
+### Quién asigna qué roles
+
+| Quién | Ve | Asigna | Tiendas |
+| --- | --- | --- | --- |
+| CEO, Administrador, Desarrollador | Todos los roles | **Todos** | Agrega y quita |
+| COO (sin los de arriba) | Todos los roles | Solo `ROLES_DE_COMERCIAL`; los demás salen bloqueados (`asignaComoComercial`) | Agrega y quita |
+| Comercial (sin los de arriba) | Solo `ROLES_DE_COMERCIAL` (`soloComercial`) | Solo `ROLES_DE_COMERCIAL` | No |
+
+- A Comercial, quien tenga algún rol fuera de su lista le sale **solo para ver** (`esSoloLectura`).
+- Al guardar, los roles que no se pueden tocar **se conservan**.
+- En el [Panel comercial](../panel-comercial/panel-comercial.md) todos (incluso CEO) asignan solo `ROLES_DE_COMERCIAL`.
+- El modal viejo "Asignar acceso" toma los roles del backend (`autenticacion/roles-asignables`).
 
 ---
 
@@ -130,6 +143,7 @@ El remitente se guarda en un solo texto: `Nombre: … | Direccion: … | Telefon
 | 2026-11-11 | Yadilton Torres | Filtros en fila fija "Mostrar solo"; filtro de fechas con atajos; se quita el filtro de roles |
 | 2026-11-11 | Yadilton Torres | Wallet y apalancamiento no se desactivan una vez activos; se quita Transportadora de datos internos |
 | 2026-11-11 | Yadilton Torres | "País" en lugar de "Es de Colombia"; Exportar Excel; pie azul |
+| 2026-11-19 | Yadilton Torres | Se documenta quién asigna qué roles (control total, COO y Comercial) |
 
 ---
 

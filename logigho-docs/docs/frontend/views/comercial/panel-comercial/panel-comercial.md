@@ -26,6 +26,7 @@ Junta en una sola fila por persona lo que está en tres colecciones:
 | `RegisterContact` | Registro inicial, respuestas del formulario [Accesos en LOGI](../../../components/accesos-logi.md) y el proceso comercial |
 | `Users` | Cuenta en LOGI: usuario, roles, tiendas, nombre, teléfono, cédula y autorización de datos |
 | `Tienda` | Tiendas de la cuenta: ID LOGI, sucursal, estado, wallet y apalancamiento |
+| `CuentasBancarias` | Cuentas bancarias de sus tiendas, activas e inactivas |
 
 También muestra a quienes **tienen cuenta pero nunca llenaron el registro**: salen como **"No llenó el formulario"** y se pueden editar igual (ver [Crear el registro](#crear-el-registro-de-quien-no-lleno-el-formulario)).
 
@@ -37,8 +38,9 @@ También muestra a quienes **tienen cuenta pero nunca llenaron el registro**: sa
 | --- | --- |
 | `panel-comercial.component.ts` / `.html` | Pantalla: tabla, filtros, detalle, edición, Excel |
 | `panel-comercial.guard.ts` | Deja entrar solo a `ROLES_PANEL_COMERCIAL = ['COO', 'CEO', 'Desarrollador']`; si no, lleva al Muro compartido |
-| `models/panel-comercial.models.ts` | `PersonaPanel`, `TiendaPanel`, `ProcesoComercial`, `EdicionPersona` y listas fijas (`CANALES`, `ESTRATEGIAS`, `ESTADOS_PROCESO`) |
-| `repository/panel-comercial.repository.ts` | Único punto que llama al backend: lee las tres colecciones, las une, crea y guarda |
+| `models/panel-comercial.models.ts` | `PersonaPanel`, `TiendaPanel`, `CuentaPanel`, `ProcesoComercial`, `EdicionPersona` y listas fijas (`CANALES`, `ESTRATEGIAS`, `ESTADOS_PROCESO`) |
+| `repository/panel-comercial.repository.ts` | Único punto que llama al backend: lee las colecciones, las une, crea y guarda (incluye `cambiarEstadoCuenta`) |
+| `panel-comercial.cuentas.spec.ts` | Pruebas de la sección de cuentas bancarias |
 | `styles/panel-comercial.scss` | Estilos de la pantalla |
 | `../roles-comercial.ts` | `ROLES_DE_COMERCIAL`: los roles que Comercial puede poner o quitar (compartido con Seguimiento) |
 
@@ -102,7 +104,20 @@ Panel lateral, en este orden:
 3. **Su negocio:** tienda, tipo, despacha desde, fulfillment, paquetes al mes y dirección de recolección. El título dice la fecha del formulario o "No llenó el formulario".
 4. **Datos de la persona:** nombre, cédula, teléfono y habeas data. Lo que viene de `Users` lleva la etiqueta "de la cuenta".
 5. **Cuenta y tiendas en LOGI:** usuario con el que entra, roles y una tarjeta por tienda (ID LOGI y sucursal para copiar, activa, wallet, apalancamiento).
-6. **Registro inicial** (plegado): fecha, cómo se enteró, cuándo comenzaría, ventas y país.
+6. **Cuentas bancarias:** ver [abajo](#cuentas-bancarias).
+7. **Registro inicial** (plegado): fecha, cómo se enteró, cuándo comenzaría, ventas y país.
+
+### Cuentas bancarias
+
+Todas las cuentas de las tiendas de la persona, **activas e inactivas** (las activas primero). Se unen con cada tienda por `IdTienda` o, si no, por nombre sin mayúsculas ni tildes.
+
+- **Buscador:** banco, tipo, número, titular, tienda o "activa / inactiva". Al buscar vuelve a la página 1.
+- **3 por página** con ‹ 1 de N ›. En celular las flechas y el botón miden 40 px.
+- Cada tarjeta: banco, número oculto (•••• 1234), tipo, titular, tienda, etiqueta **Activa** (verde) o **Inactiva** (gris) y botón **Inactivar / Activar**.
+- Antes de guardar pide confirmación: *"¿Inactivar esta cuenta? … Activa → Inactiva (ya no la verá en Mi perfil)"*.
+- Sin cuentas: *"Esta persona no tiene cuentas registradas."*
+
+Cómo se guarda y qué pantallas lo respetan: [Estado de las cuentas bancarias](../../tienda/perfil/cuentas-estado.md).
 
 ---
 
@@ -147,10 +162,11 @@ Si la persona tiene `sinRegistro = true`, al guardar se le **crea su `RegisterCo
 
 | Acción | Llamada |
 | --- | --- |
-| Leer | `GET metodoGenerico?coleccion=RegisterContact`, `...Users`, `...Tienda` (todas las páginas) |
+| Leer | `GET metodoGenerico?coleccion=RegisterContact`, `...Users`, `...Tienda`, `...CuentasBancarias` (todas las páginas) |
 | Guardar persona | `actualizarGenerico` en `metodoGenerico?coleccion=RegisterContact` con solo los cambios |
 | Crear registro | `insertarGenericoST` en `registerContact` |
 | Guardar roles | `actualizarGenerico` en `metodoGenerico?coleccion=Users` con `{ roles }` |
+| Activar / inactivar cuenta | Relee `CuentasBancarias` y `actualizarGenerico` en `metodoGenerico?coleccion=CuentasBancarias` con `{ CuentasBancoTienda }` |
 
 `GUARDADO_ACTIVO` en el repositorio apaga la escritura sin tocar la pantalla (lanza `GuardadoBloqueadoError`).
 
@@ -175,6 +191,7 @@ En la base se guardan en UTC. En pantalla, en los filtros y en el Excel se muest
 | 2026-11-11 | Yadilton Torres | Creación del Panel comercial: une RegisterContact, Users y Tienda; detalle, edición, roles, Excel y filtros |
 | 2026-11-11 | Yadilton Torres | Personas sin registro ("No llenó el formulario") editables: se les crea su RegisterContact |
 | 2026-11-11 | Yadilton Torres | Filtro de fecha de registro; se quitan los filtros de asesora y paquetes al mes; se quita Puntuación |
+| 2026-11-19 | Yadilton Torres | Sección Cuentas bancarias en el detalle: buscador, 3 por página y Activar / Inactivar |
 
 ---
 

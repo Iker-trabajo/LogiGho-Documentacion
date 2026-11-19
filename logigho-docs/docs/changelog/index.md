@@ -24,6 +24,19 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-19] — Mi perfil: cuentas activas e inactivas, modales con revisión en vivo y listas rápidas
+
+### Nuevas funcionalidades
+- Comercial puede inactivar o activar cuentas bancarias desde el Panel comercial; Mi perfil oculta las inactivas. Modales de Mi perfil con revisión en vivo.
+
+### Cambios
+- Listas de los modales siempre hacia abajo y por tandas (ciudades abre rápido); en Mi perfil el naranja queda solo en la rueda de avance.
+
+### Documentación
+- Detalle en [perfil-2026-11](perfil-2026-11.md).
+
+---
+
 ## [2026-11-11] — Comercial: Panel comercial, Seguimiento de clientes y formulario Accesos en LOGI
 
 ### Nuevas funcionalidades

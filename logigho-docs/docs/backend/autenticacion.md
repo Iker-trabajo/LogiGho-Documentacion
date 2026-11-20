@@ -69,7 +69,7 @@ Un solo motor en `Autenticacion.Nucleo`, usado por el registro, la recuperación
 | Colección | Uso |
 |---|---|
 | `RegistroSolicitudes` (**nueva**) | Una fila por código emitido (`tipo` `REGISTRO`, `CAMBIO_PASSWORD` o `RECUPERACION`): hash del identificador, correo, firma, estado, intentos, envíos. **Se borra sola 24 h después** (índice TTL en `borrarEn`). Índices: `solicitudHash` único, `email`+`creadoEn` y el TTL (script en la spec 008) |
-| `Users` | Se inserta con rol `Red social` y sin tiendas al confirmar el registro; la asignación de acceso actualiza `roles` y `tiendas` |
+| `Users` | El correo duplicado se busca con regex anclada insensible a mayúsculas, **nunca con `Collation`** (DocumentDB la rechaza, ADR-AUT-003). Se inserta con rol `Red social` y sin tiendas al confirmar el registro; la asignación de acceso actualiza `roles` y `tiendas` |
 | `RegisterContact` | Se actualiza por correo a `Registrado en plataforma` con el `userId` (cognitoId), o se crea si no existía. **Nunca se borra**: es la lista de trabajo de Comercial |
 | `Roles` | Solo lectura: los roles activos que se pueden asignar |
 | `LogAuditoria` | La asignación de acceso deja quién, a quién y roles antes y después (sin datos personales) |
@@ -111,7 +111,7 @@ Cuatro correos, todos con el diseño "guía de envío" del equipo de front (HTML
 
 | Lambda | Líneas |
 |---|---|
-| createUser | `[INFO] crear-usuario resultado=Creado`, `[ERROR] crear-usuario excepcion=<Tipo>` |
+| createUser | `[INFO] crear-usuario resultado=Creado`, `[ERROR] crear-usuario excepcion=<Tipo>` (si es un rechazo de Mongo: `excepcion=MongoCommandException codigo=<n> nombre=<CodeName>`, sin el mensaje) |
 | recuperación | `[INFO] recuperacion.solicitud.recibida`, `[INFO] recuperacion.otp.enviado`, `[INFO] recuperacion.exitosa`, `[WARN] recuperacion.otp.invalido`, `[ERROR] recuperacion.ses.fallo excepcion=<Tipo> detalle=<motivo sin correos>` |
 | cambio-pass (obsoleto) | `[INFO] cambio-pass/codigo resultado=<ResultadoCodigoCambio>`, `[INFO] cambio-pass resultado=<ResultadoCambio>`, `[INFO] cambio-pass.otp.enviado`, `[WARN] cambio-pass.otp.invalido` |
 | registro | `[INFO] registro estado=<HTTP>` y los eventos de negocio de arriba; `[ERROR] registro.ses.fallo excepcion=<Tipo> detalle=<motivo sin correos>` |
@@ -132,8 +132,7 @@ Las define el pipeline (Library) y se aplican al desplegar. **Ninguna lleva secr
 | `COGNITO_CLIENT_IDS` | createUser, cambio-pass, users | App clients cuyo token se acepta |
 | `COGNITO_CLIENT_ID_SIN_SECRETO` | cambio-pass | Client para verificar la contraseña actual |
 | `ROLES_ADMINISTRACION`, `ROLES_GESTION_PRIVILEGIOS` | createUser, users | Quién crea/edita y quién cambia privilegios |
-| `MONGO_URI`, `MONGO_DATABASE` | createUser | Conexión a `Users` (valor de la Library) |
-| `CADENA_CONEXION`, `DATABASE_NAME` | users, registerContact | Conexión que ya usa `DocumentRepository` |
+| `CADENA_CONEXION`, `DATABASE_NAME` | createUser, users, registerContact | Conexión a Mongo, cifrada en AES256 (observado en la lambda de producción 2026-11-20). `MONGO_URI`/`MONGO_DATABASE` ya no se usan |
 | `ORIGENES_CORS` | todas las nuevas | `*` por decisión de producto (2026-10-31); lista separada por comas cuando haya dominios fijos |
 | `ROLES_ASIGNABLES_COMERCIAL` | users | Roles que Comercial/CEO pueden dar desde la vista de clientes. Sin valor, no pueden asignar ninguno (cierra por defecto) |
 | `REGISTRO_ROL_INICIAL` | registro, users | Rol con que nace la cuenta registrada (`Red social`) y que se quita al asignar acceso. En `users` además limita `GET /users` a ese rol (y a quien no tiene roles) a su propio registro |

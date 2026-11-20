@@ -6,5 +6,6 @@ Decisiones del dominio de cuentas ([`backend/autenticacion.md`](../../../backend
 |---|---|
 | [ADR-AUT-001](ADR-AUT-001-plantillas-de-correo-dentro-de-la-lambda.md) | Las plantillas de los correos viven dentro de la lambda (no en SES ni en S3) |
 | [ADR-AUT-002](ADR-AUT-002-nombre-fecha-imagenes-y-boton-copiar.md) | Nombre desde Users, fecha en hora de Colombia, imágenes en el sitio de front y un solo botón de copiar |
+| [ADR-AUT-003](ADR-AUT-003-correo-sin-collation-en-documentdb.md) | El correo duplicado se compara con regex, no con Collation (DocumentDB la rechaza) |
 
 Otras decisiones del dominio (OTP propio, un solo flujo de recuperación, rol "Red social", roles asignables) están en la spec 008 del workspace y en [`backend/autenticacion.md`](../../../backend/autenticacion.md).

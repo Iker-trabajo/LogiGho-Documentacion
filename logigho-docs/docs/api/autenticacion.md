@@ -112,8 +112,8 @@ Requiere header `Token` de una persona con rol de administración.
 | 401 | `NO_AUTORIZADO` | Sin `Token`, falso o vencido |
 | 403 | `PROHIBIDO` | Sin registro en `Users` o sin rol de administración |
 | 403 | `ROL_NO_PERMITIDO` | Pidió un rol que su rol no puede asignar (`Motivos` lista los rechazados) |
-| 409 | `USUARIO_DUPLICADO` | Ya existe una cuenta con ese correo |
-| 500 | `ERROR_INTERNO` | Fallo inesperado. Si el guardado en `Users` falla, la cuenta de Cognito se elimina para no dejar usuarios huérfanos |
+| 409 | `USUARIO_DUPLICADO` | Ya existe una cuenta con ese correo (sin distinguir mayúsculas) |
+| 500 | `ERROR_INTERNO` | Fallo inesperado. Si el guardado en `Users` falla, la cuenta de Cognito se elimina para no dejar usuarios huérfanos. Entre 2026-11-18 y el arreglo de 2026-11-20 todas las llamadas daban 500 en producción por `Collation` (ADR-AUT-003) |
 
 No se envía correo a la persona creada: `createUser` no manda mensajes. Cognito no le pide cambiar la contraseña en el primer ingreso.
 

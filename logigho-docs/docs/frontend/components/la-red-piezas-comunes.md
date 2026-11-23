@@ -14,6 +14,9 @@ Tipo: componente
 
 ---
 
+!!! info "Rediseño «La Red» (2026-11-23, verificado en local, pendiente de PreProd)"
+    Estas piezas (botones, avisos, logo, enlace a redes) tienen ahora su versión clara en `views/pages/registro/styles/_registro-claro.scss` y su regla para equipos limitados en `_registro-basico.scss`; ver [Modo claro](../modo-claro-la-red.md) y [Modo básico](../modo-basico-y-movil-la-red.md). La identidad de «La Red» se llevó a toda la plataforma con tokens `--lg-*`: [Rediseño «La Red»](../tema-la-red.md).
+
 ## ¿Qué hace?
 
 Son las piezas que comparten el [registro](../views/pages/registro/registro.md), el [inicio de sesión](login.md) y recuperar contraseña: los avisos de lo que va pasando, el logo animado, los botones, el enlace a redes y las direcciones públicas.

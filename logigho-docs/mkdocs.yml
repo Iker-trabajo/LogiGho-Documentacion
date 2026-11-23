@@ -90,6 +90,14 @@ nav:
           - ADR-INV-005 PedidosInter fuente de verdad y retorno: arquitectura/adr/inventario/ADR-INV-005-pedidosinter-fuente-de-verdad-y-retorno.md
           - ADR-INV-006 Un proyecto, varias funciones, Strangler Fig: arquitectura/adr/inventario/ADR-INV-006-un-proyecto-ocho-funciones-strangler.md
           - ADR-INV-007 CORS abierto: arquitectura/adr/inventario/ADR-INV-007-cors-abierto.md
+      - Decisiones del Rediseno La Red (ADR):
+          - Indice: arquitectura/adr/rediseno-la-red/index.md
+          - ADR-RED-001 Tema por tokens y atributo raiz: arquitectura/adr/rediseno-la-red/ADR-RED-001-tema-por-tokens-y-atributo-raiz.md
+          - ADR-RED-002 Noche por defecto y claro por atributo: arquitectura/adr/rediseno-la-red/ADR-RED-002-noche-por-defecto-y-claro-por-atributo.md
+          - ADR-RED-003 TypeScript nuevo solo en el armazon: arquitectura/adr/rediseno-la-red/ADR-RED-003-typescript-nuevo-solo-en-el-armazon.md
+          - ADR-RED-004 Sin View Transitions: arquitectura/adr/rediseno-la-red/ADR-RED-004-sin-view-transitions.md
+          - ADR-RED-005 Precarga selectiva: arquitectura/adr/rediseno-la-red/ADR-RED-005-precarga-selectiva.md
+          - ADR-RED-006 Modo basico: arquitectura/adr/rediseno-la-red/ADR-RED-006-modo-basico.md
 
   - Backend:
       - Overview: backend/overview.md
@@ -264,6 +272,15 @@ nav:
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
+      - Rediseno "La Red" (tema visual):
+          - Que es, alcance y estado: frontend/tema-la-red.md
+          - Sistema visual y tokens: frontend/sistema-visual-la-red.md
+          - Modo claro e interruptor: frontend/modo-claro-la-red.md
+          - Movimiento y navegacion entre modulos: frontend/movimiento-y-navegacion-la-red.md
+          - Modo basico y celular: frontend/modo-basico-y-movil-la-red.md
+          - Validacion en PreProd y salida a produccion: guias/rediseno-la-red-validacion-y-salida.md
+          - Rollback y hotfix: guias/rediseno-la-red-rollback-y-hotfix.md
+          - Decisiones (ADR): arquitectura/adr/rediseno-la-red/index.md
       - Autenticacion y registro:
           - Guia para el front: frontend/autenticacion.md
           - Registro "La Red": frontend/views/pages/registro/registro.md
@@ -481,6 +498,8 @@ nav:
       - Pruebas E2E de autenticacion: guias/pruebas-autenticacion-e2e.md
       - Pruebas de novedades (distancia y reportes): guias/novedades-distancia-reportes-pruebas.md
       - PreProd, API HTTP y API REST: guias/apis-preprod-http-rest.md
+      - Rediseno La Red, validacion en PreProd y salida: guias/rediseno-la-red-validacion-y-salida.md
+      - Rediseno La Red, rollback y hotfix: guias/rediseno-la-red-rollback-y-hotfix.md
 
   - Plantillas:
       - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md

@@ -15,6 +15,7 @@ El rediseño lleva la identidad del inicio de sesión y del registro «La Red» 
     - **Aún no está en PreProd ni en producción.** Al redactar esta página la rama solo existía en el equipo de Iker.
     - Después de esa verificación se añadieron **dos commits** (ver [Qué cambió después de la verificación](#que-cambio-despues-de-la-verificacion)). El commit final puede cambiar todavía: otra sesión aplica detalles pedidos por Iker.
     - Cada página de esta sección dice qué está **verificado en local** y qué está **pendiente de validar en PreProd**.
+    - **Actualización 2026-11-23 (tarde):** la verificación se repitió sobre el commit final `0c88ca39`: tests 2249 de 2262 (fallan 13, los mismos de `main`), builds `preprod` y `production` correctos, y peticiones de las 6 rutas tocadas por los dos commits nuevos sin diferencias en noche y en claro. Las otras 150 rutas quedan cubiertas por la verificación de `45dbf949`. La rama ya está en el remoto; el PR a `preprod` lo abre Iker.
 
 !!! info "Cómo leer las marcas"
     **Observado** = comprobado en el archivo, el código o la herramienta citada. **Iker (fecha)** = decisión o explicación suya. **Hipótesis** = no comprobado. Las cifras vienen de `specs/021_rediseno_visual/ENTREGA.md` del workspace salvo que se cite otra fuente. Esa carpeta no es navegable desde este sitio: guarda el detalle fino (evidencias, capturas, decisiones D1–D60).

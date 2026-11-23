@@ -14,6 +14,9 @@ Tipo: vista
 
 ---
 
+!!! info "Rediseño «La Red» (2026-11-23, verificado en local, pendiente de PreProd)"
+    El registro tiene ahora **versión clara** (`data-lg-modo="dia"`, estilos en `styles/_registro-claro.scss`) con un [interruptor de tema](../../../modo-claro-la-red.md) abajo a la izquierda. La escena 3D (`la-red/**`) no tiene ni una línea cambiada. Esta identidad se llevó a toda la plataforma: ver [Rediseño «La Red»](../../../tema-la-red.md).
+
 ## ¿Qué hace?
 
 Es la página pública donde una tienda pide su cuenta de LogiGho sin ayuda de nadie. La persona responde seis preguntas sobre un mapa 3D de Colombia que reacciona a cada respuesta. Al enviar, el API le manda un código al correo. Desde el enlace de ese correo vuelve a la misma vista, escribe el código, crea su contraseña y la cuenta queda activa con el rol `Red social`, hasta que Comercial le da acceso.

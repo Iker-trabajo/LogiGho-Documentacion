@@ -14,6 +14,9 @@ Tipo: componente
 
 ---
 
+!!! info "Rediseño «La Red» (2026-11-23, verificado en local, pendiente de PreProd)"
+    El login, recuperar y registro tienen ahora **versión clara** (`data-lg-modo="dia"`) con un [interruptor de tema](../modo-claro-la-red.md) abajo a la izquierda, resuelta solo con CSS: la escena 3D no cambia. Cambios en este componente: el interruptor en la plantilla y dos reglas de día en `login.component.scss`. El resto de la plataforma adoptó esta identidad: ver [Rediseño «La Red»](../tema-la-red.md).
+
 ## ¿Qué hace?
 
 - **Iniciar sesión:** sobre el mismo mapa "La Red" del [registro](../views/pages/registro/registro.md), con su estilo.

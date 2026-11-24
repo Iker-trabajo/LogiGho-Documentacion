@@ -24,6 +24,34 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-23] — Rediseño «La Red» de toda la plataforma (construido y verificado en local; pendiente de PreProd)
+
+> **Estado:** verificado en local sobre el commit `45dbf949` de `feature/rediseno-integral-la-red`. **Aún no está en PreProd ni en producción.** La rama tiene dos commits posteriores (`9b7c5adb`, `0c88ca39`) y puede cambiar: otra sesión aplica detalles pedidos por Iker.
+
+### Nuevas funcionalidades
+- **Identidad «La Red» en toda la plataforma:** versión noche azul en las 332 superficies del front (shell, tablas, formularios, modales, tableros, estados de carga, vacío y error), con tipografías Plus Jakarta Sans e Inter.
+- **Modo claro «Papel de ruta»** con interruptor junto a «Consultar guía» (también en el menú del celular, el login y el registro). Se recuerda entre visitas y no parpadea al recargar. Por defecto, noche.
+- **Movimiento:** entrada coreografiada de cada vista, modales y desplegables con entrada suave y, al cambiar de módulo, respuesta inmediata en el menú con una línea de progreso bajo la cabecera.
+- **Precarga del código del módulo** al pasar el ratón o tocar el menú; en reposo, solo las áreas del menú del usuario.
+- **Modo básico** para equipos limitados (sin WebGL real, ≤ 2 GB, ahorro de datos, cuadros lentos): mismo diseño sin animaciones ni efectos caros. En teléfono y tableta no hay animaciones.
+
+### Cambios
+- Modo celular revisado en 148 rutas: 26 rutas que en `main` se salían de la pantalla a 390 px ya no lo hacen; tarjetas «Comunidades» y «Miembros» del muro sin corte (en escritorio la columna lateral ya no acompaña al scroll: decisión abierta).
+- **Cambio funcional pedido por Iker (2026-11-23):** en cinco vistas con Power BI, el filtro «Ecosistema» solo lista los de las tiendas del usuario. Es lógica de vista y **no está verificado contra el reporte real** (M-387).
+- Botones «Acciones» y «Crear Pedidos» de Pedidos más pausados (380 ms) y logo visible en modo claro.
+- No cambian datos, permisos, cálculos ni peticiones: 0 diferencias en las peticiones de las 156 rutas frente a `main`, en noche y en claro. No se toca la escena 3D del login y el registro.
+
+### Correcciones
+- Las 26 rutas que se desbordaban de la pantalla en celular (ver «Cambios»). No hay otras correcciones de comportamiento: los defectos heredados de `main` vistos durante el recorrido quedan como mejoras en el backlog (M-354 a M-387).
+
+### Documentación
+- Nueva sección [Rediseño «La Red»](../frontend/tema-la-red.md): [sistema visual y tokens](../frontend/sistema-visual-la-red.md), [modo claro e interruptor](../frontend/modo-claro-la-red.md), [movimiento y navegación entre módulos](../frontend/movimiento-y-navegacion-la-red.md) y [modo básico y celular](../frontend/modo-basico-y-movil-la-red.md).
+- Guías: [validación en PreProd y salida a producción](../guias/rediseno-la-red-validacion-y-salida.md) y [rollback y hotfix](../guias/rediseno-la-red-rollback-y-hotfix.md).
+- [Decisiones del rediseño (ADR-RED-001 a 006)](../arquitectura/adr/rediseno-la-red/index.md).
+- Pruebas (commit `45dbf949`, todas en local): 2.246 de 2.259 tests (los 13 que fallan son los mismos de `main`), builds `preprod` y `production` correctos, 34 capturas en motor WebKit sin errores, contraste del modo claro 60 de 60 pares. **Sin probar:** iPhone real, acciones que escriben, menú por rol con usuarios reales, interior de Power BI y cuatro modales en claro.
+
+---
+
 ## [2026-11-19] — Mi perfil: cuentas activas e inactivas, modales con revisión en vivo y listas rápidas
 
 ### Nuevas funcionalidades
@@ -37,6 +65,33 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-06] — Inicio de sesión, registro y contraseñas sobre "La Red" (PreProd)
+
+### Nuevas funcionalidades
+- **Registro por autoservicio** con mapa 3D de Colombia que reacciona a cada respuesta, caja animada que vuela al
+  mapa y deja el sello "Paquete enviado", y pantalla del código con **seis casillas reales** (escribir, pegar,
+  borrar), reenvío y mensajes por cada error.
+- **Recuperar contraseña** (`/recuperar`) y **cambio desde el perfil** con el código al correo, sin pedir la
+  contraseña actual.
+- **Avisos de lo que va pasando** (arriba a la derecha): en proceso, éxito y error; lo que queda debajo se oculta
+  y vuelve.
+- **"Síguenos en nuestras redes"** en el pie del login y el registro (Linktree), que parpadea más fuerte al pasar
+  por un país vecino.
+- **Correos nuevos** con forma de guía de envío para SES (cuatro plantillas).
+
+### Cambios
+- Login sobre el mismo mapa, con logo animado, botones nuevos, puerta de bodega al entrar y camioncito que
+  termina su viaje antes de entrar o mostrar el error. Sin botones de redes sociales ni ventanas SweetAlert.
+- Ajustes para celular: barra "Atrás / Continuar" pegada al final de la tarjeta, toques sin efectos pegados,
+  autocompletado oscuro, muesca del iPhone y pantallas desde 320 px.
+- `environment.preprod.ts` apunta al pool, client y API de PreProd.
+- Crear pedidos: "La Parada" se muestra como Villa del Rosario.
+
+### Documentación
+- [Registro "La Red"](../frontend/views/pages/registro/registro.md), [Mapa "La Red"](../frontend/views/pages/registro/la-red-mapa.md),
+  [Login y recuperación](../frontend/components/login.md), [Piezas comunes](../frontend/components/la-red-piezas-comunes.md)
+  y [Correos de autenticación](../guias/correos-autenticacion.md).
+- 38 pruebas unitarias nuevas o actualizadas del front, todas en verde.
 ## [2026-11-11] — Comercial: Panel comercial, Seguimiento de clientes y formulario Accesos en LOGI
 
 ### Nuevas funcionalidades

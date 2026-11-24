@@ -80,6 +80,7 @@ nav:
           - Indice: arquitectura/adr/autenticacion/index.md
           - ADR-AUT-001 Plantillas de correo dentro de la lambda: arquitectura/adr/autenticacion/ADR-AUT-001-plantillas-de-correo-dentro-de-la-lambda.md
           - ADR-AUT-002 Nombre, fecha, imagenes y boton de copiar: arquitectura/adr/autenticacion/ADR-AUT-002-nombre-fecha-imagenes-y-boton-copiar.md
+          - ADR-AUT-003 Correo sin Collation en DocumentDB: arquitectura/adr/autenticacion/ADR-AUT-003-correo-sin-collation-en-documentdb.md
       - Decisiones de Inventario (ADR):
           - Indice: arquitectura/adr/inventario/index.md
           - ADR-INV-001 Clave unica e indice sparse: arquitectura/adr/inventario/ADR-INV-001-clave-unica-e-indice-sparse.md
@@ -89,6 +90,14 @@ nav:
           - ADR-INV-005 PedidosInter fuente de verdad y retorno: arquitectura/adr/inventario/ADR-INV-005-pedidosinter-fuente-de-verdad-y-retorno.md
           - ADR-INV-006 Un proyecto, varias funciones, Strangler Fig: arquitectura/adr/inventario/ADR-INV-006-un-proyecto-ocho-funciones-strangler.md
           - ADR-INV-007 CORS abierto: arquitectura/adr/inventario/ADR-INV-007-cors-abierto.md
+      - Decisiones del Rediseno La Red (ADR):
+          - Indice: arquitectura/adr/rediseno-la-red/index.md
+          - ADR-RED-001 Tema por tokens y atributo raiz: arquitectura/adr/rediseno-la-red/ADR-RED-001-tema-por-tokens-y-atributo-raiz.md
+          - ADR-RED-002 Noche por defecto y claro por atributo: arquitectura/adr/rediseno-la-red/ADR-RED-002-noche-por-defecto-y-claro-por-atributo.md
+          - ADR-RED-003 TypeScript nuevo solo en el armazon: arquitectura/adr/rediseno-la-red/ADR-RED-003-typescript-nuevo-solo-en-el-armazon.md
+          - ADR-RED-004 Sin View Transitions: arquitectura/adr/rediseno-la-red/ADR-RED-004-sin-view-transitions.md
+          - ADR-RED-005 Precarga selectiva: arquitectura/adr/rediseno-la-red/ADR-RED-005-precarga-selectiva.md
+          - ADR-RED-006 Modo basico: arquitectura/adr/rediseno-la-red/ADR-RED-006-modo-basico.md
 
   - Backend:
       - Overview: backend/overview.md
@@ -263,7 +272,22 @@ nav:
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md
-      - Autenticacion y registro: frontend/autenticacion.md
+      - Rediseno "La Red" (tema visual):
+          - Que es, alcance y estado: frontend/tema-la-red.md
+          - Sistema visual y tokens: frontend/sistema-visual-la-red.md
+          - Modo claro e interruptor: frontend/modo-claro-la-red.md
+          - Movimiento y navegacion entre modulos: frontend/movimiento-y-navegacion-la-red.md
+          - Modo basico y celular: frontend/modo-basico-y-movil-la-red.md
+          - Validacion en PreProd y salida a produccion: guias/rediseno-la-red-validacion-y-salida.md
+          - Rollback y hotfix: guias/rediseno-la-red-rollback-y-hotfix.md
+          - Decisiones (ADR): arquitectura/adr/rediseno-la-red/index.md
+      - Autenticacion y registro:
+          - Guia para el front: frontend/autenticacion.md
+          - Registro "La Red": frontend/views/pages/registro/registro.md
+          - Mapa "La Red" (escena WebGL): frontend/views/pages/registro/la-red-mapa.md
+          - Login, recuperacion y cambio de contrasena: frontend/components/login.md
+          - Piezas comunes (avisos, logo, botones, redes): frontend/components/la-red-piezas-comunes.md
+          - Correos de autenticacion (SES): guias/correos-autenticacion.md
       - Crear un modulo por base de datos: frontend/crear-modulo-db.md
       - Vistas:
           - Efectividad por Ciudad (Entregas): frontend/views/metricas-efectividad-ciudad.md
@@ -446,6 +470,16 @@ nav:
                       - Detalle del Lote: frontend/views/logistica/ingreso-devoluciones/components/detalle-lote.md
                       - Historial de Lotes: frontend/views/logistica/ingreso-devoluciones/components/historial-lotes.md
                       - Filtro Múltiple: frontend/views/logistica/ingreso-devoluciones/components/filtro-multiple.md
+                  - Novedades:
+                      - Componente: frontend/views/logistica/novedades/novedades.md
+                      - Modelo: frontend/views/logistica/novedades/modelos/novedades-models.md
+                      - Repositorio: frontend/views/logistica/novedades/servicios/novedades-repository.md
+                      - Store: frontend/views/logistica/novedades/servicios/novedades-store.md
+                      - Mapper: frontend/views/logistica/novedades/helpers/novedades-mapper.md
+                      - Reglas (rules.ts): frontend/views/logistica/novedades/helpers/novedades-rules.md
+                      - Excel: frontend/views/logistica/novedades/helpers/novedades-excel.md
+                      - Filtro Desplegable: frontend/views/logistica/novedades/components/filtro-desplegable.md
+                      - Panel de Detalle: frontend/views/logistica/novedades/components/detalle-guia.md
       - Estilos y SCSS: frontend/estilos.md
       - Rutas y navegacion: frontend/rutas.md
 
@@ -467,6 +501,8 @@ nav:
       - Pruebas E2E de autenticacion: guias/pruebas-autenticacion-e2e.md
       - Pruebas de novedades (distancia y reportes): guias/novedades-distancia-reportes-pruebas.md
       - PreProd, API HTTP y API REST: guias/apis-preprod-http-rest.md
+      - Rediseno La Red, validacion en PreProd y salida: guias/rediseno-la-red-validacion-y-salida.md
+      - Rediseno La Red, rollback y hotfix: guias/rediseno-la-red-rollback-y-hotfix.md
 
   - Plantillas:
       - Vista o Componente Angular: plantillas/PLANTILLA-ANGULAR.md

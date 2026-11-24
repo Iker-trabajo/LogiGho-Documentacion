@@ -24,6 +24,26 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-24] — Comercial y Mi perfil: «Su negocio» por tienda, forma de la tienda, foto predeterminada y módulos con pruebas
+
+### Nuevas funcionalidades
+- Panel comercial: fecha de contrato y «Su negocio» por tienda (cada tienda guarda solo lo suyo en su `_id`); Estrategia LOGI A–D, paquetes hasta «Más de 150», canal «Otro» y varios tipos de negocio.
+- Clientes completa con lo del Panel (dirección, sucursal, tipo) y agrega a las tiendas viejas los campos que les falten sin pisar nada.
+- Toda tienda nueva nace con la forma y el orden de Administración → Tiendas.
+- Mi perfil: «Usar la predeterminada» para foto y banner.
+
+### Cambios
+- Se trae de `main` el rediseño «La Red»; los colores fijos de estos módulos pasan a `--lg-*`.
+- Mi perfil, Panel comercial y Clientes quedan organizados en `helpers/`, `models/`, `repository/` y `styles/`, con pruebas de reglas, repositorio y pantalla (61, 46 y 37).
+
+### Correcciones
+- Listas tapadas por la sección de abajo, saltos de scroll al abrirlas y la lista de tienda que no se cerraba.
+
+### Documentación
+- Nueva: [Forma de la tienda](../frontend/core/forma-tienda.md). Detalle en [comercial-2026-11](comercial-2026-11.md) y [perfil-2026-11](perfil-2026-11.md).
+
+---
+
 ## [2026-11-23] — Rediseño «La Red» de toda la plataforma (construido y verificado en local; pendiente de PreProd)
 
 > **Estado:** verificado en local sobre el commit `45dbf949` de `feature/rediseno-integral-la-red`. **Aún no está en PreProd ni en producción.** La rama tiene dos commits posteriores (`9b7c5adb`, `0c88ca39`) y puede cambiar: otra sesión aplica detalles pedidos por Iker.

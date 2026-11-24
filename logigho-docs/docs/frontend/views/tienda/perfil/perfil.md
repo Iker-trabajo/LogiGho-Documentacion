@@ -30,16 +30,39 @@ Arriba muestra el avance en una rueda de porcentaje y el siguiente paso que le f
 
 ## Archivos
 
+Organizado como los demás módulos del proyecto (pantalla en la raíz, y `components/`, `helpers/`, `models/`, `repository/` y `styles/`):
+
+```
+tienda/perfil/
+  perfil.component.ts / .html / .spec.ts
+  perfil.validaciones.spec.ts
+  components/detalle-tienda/      (+ .spec.ts)
+  helpers/perfil.rules.ts         (+ .spec.ts)
+  models/perfil.models.ts
+  repository/perfil.repository.ts (+ .spec.ts)
+  styles/perfil.scss, perfil.mobile.scss
+```
+
 | Archivo | Responsabilidad |
 | --- | --- |
 | `perfil.component.ts` / `.html` | Pantalla: avance, tiendas, documentos, cuentas y los modales para crear o editar |
-| `perfil.model.ts` | `TiendaPerfil`, `CuentaPerfil`, `DocumentoPerfil`, `PropietarioPerfil`, `PasoPerfil`, `ModalPerfil` |
-| `repository/perfil.repository.ts` | Escrituras: crear y editar tienda, mis datos, fotos, documentos (S3 + `TiendaDocuments`) y cuentas |
+| `helpers/perfil.rules.ts` | Reglas puras: documento por tipo, remitente, detalle de la tienda, estado de los 4 documentos y resumen por tienda, filtros, paginación y constantes (`MAX_ARCHIVO_MB`, `BANCOS_BILLETERA`, `REGLAS`) |
+| `models/perfil.models.ts` | `TiendaPerfil`, `CuentaPerfil`, `DocumentoPerfil`, `PropietarioPerfil`, `PasoPerfil`, `ModalPerfil`, `ResumenDocumentosTienda` |
+| `repository/perfil.repository.ts` | Escrituras: crear y editar tienda, mis datos, fotos (y volver a la predeterminada), documentos (S3 + `TiendaDocuments`) y cuentas |
 | `components/detalle-tienda/` | "Detalle y documentos" de una tienda: pestañas Datos, Documentos tienda, una por autorizado y "+ Autorizado" |
-| `perfil.component.scss` / `.mobile.scss` | Estilos de escritorio y celular (≤768 px) |
-| `perfil.validaciones.spec.ts` | Pruebas de los modales y de las cuentas inactivas |
+| `styles/perfil.scss` / `perfil.mobile.scss` | Estilos de escritorio y celular (≤768 px) |
 
-Componentes compartidos que usa: [Lista de opciones](../../../components/lista-opciones.md), `app-confirmar-cambios`, `app-paginador`, `app-direccion-estandarizada` (Armar dirección del 1 a 1) y la directiva `appModalTeclado`.
+### Pruebas (61)
+
+| Archivo | Qué prueba |
+| --- | --- |
+| `perfil.component.spec.ts` | Que la pantalla carga, Cambiar contraseña y foto/banner predeterminados |
+| `perfil.validaciones.spec.ts` | Modales con revisión en vivo y cuentas inactivas |
+| `helpers/perfil.rules.spec.ts` | Documento por tipo, remitente, detalle de tienda, filtros, estado y resumen de documentos |
+| `repository/perfil.repository.spec.ts` | Crear tienda (forma, orden e Id), nombre repetido, editar tienda, documentos y cuentas (sin Id no deja) |
+| `components/detalle-tienda/detalle-tienda.component.spec.ts` | Tarjetas y avance, autorizados, subida y sus errores |
+
+Componentes compartidos que usa: [Lista de opciones](../../../components/lista-opciones.md), `app-confirmar-cambios`, `app-paginador`, `app-direccion-estandarizada` (Armar dirección del 1 a 1), `app-cambio-contrasena` y la directiva `appModalTeclado`. Para crear la tienda usa la [Forma de la tienda](../../../core/forma-tienda.md).
 
 ---
 
@@ -52,15 +75,25 @@ Componentes compartidos que usa: [Lista de opciones](../../../components/lista-o
 - **Pasos:** el actual en azul con pulso, los completos en verde y los pendientes en gris.
 
 !!! note "Colores"
-    El naranja de la marca se usa **solo en la rueda de avance**. Botones y pasos van en azul (`--logigho-azul`) y lo que está "en revisión" o "sin ID" en ámbar suave (`#fef3c7` / `#92400e`), igual que en el resto de la app.
+    Desde el 24 de noviembre de 2026 Mi perfil usa los colores del [rediseño «La Red»](../../../tema-la-red.md) (variables `--lg-*`), así se ve bien de noche y de día. No quedan colores fijos (`#fff`, `--logigho-*`): fondos con `--lg-superficie*`, "en revisión" con `--lg-alerta-*`, validado con `--lg-exito-*`, faltante con `--lg-error-*` y enlaces o etiquetas con `--lg-info-*`.
+
+### Foto y banner
+
+- Se cambian en **Editar mis datos**. Se guardan en `PerfilesUsuario` (`avatarUrl`, `bannerUrl`), la misma colección del espacio social, así la foto es una sola en toda la plataforma (`FotoPerfilService`).
+- **Usar la predeterminada:** debajo de «Foto de perfil» y de «Banner». Si la persona tiene una imagen propia, sale el botón **«Usar la predeterminada»**; al tocarlo queda marcado (*«Se usará la predeterminada · deshacer»*) y, al guardar, se **vacía solo esa URL** (`FotoPerfilService.quitar`). Vuelven la inicial y el banner de siempre; el archivo subido no se borra.
+- Si no tiene imagen propia, sale *«✓ Ya usas la predeterminada»* (solo informa).
+- Elegir otra imagen deja sin efecto lo marcado. En el resumen antes de guardar sale *«Foto de perfil: La actual → Predeterminada»*.
+- Medidas recomendadas: foto **500 × 500 px** (se ve en círculo de 112 px, 84 en celular) y banner **1920 × 400 px** (160 px de alto, 120 en tableta, 112 en celular; lo importante, en el centro). PNG, JPG o WebP, máximo 5 MB.
 
 ### Tiendas
 
 - **Crear tienda:** nombre, correo (fijo, el de la cuenta), tipo de negocio (varios y "Otro: cuál"), teléfono, ciudad y dirección. Ciudad y dirección son obligatorias.
 - La tienda **nace inactiva** y asignada al usuario. Comercial la activa.
 - **Id:** lo calcula el front como el más alto más 1, igual que Administración → Tiendas. Si una tienda vieja no tiene Id, Seguimiento se lo pone al guardarla.
+- **Forma y orden:** nace con los 17 campos y en el mismo orden que en Administración → Tiendas (`armarTiendaNueva`). Ver [Forma de la tienda](../../../core/forma-tienda.md).
 - **Nombre único** en toda la plataforma, sin importar mayúsculas, tildes ni espacios.
 - **`TipoTienda`:** se guarda como en producción (`Propia`, `Dropshipping`, `Proveedor` u otro).
+- **Teléfono:** el ejemplo dice «Ej: 300 123 4567» y los textos de ejemplo van en gris claro, para que no parezcan un dato ya escrito.
 - **Tienda activa:** no se edita; sale "comunícate con un asesor".
 
 ### Documentos
@@ -102,7 +135,7 @@ La revisión se dispara desde el contenedor del modal con `(input)`, `(change)`,
 
 ### Listas
 
-Todas las listas de los modales usan `[siempreAbajo]="true"`: abren hacia abajo y, si no hay espacio, el modal baja lo necesario. La de ciudades (más de mil) se pinta por tandas. En celular salen como hoja inferior.
+Todas las listas de los modales usan `[siempreAbajo]="true"`: abren hacia abajo con su alto normal y **no mueven el scroll**; si no cabe, la persona baja. La de ciudades (más de mil) se pinta por tandas. En celular salen como hoja inferior.
 
 ### Validaciones comunes
 
@@ -121,9 +154,11 @@ Todas las listas de los modales usan `[siempreAbajo]="true"`: abren hacia abajo 
 | Acción | Llamada |
 | --- | --- |
 | Leer | `GET metodoGenerico?coleccion=Tienda`, `Users`, `TiendaDocuments`, `CuentasBancarias`, `Ciudades` |
-| Crear tienda | `insertarGenerico` en `Tienda` y `actualizarGenerico` en `Users` con `{ tiendas }` |
-| Editar tienda | `actualizarGenerico` en `Tienda` con solo los cambios |
+| Crear tienda | `insertarGenerico` en `Tienda` (forma completa, en orden) y `actualizarGenerico` en `Users` con `{ tiendas }` |
+| Editar tienda | `actualizarGenerico` en `Tienda` con solo remitente, dirección y ciudad, en el orden de la tienda |
 | Mis datos | `actualizarGenerico` en `Users` |
+| Foto y banner | Sube a `archivos-muro-compartido` y `actualizarGenerico` (o `insertarGenerico`) en `PerfilesUsuario` |
+| Volver a la predeterminada | `actualizarGenerico` en `PerfilesUsuario` con `avatarUrl: ''` y/o `bannerUrl: ''` |
 | Documento | Sube a S3 y `insertarGenerico` en `TiendaDocuments` |
 | Cuenta bancaria | `insertarGenerico` en `CuentasBancarias` (un registro con su `CuentasBancoTienda`) |
 
@@ -139,6 +174,10 @@ Todas las listas de los modales usan `[siempreAbajo]="true"`: abren hacia abajo 
 | 2026-11-19 | Yadilton Torres | Cuentas inactivas ocultas y bloqueo al registrarlas de nuevo |
 | 2026-11-19 | Yadilton Torres | Modales con revisión en vivo, ✓ y resumen; listas siempre hacia abajo |
 | 2026-11-19 | Yadilton Torres | Naranja solo en la rueda de avance; botones y pasos en azul, "en revisión" en ámbar |
+| 2026-11-23 | Yadilton Torres | Crear tienda con la forma y el orden de Administración (`armarTiendaNueva`); ejemplo de teléfono «Ej: 300 123 4567» |
+| 2026-11-24 | Yadilton Torres | Se trae de `main` el rediseño «La Red» y «Cambiar contraseña»; colores fijos pasan a `--lg-*` (modo noche) |
+| 2026-11-24 | Yadilton Torres | «Usar la predeterminada» para foto y banner |
+| 2026-11-24 | Yadilton Torres | Organización en `helpers/`, `models/` y `styles/`; pruebas de reglas, repositorio y detalle de tienda (61 en total) |
 
 ---
 

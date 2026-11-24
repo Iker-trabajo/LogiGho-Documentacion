@@ -30,7 +30,7 @@ Lista desplegable con el estilo de la página. Reemplaza al `<select>` nativo, q
 | `valor` | `string` | Valor elegido |
 | `etiqueta` | `string` | Texto cuando no hay valor y `aria-label` |
 | `icono` | `string` | Clase Font Awesome del icono de la izquierda |
-| `siempreAbajo` | `boolean` | En formularios (modales): abre siempre hacia abajo; si no cabe, el contenedor con scroll baja lo necesario. Por defecto `false` |
+| `siempreAbajo` | `boolean` | Abre siempre hacia abajo con su alto normal y **no mueve el scroll**: si no cabe, la persona baja. Por defecto `false` |
 | `valorChange` | `string` | Se eligió otra opción |
 
 ---
@@ -44,6 +44,11 @@ Lista desplegable con el estilo de la página. Reemplaza al `<select>` nativo, q
 - **Se cierra al presionar fuera** (`document:pointerdown`). Se usa `pointerdown` y no `click` porque los paneles laterales detienen el clic para no cerrarse, y la lista no se enteraba.
 - **Teclado:** ↑ ↓ para moverse, Enter elige, Esc cierra y devuelve el foco al botón.
 - **Filtro activo:** si el valor es distinto de la primera opción ("Todos"), el botón se resalta en azul (`lista--con-valor`). Sobre fondos azules (por ejemplo el pie de las tablas) la pantalla fuerza el botón blanco para que no desaparezca.
+- **No mueve la página:** al abrir solo se mueve la lista por dentro hasta la opción elegida. Antes usaba `scrollIntoView`, que también movía la página y el panel.
+- **Clase en la etiqueta cuando está abierta:** `lista-opciones--abierta` (`@HostBinding`). Quien la usa puede subir su sección mientras está abierta, para que la de abajo no la tape. Por ejemplo, el Panel comercial: `.pc-bloque:has(app-lista-opciones.lista-opciones--abierta) { z-index: 5; }`. Se usa la clase de la etiqueta porque la `.lista--abierta` de adentro no se ve desde los estilos de otro componente.
+
+!!! warning "No ponerla dentro de un `<label>`"
+    Dentro de un `<label>`, el navegador pasa el clic de una opción al botón de la lista y la vuelve a abrir: la lista no se cierra al elegir. Usar un `<div>` como contenedor.
 
 ---
 
@@ -53,3 +58,4 @@ Lista desplegable con el estilo de la página. Reemplaza al `<select>` nativo, q
 | --- | --- | --- |
 | 2026-11-11 | Yadilton Torres | Abre a la izquierda si no cabe; solo una abierta a la vez; se cierra con `pointerdown` fuera |
 | 2026-11-19 | Yadilton Torres | Entrada `siempreAbajo` para modales; listas largas por tandas para que abran rápido. Pruebas en `lista-opciones.component.spec.ts` |
+| 2026-11-23 | Yadilton Torres | Al abrir ya no mueve el scroll de la página ni del panel; clase `lista-opciones--abierta` en la etiqueta |

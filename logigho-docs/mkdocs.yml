@@ -314,6 +314,7 @@ nav:
             - Servicio de Cotizacion: frontend/core/cotizacion-service.md
             - Reglas Modalidad de Pago: frontend/core/reglas-modalidad-pago.md
             - Servicio de Notificaciones: frontend/core/notificaciones-service.md
+            - "Forma de la tienda (campos, orden e Id)": frontend/core/forma-tienda.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md

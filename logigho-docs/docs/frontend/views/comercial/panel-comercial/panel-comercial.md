@@ -34,15 +34,36 @@ También muestra a quienes **tienen cuenta pero nunca llenaron el registro**: sa
 
 ## Archivos
 
+```
+comercial/panel-comercial/
+  panel-comercial.component.ts / .html / .spec.ts
+  panel-comercial.guard.ts (+ .spec.ts)
+  helpers/panel-comercial.rules.ts (+ .spec.ts)
+  helpers/panel-comercial.repository.fake.ts
+  models/panel-comercial.models.ts
+  repository/panel-comercial.repository.ts (+ .spec.ts)
+  styles/panel-comercial.scss, panel-comercial.mobile.scss
+```
+
 | Archivo | Responsabilidad |
 | --- | --- |
 | `panel-comercial.component.ts` / `.html` | Pantalla: tabla, filtros, detalle, edición, Excel |
 | `panel-comercial.guard.ts` | Deja entrar solo a `ROLES_PANEL_COMERCIAL = ['COO', 'CEO', 'Desarrollador']`; si no, lleva al Muro compartido |
-| `models/panel-comercial.models.ts` | `PersonaPanel`, `TiendaPanel`, `CuentaPanel`, `ProcesoComercial`, `EdicionPersona` y listas fijas (`CANALES`, `ESTRATEGIAS`, `ESTADOS_PROCESO`) |
-| `repository/panel-comercial.repository.ts` | Único punto que llama al backend: lee las colecciones, las une, crea y guarda (incluye `cambiarEstadoCuenta`) |
-| `panel-comercial.cuentas.spec.ts` | Pruebas de la sección de cuentas bancarias |
-| `styles/panel-comercial.scss` | Estilos de la pantalla |
+| `helpers/panel-comercial.rules.ts` | Reglas puras: etapas, textos (tipos, fuentes, paquetes, fechas, Sí/No, país), sucursal que se muestra, color del estado, iniciales, WhatsApp, completitud y día en Colombia |
+| `models/panel-comercial.models.ts` | `PersonaPanel`, `TiendaPanel`, `CuentaPanel`, `DatosNegocioTienda`, `EdicionPersona` y listas fijas (`CANALES`, `ESTRATEGIAS`, `PAQUETES`, `ESTADOS_PROCESO`) |
+| `repository/panel-comercial.repository.ts` | Único punto que llama al backend: lee las colecciones, las une, crea y guarda (incluye `cambiarEstadoCuenta`, `leerTienda` y `guardarDatosTienda`) |
+| `helpers/panel-comercial.repository.fake.ts` | Base falsa compartida por las pruebas |
+| `styles/panel-comercial.scss` / `.mobile.scss` | Estilos de la pantalla |
 | `../roles-comercial.ts` | `ROLES_DE_COMERCIAL`: los roles que Comercial puede poner o quitar (compartido con Seguimiento) |
+
+### Pruebas (46)
+
+| Archivo | Qué prueba |
+| --- | --- |
+| `panel-comercial.component.spec.ts` | Sección de cuentas, listas (canal «Otro», paquetes, tiendas), tipos de negocio y «Su negocio» por tienda (cada tienda guarda solo lo suyo) |
+| `repository/panel-comercial.repository.spec.ts` | Cuentas bancarias, datos que ya existen y valores anteriores de estrategia y paquetes |
+| `helpers/panel-comercial.rules.spec.ts` | Etapas, textos, sucursal, WhatsApp, completitud y día en Colombia |
+| `panel-comercial.guard.spec.ts` | Quién puede entrar |
 
 Componentes compartidos que usa: [Lista de opciones](../../../components/lista-opciones.md), [Filtro de fechas](../../../components/filtro-fechas.md), `app-paginador`, `app-confirmar-cambios` y la directiva `appPanelRedimensionable` (panel lateral que se agranda arrastrando el borde).
 
@@ -101,7 +122,7 @@ Panel lateral, en este orden:
 
 1. **Encabezado:** nombre, correo y teléfono para copiar, y botón de WhatsApp aparte.
 2. **Proceso comercial:** estado de proceso, estado de contacto, canal, estrategia, asesora, sucursal Inter y fecha de accesos. La **nota** va en su propio recuadro naranja.
-3. **Su negocio:** tienda, tipo, despacha desde, fulfillment, paquetes al mes y dirección de recolección. El título dice la fecha del formulario o "No llenó el formulario".
+3. **Su negocio:** tienda, tipo, despacha desde, fulfillment, paquetes al mes, **fecha de contrato** y dirección de recolección. El título dice la fecha del formulario o "No llenó el formulario". Con varias tiendas sale **«Elegir tienda»**: tipo, fulfillment, dirección y fecha son **los de la tienda elegida**; «Despacha desde» y «Paquetes al mes» son de la persona (nota *«de la persona»*). Ver [Su negocio por tienda](#su-negocio-por-tienda).
 4. **Datos de la persona:** nombre, cédula, teléfono y habeas data. Lo que viene de `Users` lleva la etiqueta "de la cuenta".
 5. **Cuenta y tiendas en LOGI:** usuario con el que entra, roles y una tarjeta por tienda (ID LOGI y sucursal para copiar, activa, wallet, apalancamiento).
 6. **Cuentas bancarias:** ver [abajo](#cuentas-bancarias).
@@ -124,6 +145,41 @@ Cómo se guarda y qué pantallas lo respetan: [Estado de las cuentas bancarias](
 ## Edición
 
 Mismo orden que el detalle, en bloques: **Proceso**, **Su negocio**, **Datos de la persona** y **Roles**.
+
+### Listas del proceso
+
+| Campo | Opciones |
+| --- | --- |
+| Estrategia LOGI | Sin definir, A (0 a 10 guías), B (10 a 50), C (50 a 150), D (más de 150), Estrategia comercial y Especial. Las categorías viejas se leen como el nivel nuevo (D antigua → A, B → B, C → C) |
+| Paquetes al mes | Menos de 50, De 50 a 150 y Más de 150. «50 a 100» se lee como «50 a 150»; «Más de 100» sale como «100 o más (anterior)». La tarjeta de arriba es **«Más de 150 paquetes/mes»** (cuenta también los «Más de 100» viejos) |
+| Canal de contacto | Los de `CANALES` y **«Otro (escribir cuál)»**: se guarda el texto escrito y es obligatorio |
+| Tipo de negocio | Se pueden marcar varios; se guarda en `businessType` separado por comas (`propio, Proveedor`) con `shared/utils/tipos-negocio.ts` |
+
+Todas las listas abren hacia abajo, no mueven el scroll y la sección que tiene una abierta queda por encima de la de abajo (ver [Lista de opciones](../../../components/lista-opciones.md)).
+
+### Campos que se llenan solos
+
+Si el registro no tiene el dato, al editar se llena con lo que ya existe y lleva una nota de dónde salió; **no cuenta como cambio** si nadie lo toca:
+
+| Campo | De dónde |
+| --- | --- |
+| Teléfono y cédula | De la cuenta (`Users`) — *«de la cuenta»* |
+| Sucursal Inter | De sus tiendas; al guardarla también se escribe en las tiendas que no tienen (`ponerSucursalEnTiendas`) |
+| Tienda y dirección (sin tiendas en LOGI) | Del registro |
+
+### Su negocio por tienda
+
+Con tiendas en LOGI, **tipo de negocio, fulfillment, dirección de recolección y fecha de contrato son de cada tienda** (`Tienda.TipoTienda`, `Fulfillment`, `Direccion`, `FechaContrato`):
+
+- **Elegir tienda** solo dice cuál se está viendo: **no es un cambio**. Sale siempre que tenga tiendas, aunque sea una; el nombre no se escribe aquí.
+- Al elegir una tienda **se vuelve a consultar en la base** (`leerTienda`) y se muestra lo que tiene; lo que le falte queda vacío.
+- Cada tienda tiene su **propio borrador por `_id`**: al cambiar de tienda, lo de la pantalla queda en la tienda que se estaba viendo y se carga la otra. Nada pasa de una tienda a otra.
+- Al guardar, cada tienda escribe **en su `_id` solo los campos que cambiaron en ella** (`guardarDatosTienda`), en el orden de la [Forma de la tienda](../../../core/forma-tienda.md). El registro de la persona no recibe datos de tienda.
+- El resumen dice de qué tienda es cada cambio: *«Fulfillment de pandal5: No → Sí»*.
+- Equivalencias de tipo (formulario → tienda): `propio` → `Propia`, `Dropshipper` → `Dropshipping`, `Proveedor` → `Proveedor`; «Otro» guarda lo escrito (`tiposDeTienda` / `tiposParaTienda`).
+- Formatos: fecha `AAAA-MM-DD` (como Clientes) y se muestra `dd/mm/aaaa`; Fulfillment `Si` / `No` / vacío.
+
+Sin tiendas en LOGI, todo se edita en el registro de la persona, como antes.
 
 ### Validaciones
 
@@ -166,6 +222,9 @@ Si la persona tiene `sinRegistro = true`, al guardar se le **crea su `RegisterCo
 | Guardar persona | `actualizarGenerico` en `metodoGenerico?coleccion=RegisterContact` con solo los cambios |
 | Crear registro | `insertarGenericoST` en `registerContact` |
 | Guardar roles | `actualizarGenerico` en `metodoGenerico?coleccion=Users` con `{ roles }` |
+| Releer una tienda al elegirla | `GET metodoGenerico?coleccion=Tienda` con `NombreTienda` (se confirma por `_id`) |
+| Guardar datos de una tienda | `actualizarGenerico` en `metodoGenerico?coleccion=Tienda` con su `_id` y solo `TipoTienda`, `Fulfillment`, `Direccion` y/o `FechaContrato` |
+| Sucursal en tiendas sin sucursal | `actualizarGenerico` en `metodoGenerico?coleccion=Tienda` con `{ Sucursal }` |
 | Activar / inactivar cuenta | Relee `CuentasBancarias` y `actualizarGenerico` en `metodoGenerico?coleccion=CuentasBancarias` con `{ CuentasBancoTienda }` |
 
 `GUARDADO_ACTIVO` en el repositorio apaga la escritura sin tocar la pantalla (lanza `GuardadoBloqueadoError`).
@@ -192,6 +251,9 @@ En la base se guardan en UTC. En pantalla, en los filtros y en el Excel se muest
 | 2026-11-11 | Yadilton Torres | Personas sin registro ("No llenó el formulario") editables: se les crea su RegisterContact |
 | 2026-11-11 | Yadilton Torres | Filtro de fecha de registro; se quitan los filtros de asesora y paquetes al mes; se quita Puntuación |
 | 2026-11-19 | Yadilton Torres | Sección Cuentas bancarias en el detalle: buscador, 3 por página y Activar / Inactivar |
+| 2026-11-20 | Yadilton Torres | Campos vacíos con lo de la cuenta y la tienda; sucursal también en las tiendas; canal «Otro»; Estrategia LOGI A–D; paquetes hasta «Más de 150»; elegir tienda; varios tipos de negocio |
+| 2026-11-23 | Yadilton Torres | Fecha de contrato por tienda; «Su negocio» por tienda (cada una guarda solo lo suyo); selector siempre visible; listas por encima y sin mover el scroll; tarjeta «Más de 150» |
+| 2026-11-24 | Yadilton Torres | Colores del tema «La Red»; reglas a `helpers/`; pruebas separadas en pantalla, repositorio, reglas y guard (46) |
 
 ---
 

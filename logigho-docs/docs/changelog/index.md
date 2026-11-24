@@ -24,6 +24,19 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-24] — Costos transporte tienda: rediseño, cobertura por tienda y validaciones (PreProd)
+
+### Nuevas funcionalidades
+- Pestaña «Cobertura por tienda» (solo consulta), modal de crear propio con validaciones por campo y modal de actualizar mejorado.
+
+### Cambios
+- Tabla propia, paginación con números, diseño para celular, tema «La Red» (oscuro y claro) y carpetas como Novedades. Sin cambios en la lógica de envío.
+
+### Documentación
+- Detalle en [costos-transporte-tienda-2026-11](costos-transporte-tienda-2026-11.md).
+
+---
+
 ## [2026-11-23] — Rediseño «La Red» de toda la plataforma (construido y verificado en local; pendiente de PreProd)
 
 > **Estado:** verificado en local sobre el commit `45dbf949` de `feature/rediseno-integral-la-red`. **Aún no está en PreProd ni en producción.** La rama tiene dos commits posteriores (`9b7c5adb`, `0c88ca39`) y puede cambiar: otra sesión aplica detalles pedidos por Iker.

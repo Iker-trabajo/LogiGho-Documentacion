@@ -24,6 +24,19 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-24] — Logi: asistente con dron, ayuda, soporte y seguridad por rol (rama `feature/logo-animado`)
+
+### Nuevas funcionalidades
+- Logi con diseño de dron, ayuda en todo el menú, 39 guías (Ctrl + K), explicación de errores, reportes a soporte y Cambiar entorno.
+
+### Cambios
+- Logi solo muestra lo de los módulos del rol, y el layout ya no deja que un módulo padre abra hijas con roles propios. Carpetas `services/`, `conocimiento/`, `helpers/` y `styles/`.
+
+### Documentación
+- Detalle en [logi-2026-11](logi-2026-11.md).
+
+---
+
 ## [2026-11-23] — Rediseño «La Red» de toda la plataforma (construido y verificado en local; pendiente de PreProd)
 
 > **Estado:** verificado en local sobre el commit `45dbf949` de `feature/rediseno-integral-la-red`. **Aún no está en PreProd ni en producción.** La rama tiene dos commits posteriores (`9b7c5adb`, `0c88ca39`) y puede cambiar: otra sesión aplica detalles pedidos por Iker.

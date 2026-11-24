@@ -314,11 +314,18 @@ nav:
             - Servicio de Cotizacion: frontend/core/cotizacion-service.md
             - Reglas Modalidad de Pago: frontend/core/reglas-modalidad-pago.md
             - Servicio de Notificaciones: frontend/core/notificaciones-service.md
+            - Acceso a modulos (seguridad de rutas): frontend/core/acceso-modulos.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
               - Campana de Notificaciones: frontend/components/campana-notificaciones.md
               - Accesos en LOGI (formulario): frontend/components/accesos-logi.md
+              - Logi (asistente):
+                  - Que es y como funciona: frontend/components/logi/logi.md
+                  - Seguridad por rol: frontend/components/logi/seguridad-por-rol.md
+                  - Conocimiento: frontend/components/logi/conocimiento.md
+                  - Helpers: frontend/components/logi/helpers.md
+                  - Servicios: frontend/components/logi/services.md
               - Lista de opciones: frontend/components/lista-opciones.md
               - Filtro de fechas: frontend/components/filtro-fechas.md
               - Paso Cotizacion (Modal Pedidos): frontend/components/paso-cotizacion.md
@@ -517,3 +524,4 @@ nav:
       - Liberacion de Metricas de entrega (oct 2026): changelog/metricas-2026-10.md
       - Novedades Inter, distancia y reportes (nov 2026): changelog/novedades-2026-11.md
       - Comercial, Panel y Accesos en LOGI (nov 2026): changelog/comercial-2026-11.md
+      - Logi, asistente y seguridad por rol (nov 2026): changelog/logi-2026-11.md

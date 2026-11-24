@@ -10,9 +10,9 @@ nivel: 2
 
 **Autor:** Yadilton Torres
 
-**Selector:** `app-logi-mascot`
+**Selector:** `app-logi-assistant`
 
-**Ubicación:** `SitioLogiGho/src/app/components/logi-pet`
+**Ubicación:** `SitioLogiGho/src/app/components/logi-assistant`
 
 **Rama:** `feature/logo-animado` (commit `79b06c48`). Aún no está en PreProd ni en producción.
 
@@ -44,11 +44,11 @@ Nunca muestra al usuario texto técnico, y **solo habla de los módulos que el r
 ## Uso
 
 ```html
-<app-logi-mascot
+<app-logi-assistant
   whatsappUrl="https://wa.me/573176064197"
   whatsappMensaje="¡Hola! Necesito ayuda con LogiGho."
   [menu]="navItems"
-></app-logi-mascot>
+></app-logi-assistant>
 ```
 
 | Entrada | Tipo | Para qué |
@@ -63,13 +63,13 @@ Nunca muestra al usuario texto técnico, y **solo habla de los módulos que el r
 ## Estructura de archivos
 
 ```
-logi-pet/
-├── logi-mascot.component.ts / .html / .spec.ts → El robot: dibujo, burbuja, menú, buscador y reacciones
+logi-assistant/
+├── logi-assistant.component.ts / .html / .spec.ts → El robot: dibujo, burbuja, menú, buscador y reacciones
 ├── styles/
-│   └── logi-mascot.component.scss              → Dron, burbuja, menú y animaciones
+│   └── logi-assistant.component.scss              → Dron, burbuja, menú y animaciones
 ├── services/
 │   ├── logi.service.ts (+ .spec)               → Puente entre la app y Logi (esperas, fallas, avisos)
-│   └── logi-entornos.service.ts (+ .spec)      → Cambiar entorno: GET y PUT /preferencias/mia
+│   └── logi-experiencias.service.ts (+ .spec)      → Cambiar entorno: GET y PUT /preferencias/mia
 ├── conocimiento/                               → Solo textos y datos
 │   ├── logi-conocimiento.ts (+ .spec)          → ~140 pantallas: para qué sirven, consejos y errores típicos
 │   ├── logi-guias.ts (+ .spec)                 → 39 guías de «Pregúntale a Logi»
@@ -86,7 +86,7 @@ logi-pet/
 
 Detalle de cada carpeta: [Conocimiento](conocimiento.md) · [Helpers](helpers.md) · [Servicios](services.md).
 
-Fuera de `logi-pet` también participan:
+Fuera de `logi-assistant` también participan:
 
 | Archivo | Qué hace |
 |---|---|
@@ -197,7 +197,7 @@ Interceptor / manejador de errores
 
 | Archivo | Pruebas |
 |---|---|
-| `logi-mascot.component.spec.ts` | Seguridad: buscador, preguntas frecuentes, «¿Qué hago aquí?» y guías abiertas directo |
+| `logi-assistant.component.spec.ts` | Seguridad: buscador, preguntas frecuentes, «¿Qué hago aquí?» y guías abiertas directo |
 | `services/*.spec.ts` | Esperas, fallas y avisos; Cambiar entorno apagado sin llamar al servidor |
 | `conocimiento/*.spec.ts` | Rutas bien escritas, ids únicos, búsqueda sin tildes, rotación de consejos |
 | `helpers/*.spec.ts` | Explicación de alertas, texto sin tecnicismos, diagnóstico por HTTP, revisión de campos |
@@ -205,7 +205,7 @@ Interceptor / manejador de errores
 Junto con `acceso-modulos.spec.ts` y `default-layout.component.spec.ts` son **74 pruebas en verde**.
 
 ```bash
-npx ng test --watch=false --browsers=ChromeHeadless --include="src/app/components/logi-pet/**/*.spec.ts" --include="src/app/core/application/services/guards/*.spec.ts" --include="src/app/layout/default-layout/default-layout.component.spec.ts"
+npx ng test --watch=false --browsers=ChromeHeadless --include="src/app/components/logi-assistant/**/*.spec.ts" --include="src/app/core/application/services/guards/*.spec.ts" --include="src/app/layout/default-layout/default-layout.component.spec.ts"
 ```
 
 ---

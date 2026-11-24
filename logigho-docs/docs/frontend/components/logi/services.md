@@ -10,7 +10,7 @@ nivel: 2
 
 **Autor:** Yadilton Torres
 
-**Ubicación:** `SitioLogiGho/src/app/components/logi-pet/services/`
+**Ubicación:** `SitioLogiGho/src/app/components/logi-assistant/services/`
 
 ---
 
@@ -32,7 +32,7 @@ Funciones exportadas: `motivoDeFallaCodigo()`, `tecnicoDeServidor()` (estado, se
 
 ---
 
-## `LogiEntornosService` (`logi-entornos.service.ts`)
+## `LogiExperienciasService` (`logi-experiencias.service.ts`)
 
 «Cambiar entorno» (experiencias). Contrato: [Preferencias de usuario](../../../api/preferencias.md).
 
@@ -41,7 +41,7 @@ Funciones exportadas: `motivoDeFallaCodigo()`, `tecnicoDeServidor()` (estado, se
 | `cargar(forzar?)` | `GET /preferencias/mia`, una vez por sesión. Nunca lanza: si falla, el usuario sigue en `clasica` |
 | `cambiar(id, confirmado?)` | `PUT`; cambia solo si el servidor confirma |
 | `cambiarTema(tema)` | Tema dentro del entorno activo |
-| `entornos`, `activo`, `temas`, `hayParaElegir` | Señales para la lista de Logi (la opción sale con 2 o más entornos) |
+| `experiencias`, `activo`, `temas`, `hayParaElegir` | Señales para la lista de Logi (la opción sale con 2 o más experiencias) |
 | `registrarGuardia(fn)` / `hayCambiosSinGuardar()` | Una pantalla avisa cambios sin guardar; si la guardia falla, se toma como sin cambios |
 
 Con `environment.preferenciasActivas = false` (producción) el estado es `apagado`, no llama al servidor y solo existe «Clásica».
@@ -51,4 +51,4 @@ Con `environment.preferenciasActivas = false` (producción) el estado es `apagad
 ## Pruebas
 
 - `logi.service.spec.ts`: avisos sin Logi, una sola espera con varias peticiones, conexión tardía, desconexión, error del oyente sin romper la app, mensaje del servidor, frase por código, versión nueva y detalle técnico.
-- `logi-entornos.service.spec.ts`: apagado sin llamar al servidor, guardia que se registra y se quita, guardia que falla.
+- `logi-experiencias.service.spec.ts`: apagado sin llamar al servidor, guardia que se registra y se quita, guardia que falla.

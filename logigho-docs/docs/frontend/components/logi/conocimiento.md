@@ -10,7 +10,7 @@ nivel: 2
 
 **Autor:** Yadilton Torres
 
-**Ubicación:** `SitioLogiGho/src/app/components/logi-pet/conocimiento/`
+**Ubicación:** `SitioLogiGho/src/app/components/logi-assistant/conocimiento/`
 
 Solo textos y datos: lo que Logi sabe de LogiGho. Todo es local, sin IA ni servidor.
 

@@ -10,7 +10,7 @@ nivel: 2
 
 **Autor:** Yadilton Torres
 
-**Ubicación:** `SitioLogiGho/src/app/components/logi-pet/logi-mascot.component.ts`
+**Ubicación:** `SitioLogiGho/src/app/components/logi-assistant/logi-assistant.component.ts`
 
 ---
 
@@ -65,7 +65,7 @@ La guía de **Ingreso Devoluciones** apuntaba a `/logistica/ingreso-devoluciones
 
 ## Pruebas
 
-`logi-mascot.component.spec.ts` (sin pintar el componente):
+`logi-assistant.component.spec.ts` (sin pintar el componente):
 
 - El buscador no responde con guías de módulos ajenos y sí con las propias.
 - Mientras no carguen los módulos solo salen guías que no dependen de un módulo.

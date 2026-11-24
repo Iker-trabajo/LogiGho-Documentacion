@@ -10,7 +10,7 @@ nivel: 2
 
 **Autor:** Yadilton Torres
 
-**Ubicación:** `SitioLogiGho/src/app/components/logi-pet/helpers/`
+**Ubicación:** `SitioLogiGho/src/app/components/logi-assistant/helpers/`
 
 Lógica pura, sin Angular: fácil de probar.
 

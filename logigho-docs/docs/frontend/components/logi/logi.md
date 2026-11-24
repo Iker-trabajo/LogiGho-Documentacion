@@ -14,7 +14,7 @@ nivel: 2
 
 **Ubicación:** `SitioLogiGho/src/app/components/logi-assistant`
 
-**Rama:** `feature/logo-animado` (commit `79b06c48`). Aún no está en PreProd ni en producción.
+**Rama:** `feature/logo-animado` (commit `553a7b71`). Aún no está en PreProd ni en producción.
 
 ---
 
@@ -214,6 +214,7 @@ npx ng test --watch=false --browsers=ChromeHeadless --include="src/app/component
 
 | Fecha | Autor | Cambio |
 |---|---|---|
+| 2026-11-24 | Yadilton Torres | Carpeta `logi-pet` → `logi-assistant`, `LogiMascotComponent` → `LogiAssistantComponent` y `LogiEntornosService` → `LogiExperienciasService` |
 | 2026-11-24 | Yadilton Torres | Seguridad por rol; carpetas `services/`, `conocimiento/`, `helpers/` y `styles/`; pruebas unitarias |
 | 2026-11 | Yadilton Torres | Diseño del dron, guías, recorridos, errores, reportes a soporte, ayuda en todo el menú y Cambiar entorno |
 

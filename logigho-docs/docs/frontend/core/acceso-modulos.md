@@ -12,7 +12,7 @@ nivel: 2
 
 **Ubicación:** `SitioLogiGho/src/app/core/application/services/guards/acceso-modulos.ts`
 
-**Rama:** `feature/logo-animado` (commit `79b06c48`).
+**Rama:** `feature/logo-animado` (commit `553a7b71`).
 
 ---
 

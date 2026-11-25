@@ -315,6 +315,7 @@ nav:
             - Reglas Modalidad de Pago: frontend/core/reglas-modalidad-pago.md
             - Servicio de Notificaciones: frontend/core/notificaciones-service.md
             - Acceso a modulos (seguridad de rutas): frontend/core/acceso-modulos.md
+            - "Forma de la tienda (campos, orden e Id)": frontend/core/forma-tienda.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
@@ -418,6 +419,9 @@ nav:
                   - Novedades (distancia a la dirección): frontend/views/logistica/novedades/novedades-distancia.md
                   - Directiva ayuda flotante: frontend/views/gestion-datos/export-data/directives/ayuda-flotante-directive.md
               - Tienda:
+                  - Mi perfil:
+                      - Componente: frontend/views/tienda/perfil/perfil.md
+                      - Estado de las cuentas bancarias: frontend/views/tienda/perfil/cuentas-estado.md
                   - Portafolio:
                       - Componente: frontend/views/tienda/Portafolio/portafolio.md
                       - Arquitectura: frontend/views/tienda/Portafolio/portafolio-ADR.md
@@ -533,3 +537,4 @@ nav:
       - Comercial, Panel y Accesos en LOGI (nov 2026): changelog/comercial-2026-11.md
       - Logi, asistente y seguridad por rol (nov 2026): changelog/logi-2026-11.md
       - Costos transporte tienda (nov 2026): changelog/costos-transporte-tienda-2026-11.md
+      - Mi perfil y cuentas bancarias (nov 2026): changelog/perfil-2026-11.md

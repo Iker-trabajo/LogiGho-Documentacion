@@ -46,6 +46,24 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 ### Documentación
 - Detalle en [costos-transporte-tienda-2026-11](costos-transporte-tienda-2026-11.md).
 
+## [2026-11-24] — Comercial y Mi perfil: «Su negocio» por tienda, forma de la tienda, foto predeterminada y módulos con pruebas
+
+### Nuevas funcionalidades
+- Panel comercial: fecha de contrato y «Su negocio» por tienda (cada tienda guarda solo lo suyo en su `_id`); Estrategia LOGI A–D, paquetes hasta «Más de 150», canal «Otro» y varios tipos de negocio.
+- Clientes completa con lo del Panel (dirección, sucursal, tipo) y agrega a las tiendas viejas los campos que les falten sin pisar nada.
+- Toda tienda nueva nace con la forma y el orden de Administración → Tiendas.
+- Mi perfil: «Usar la predeterminada» para foto y banner.
+
+### Cambios
+- Se trae de `main` el rediseño «La Red»; los colores fijos de estos módulos pasan a `--lg-*`.
+- Mi perfil, Panel comercial y Clientes quedan organizados en `helpers/`, `models/`, `repository/` y `styles/`, con pruebas de reglas, repositorio y pantalla (61, 46 y 37).
+
+### Correcciones
+- Listas tapadas por la sección de abajo, saltos de scroll al abrirlas y la lista de tienda que no se cerraba.
+
+### Documentación
+- Nueva: [Forma de la tienda](../frontend/core/forma-tienda.md). Detalle en [comercial-2026-11](comercial-2026-11.md) y [perfil-2026-11](perfil-2026-11.md).
+
 ---
 
 ## [2026-11-23] — Rediseño «La Red» de toda la plataforma (construido y verificado en local; pendiente de PreProd)
@@ -73,6 +91,19 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 - Guías: [validación en PreProd y salida a producción](../guias/rediseno-la-red-validacion-y-salida.md) y [rollback y hotfix](../guias/rediseno-la-red-rollback-y-hotfix.md).
 - [Decisiones del rediseño (ADR-RED-001 a 006)](../arquitectura/adr/rediseno-la-red/index.md).
 - Pruebas (commit `45dbf949`, todas en local): 2.246 de 2.259 tests (los 13 que fallan son los mismos de `main`), builds `preprod` y `production` correctos, 34 capturas en motor WebKit sin errores, contraste del modo claro 60 de 60 pares. **Sin probar:** iPhone real, acciones que escriben, menú por rol con usuarios reales, interior de Power BI y cuatro modales en claro.
+
+---
+
+## [2026-11-19] — Mi perfil: cuentas activas e inactivas, modales con revisión en vivo y listas rápidas
+
+### Nuevas funcionalidades
+- Comercial puede inactivar o activar cuentas bancarias desde el Panel comercial; Mi perfil oculta las inactivas. Modales de Mi perfil con revisión en vivo.
+
+### Cambios
+- Listas de los modales siempre hacia abajo y por tandas (ciudades abre rápido); en Mi perfil el naranja queda solo en la rueda de avance.
+
+### Documentación
+- Detalle en [perfil-2026-11](perfil-2026-11.md).
 
 ---
 

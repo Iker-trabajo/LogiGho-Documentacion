@@ -147,6 +147,8 @@ Fondo blanco (igual que el resto de la página), pasos arriba con barra de avanc
 | 2026-11-11 | Yadilton Torres | Sale solo a quien tiene únicamente el rol Red social y no lo ha completado; obligatorio; antes de la guía |
 | 2026-11-11 | Yadilton Torres | Todos los campos obligatorios; ciudad con buscador desplegable; fondo blanco; etiqueta "✓ Guardado" |
 | 2026-11-11 | Yadilton Torres | Notificación a Comercial y COO al completarlo por primera vez |
+| 2026-11-20 | Yadilton Torres | Paquetes al mes: Menos de 50, De 50 a 150 y Más de 150; varios tipos de negocio pasan a `TipoTienda` |
+| 2026-11-23 | Yadilton Torres | La primera tienda nace con la [forma y el orden de Administración](../core/forma-tienda.md) (`armarTiendaNueva`); ejemplo del teléfono «Ej: 300 123 4567» |
 
 ---
 

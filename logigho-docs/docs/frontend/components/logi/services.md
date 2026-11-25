@@ -36,19 +36,29 @@ Funciones exportadas: `motivoDeFallaCodigo()`, `tecnicoDeServidor()` (estado, se
 
 «Cambiar entorno» (experiencias). Contrato: [Preferencias de usuario](../../../api/preferencias.md).
 
+Desde la integración del 2026-11-25 **no hace peticiones propias**: delega en el `ExperienciaActivaStore` del
+[motor de experiencias](../../experiencias/index.md), el mismo que usa el selector del header. Así Logi y el selector comparten estado y versión
+(antes cada uno tenía la suya y chocaban con 409).
+
 | Elemento | Qué hace |
 |---|---|
-| `cargar(forzar?)` | `GET /preferencias/mia`, una vez por sesión. Nunca lanza: si falla, el usuario sigue en `clasica` |
-| `cambiar(id, confirmado?)` | `PUT`; cambia solo si el servidor confirma |
-| `cambiarTema(tema)` | Tema dentro del entorno activo |
-| `experiencias`, `activo`, `temas`, `hayParaElegir` | Señales para la lista de Logi (la opción sale con 2 o más experiencias) |
+| `cargar(forzar?)` | Pide al store que lea `GET /preferencias/mia` (`iniciar()`); `forzar` es «Reintentar». Nunca lanza: si falla, el usuario sigue en `clasica` |
+| `cambiar(id, confirmado?)` | Revisa guardia, `ya-activo` y `en-curso`; baja el shell de la experiencia **antes** de guardar (si no carga: `carga-fallida`); luego `store.cambiar(id)` (`PUT`, solo cambia si el servidor confirma). Traduce el aviso del store a un motivo de Logi y lo descarta para no mostrar dos mensajes |
+| `cambiarTema(tema)` | Hoy devuelve `desconocido`: cada experiencia tiene un solo tema |
+| `experiencias`, `activo`, `hayParaElegir` | Salen de `store.opciones()`, `store.activa()` y `store.hayVarias()`; el estado (general, beta, borrador) es el que da el servidor (`store.estadosServidor`). La opción sale con 2 o más experiencias |
+| `estado` | `apagado` (bandera apagada), `sin-cargar`, `cargando`, `fallo` (`store.lecturaFallida`) o `listo` |
 | `registrarGuardia(fn)` / `hayCambiosSinGuardar()` | Una pantalla avisa cambios sin guardar; si la guardia falla, se toma como sin cambios |
 
-Con `environment.preferenciasActivas = false` (producción) el estado es `apagado`, no llama al servidor y solo existe «Clásica».
+Con `environment.preferenciasActivas = false` (producción) el estado es `apagado`, no llama al servidor y Logi muestra «Muy pronto».
+
+!!! info "Dónde se monta Logi"
+    Desde la misma integración Logi se monta **una sola vez** en `ShellHostComponent` (fuera del `ngComponentOutlet`), no dentro del layout clásico.
+    Así aparece en Clásica y en Aurora y no se destruye al cambiar de experiencia (el mensaje «¡Listo! Ya estás en Aurora» sobrevive al cambio).
+    Recibe el menú de `PlataformaFacade.menu()`. En Aurora móvil sube sobre la barra inferior (regla en `experiencias/aurora/estilos/_global.scss`).
 
 ---
 
 ## Pruebas
 
 - `logi.service.spec.ts`: avisos sin Logi, una sola espera con varias peticiones, conexión tardía, desconexión, error del oyente sin romper la app, mensaje del servidor, frase por código, versión nueva y detalle técnico.
-- `logi-experiencias.service.spec.ts`: apagado sin llamar al servidor, guardia que se registra y se quita, guardia que falla.
+- `logi-experiencias.service.spec.ts`: delegación en el store (con un `PREFERENCIAS_PORT` falso), estados, cargar, cambiar, errores 422 y 500, guardia y `en-curso`.

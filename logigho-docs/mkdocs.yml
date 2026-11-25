@@ -102,6 +102,7 @@ nav:
   - Backend:
       - Overview: backend/overview.md
       - Autenticacion (cuentas, permisos): backend/autenticacion.md
+      - Cobro de servicios (Waichat y Pago a proveedores): backend/cobro-servicios/index.md
       - Lambdas .NET (Clean Architecture):
           - Filosofía del proyecto (Clean Architecture):
               - Estructura general: backend/lambdas-dotnet/estructura.md

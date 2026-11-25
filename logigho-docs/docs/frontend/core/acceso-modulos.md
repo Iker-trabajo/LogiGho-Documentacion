@@ -60,7 +60,7 @@ rutaPermitida('/app/tienda/detalle/5', todos, delUsuario)  // true: cuelga de Mi
 | `normalizarRutaModulo(ruta)` | Normaliza como en el paso 1 |
 | `esRutaLibre(ruta)` | `true` para inicio, Muro y Maps |
 | `rutaPermitida(ruta, todos, delUsuario)` | La regla. `todos` = módulos ACTIVO sin filtrar; `delUsuario` = los de sus roles (o con `Todos`) |
-| `AccesoModulosService.registrar(todos, delUsuario)` | Lo llama el layout al cargar los módulos |
+| `AccesoModulosService.registrar(todos, delUsuario)` | Lo llama `PlataformaFacade.publicarModulos(modulos, todos)` al cargar los módulos (desde la integración del 2026-11-25 ya no solo el layout clásico, así que también sirve en Aurora) |
 | `AccesoModulosService.puede(ruta)` | `false` mientras no carguen los módulos |
 
 ---
@@ -90,3 +90,12 @@ rutaPermitida('/app/tienda/detalle/5', todos, delUsuario)  // true: cuelga de Mi
 - Las pantallas de módulos **INACTIVO** (ej. Cotizador, Mi Score) siguen abriendo a mano para quien tenga el módulo padre, porque el layout solo consulta `module?estado=ACTIVO`.
 - Lo correcto es arreglar la ruta del módulo «Controller» (`/app/controll` → `/app/controller`) en la colección; entonces el respaldo del paso 5 deja de hacer falta para esas pantallas.
 - La validación corre después de navegar (`NavigationEnd`): la pantalla alcanza a cargar antes de sacar al usuario. El backend debe seguir validando el rol en cada servicio.
+
+## Una sola regla en todos los shells (integración 2026-11-25)
+
+Al unir esta regla con el [motor de experiencias](../experiencias/index.md) quedó **una sola** fuente de acceso para Clásica, Aurora y Logi:
+
+- `PlataformaFacade` guarda `todosLosModulos` (los ACTIVO sin filtrar por rol) además de los del usuario y los registra en `AccesoModulosService`.
+- `PlataformaFacade.validarAcceso()` (la usan los shells nuevos) y `validateModuleAccess()` del layout clásico usan `rutaPermitida` y `esRutaLibre`. La regla vieja de prefijo (`tieneAccesoARuta`) quedó solo para sus pruebas.
+- `DatosBienvenida` (servicio compartido de inicio de sesión) suma `tiendas` y `esInterno` para el formulario Accesos.
+- **Efecto a vigilar:** antes toda ruta bajo `/app/` quedaba excluida de la validación; ahora se valida. Una pantalla sin módulo propio en `Modulo` queda cerrada. Revisadas en el código sin enlaces desde el menú: `/dropshipping/correlacion`, `/dropshipping/dashboard`, `/integracion/pedidos-hoko`, `/integracion/cartera-hoko`, `/director-de-operaciones/costostransportetienda`, `/usuario/modulopedidos`.

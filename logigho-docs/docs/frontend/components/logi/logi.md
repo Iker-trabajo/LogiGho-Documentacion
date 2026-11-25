@@ -36,7 +36,7 @@ Nunca muestra al usuario texto técnico, y **solo habla de los módulos que el r
 
 | Acceso | Descripción |
 |---|---|
-| Autenticado | Vive en el [layout](../../layout/default-layout.md), así que aparece en todas las rutas bajo `/app` |
+| Autenticado | Se monta una sola vez en el anfitrión de experiencias (`ShellHostComponent`), así que aparece en todas las rutas bajo `/app`, en Clásica y en Aurora |
 | Lo que muestra | Guías, preguntas frecuentes, consejos y recorridos solo de los módulos del rol. Las ayudas generales (soporte, atajos, «No veo una opción») son para todos |
 
 ---

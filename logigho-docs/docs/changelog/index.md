@@ -24,6 +24,22 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-25] — Integración para presentación a gerencia: cobro de servicios, experiencias (Aurora), Logi, costos y Mi perfil (PreProd)
+
+### Nuevas funcionalidades
+- **Cobro de servicios** (Waichat y Pago a proveedores): Mis servicios para la tienda y administración en Controller. Ver [Cobro de servicios](../backend/cobro-servicios/index.md).
+- **Selector de experiencia** arriba a la derecha y experiencia **Aurora** (riel de 7 iconos, billetera, pedidos, productos y proveedores propios).
+- **Logi cambia de experiencia**, igual que el selector, y aparece en Clásica y en Aurora.
+
+### Cambios
+- Logi delega en el motor de experiencias y se monta una sola vez en el anfitrión de experiencias.
+- Una sola regla de acceso por rol para Clásica, Aurora y Logi: ahora también se validan las rutas bajo `/app/`. Ver [Acceso a módulos](../frontend/core/acceso-modulos.md).
+- El retiro de las tiendas ya no resta comisión bancaria.
+- El autorizador del API de PreProd acepta el pool de Cognito de PreProd además del de producción; la lambda de preferencias valida contra el pool y el cliente de PreProd.
+
+### Documentación
+- Detalle en las entradas de Logi, Costos transporte tienda y Comercial y Mi perfil del 2026-11-24 y en [Experiencia Aurora](../frontend/experiencias/experiencia-aurora.md).
+
 ## [2026-11-24] — Logi: asistente con dron, ayuda, soporte y seguridad por rol (rama `feature/logo-animado`)
 
 ### Nuevas funcionalidades

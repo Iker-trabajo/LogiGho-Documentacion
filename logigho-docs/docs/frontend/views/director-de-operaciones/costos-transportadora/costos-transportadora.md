@@ -15,7 +15,7 @@ Tipo: vista
 
 Es la pantalla donde se configura el [motor Dinámico](../../../../backend/lambdas-dotnet/lambdas/ApiLambdaLiquidacionesLogighoAOT/motor-dinamico/overview.md) de liquidaciones: qué transportadoras liquidan con el motor nuevo, qué política de peso usan, qué trayectos aceptan y cuánto cobra cada tienda por cada uno. Antes de este módulo, migrar una transportadora al motor Dinámico significaba editar documentos de Mongo a mano; ahora es un formulario con validación, igual que cualquier otra pantalla de la plataforma.
 
-No reemplaza nada del sistema legacy de tarifas (**Costos Transporte Tienda**) — las transportadoras que siguen en el motor Legacy (Interrapidísimo, Envía, Servientrega) siguen configurándose ahí. Este módulo es exclusivamente para transportadoras migradas o en proceso de migrar al motor Dinámico.
+No reemplaza nada del sistema legacy de tarifas ([**Costos Transporte Tienda**](../costostransportetienda/costostransportetienda.md)) — las transportadoras que siguen en el motor Legacy (Interrapidísimo, Envía, Servientrega) siguen configurándose ahí. Este módulo es exclusivamente para transportadoras migradas o en proceso de migrar al motor Dinámico.
 
 ---
 

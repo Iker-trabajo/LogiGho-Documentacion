@@ -24,6 +24,64 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-25] — Integración para presentación a gerencia: cobro de servicios, experiencias (Aurora), Logi, costos y Mi perfil (PreProd)
+
+### Nuevas funcionalidades
+- **Cobro de servicios** (Waichat y Pago a proveedores): Mis servicios para la tienda y administración en Controller. Ver [Cobro de servicios](../backend/cobro-servicios/index.md).
+- **Selector de experiencia** arriba a la derecha y experiencia **Aurora** (riel de 7 iconos, billetera, pedidos, productos y proveedores propios).
+- **Logi cambia de experiencia**, igual que el selector, y aparece en Clásica y en Aurora.
+
+### Cambios
+- Logi delega en el motor de experiencias y se monta una sola vez en el anfitrión de experiencias.
+- Una sola regla de acceso por rol para Clásica, Aurora y Logi: ahora también se validan las rutas bajo `/app/`. Ver [Acceso a módulos](../frontend/core/acceso-modulos.md).
+- El retiro de las tiendas ya no resta comisión bancaria.
+- El autorizador del API de PreProd acepta el pool de Cognito de PreProd además del de producción; la lambda de preferencias valida contra el pool y el cliente de PreProd.
+
+### Documentación
+- Detalle en las entradas de Logi, Costos transporte tienda y Comercial y Mi perfil del 2026-11-24 y en [Experiencia Aurora](../frontend/experiencias/experiencia-aurora.md).
+
+## [2026-11-24] — Logi: asistente con dron, ayuda, soporte y seguridad por rol (rama `feature/logo-animado`)
+
+### Nuevas funcionalidades
+- Logi con diseño de dron, ayuda en todo el menú, 39 guías (Ctrl + K), explicación de errores, reportes a soporte y Cambiar entorno.
+
+### Cambios
+- Logi solo muestra lo de los módulos del rol, y el layout ya no deja que un módulo padre abra hijas con roles propios. Carpetas `services/`, `conocimiento/`, `helpers/` y `styles/`.
+
+### Documentación
+- Detalle en [logi-2026-11](logi-2026-11.md).
+
+## [2026-11-24] — Costos transporte tienda: rediseño, cobertura por tienda y validaciones (PreProd)
+
+### Nuevas funcionalidades
+- Pestaña «Cobertura por tienda» (solo consulta), modal de crear propio con validaciones por campo y modal de actualizar mejorado.
+
+### Cambios
+- Tabla propia, paginación con números, diseño para celular, tema «La Red» (oscuro y claro) y carpetas como Novedades. Sin cambios en la lógica de envío.
+
+### Documentación
+- Detalle en [costos-transporte-tienda-2026-11](costos-transporte-tienda-2026-11.md).
+
+## [2026-11-24] — Comercial y Mi perfil: «Su negocio» por tienda, forma de la tienda, foto predeterminada y módulos con pruebas
+
+### Nuevas funcionalidades
+- Panel comercial: fecha de contrato y «Su negocio» por tienda (cada tienda guarda solo lo suyo en su `_id`); Estrategia LOGI A–D, paquetes hasta «Más de 150», canal «Otro» y varios tipos de negocio.
+- Clientes completa con lo del Panel (dirección, sucursal, tipo) y agrega a las tiendas viejas los campos que les falten sin pisar nada.
+- Toda tienda nueva nace con la forma y el orden de Administración → Tiendas.
+- Mi perfil: «Usar la predeterminada» para foto y banner.
+
+### Cambios
+- Se trae de `main` el rediseño «La Red»; los colores fijos de estos módulos pasan a `--lg-*`.
+- Mi perfil, Panel comercial y Clientes quedan organizados en `helpers/`, `models/`, `repository/` y `styles/`, con pruebas de reglas, repositorio y pantalla (61, 46 y 37).
+
+### Correcciones
+- Listas tapadas por la sección de abajo, saltos de scroll al abrirlas y la lista de tienda que no se cerraba.
+
+### Documentación
+- Nueva: [Forma de la tienda](../frontend/core/forma-tienda.md). Detalle en [comercial-2026-11](comercial-2026-11.md) y [perfil-2026-11](perfil-2026-11.md).
+
+---
+
 ## [2026-11-23] — Rediseño «La Red» de toda la plataforma (construido y verificado en local; pendiente de PreProd)
 
 > **Estado:** verificado en local sobre el commit `45dbf949` de `feature/rediseno-integral-la-red`. **Aún no está en PreProd ni en producción.** La rama tiene dos commits posteriores (`9b7c5adb`, `0c88ca39`) y puede cambiar: otra sesión aplica detalles pedidos por Iker.
@@ -49,6 +107,19 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 - Guías: [validación en PreProd y salida a producción](../guias/rediseno-la-red-validacion-y-salida.md) y [rollback y hotfix](../guias/rediseno-la-red-rollback-y-hotfix.md).
 - [Decisiones del rediseño (ADR-RED-001 a 006)](../arquitectura/adr/rediseno-la-red/index.md).
 - Pruebas (commit `45dbf949`, todas en local): 2.246 de 2.259 tests (los 13 que fallan son los mismos de `main`), builds `preprod` y `production` correctos, 34 capturas en motor WebKit sin errores, contraste del modo claro 60 de 60 pares. **Sin probar:** iPhone real, acciones que escriben, menú por rol con usuarios reales, interior de Power BI y cuatro modales en claro.
+
+---
+
+## [2026-11-19] — Mi perfil: cuentas activas e inactivas, modales con revisión en vivo y listas rápidas
+
+### Nuevas funcionalidades
+- Comercial puede inactivar o activar cuentas bancarias desde el Panel comercial; Mi perfil oculta las inactivas. Modales de Mi perfil con revisión en vivo.
+
+### Cambios
+- Listas de los modales siempre hacia abajo y por tandas (ciudades abre rápido); en Mi perfil el naranja queda solo en la rueda de avance.
+
+### Documentación
+- Detalle en [perfil-2026-11](perfil-2026-11.md).
 
 ---
 
@@ -495,6 +566,20 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
   **Importación Facturas Envía**, con las validaciones y las columnas obligatorias.
 - Actualizadas **Importación Facturas Genérico** (validaciones y `columnasOpcionales`),
   **Facturas Transportadoras** (X-Cargo fuera de servicio y cómo reactivarlo) y su ADR.
+
+## [2026-11-24] — Motor de experiencias y experiencia «Aurora» (front)
+
+### Nuevas funcionalidades
+- **Motor de experiencias** en el front: selector de experiencia, preferencia guardada en el servidor (`GET/PUT preferencias/mia`), shells y versiones de vista por experiencia.
+- **Experiencia Aurora** (estado `borrador`): paleta lima, negro y blanco, riel de 7 iconos con panel, Billetera con saldo disponible, pedidos con etapas y tabla de filas altas, versiones propias de Productos y Proveedores.
+
+### Cambios
+- La experiencia `clasica` (plataforma actual) no cambia para el usuario. El layout pasa a carga diferida.
+
+### Documentación
+- [Motor de experiencias y experiencia Aurora](../frontend/experiencias/experiencia-aurora.md): cómo funciona, dónde está cada cosa, reglas y cómo agregar una vista o una experiencia.
+
+---
 ## [2026-10-17] — Propuesta: Sistema de Experiencias y seguridad de accesos
 
 ### Documentación

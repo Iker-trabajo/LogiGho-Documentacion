@@ -102,6 +102,7 @@ nav:
   - Backend:
       - Overview: backend/overview.md
       - Autenticacion (cuentas, permisos): backend/autenticacion.md
+      - Cobro de servicios (Waichat y Pago a proveedores): backend/cobro-servicios/index.md
       - Lambdas .NET (Clean Architecture):
           - Filosofía del proyecto (Clean Architecture):
               - Estructura general: backend/lambdas-dotnet/estructura.md
@@ -297,6 +298,7 @@ nav:
           - Barra superior (Default Header): frontend/layout/default-header.md
       - Sistema de Experiencias (propuesta):
           - Que es: frontend/experiencias/index.md
+          - Motor y experiencia Aurora (implementado): frontend/experiencias/experiencia-aurora.md
           - Arquitectura (ADR-001): frontend/experiencias/adr/ADR-001-sistema-experiencias.md
           - Estructura del proyecto: frontend/experiencias/estructura-proyecto.md
           - Crear una vista: frontend/experiencias/crear-vista.md
@@ -314,11 +316,19 @@ nav:
             - Servicio de Cotizacion: frontend/core/cotizacion-service.md
             - Reglas Modalidad de Pago: frontend/core/reglas-modalidad-pago.md
             - Servicio de Notificaciones: frontend/core/notificaciones-service.md
+            - Acceso a modulos (seguridad de rutas): frontend/core/acceso-modulos.md
+            - "Forma de la tienda (campos, orden e Id)": frontend/core/forma-tienda.md
           - components:
                 #- Landing Page: frontend/components/landing-page.md
               - Estandarizacion de direcciones: frontend/components/estandar-direcciones.md
               - Campana de Notificaciones: frontend/components/campana-notificaciones.md
               - Accesos en LOGI (formulario): frontend/components/accesos-logi.md
+              - Logi (asistente):
+                  - Que es y como funciona: frontend/components/logi/logi.md
+                  - Seguridad por rol: frontend/components/logi/seguridad-por-rol.md
+                  - Conocimiento: frontend/components/logi/conocimiento.md
+                  - Helpers: frontend/components/logi/helpers.md
+                  - Servicios: frontend/components/logi/services.md
               - Lista de opciones: frontend/components/lista-opciones.md
               - Filtro de fechas: frontend/components/filtro-fechas.md
               - Paso Cotizacion (Modal Pedidos): frontend/components/paso-cotizacion.md
@@ -365,6 +375,13 @@ nav:
                       - Modelos: frontend/views/director-de-operaciones/costos-transportadora/modelos/liquidacion-transportadora-models.md
                       - Servicio de Estado: frontend/views/director-de-operaciones/costos-transportadora/servicios/transportadora-activa-service.md
                       - Arquitectura (ADR-001): frontend/views/director-de-operaciones/costos-transportadora/adr/ADR-001-simulador-sin-calculo-propio.md
+                  - Costos Transporte Tienda:
+                      - Componente: frontend/views/director-de-operaciones/costostransportetienda/costostransportetienda.md
+                      - Cobertura por tienda: frontend/views/director-de-operaciones/costostransportetienda/components/cobertura-costos.md
+                      - Reglas del modal de crear: frontend/views/director-de-operaciones/costostransportetienda/helpers/crear-costo-rules.md
+                      - Calculo de cobertura: frontend/views/director-de-operaciones/costostransportetienda/helpers/cobertura-helper.md
+                      - Formatos: frontend/views/director-de-operaciones/costostransportetienda/helpers/formato-helper.md
+                      - Modelos: frontend/views/director-de-operaciones/costostransportetienda/modelos/costos-transporte-models.md
               - Controller:
                   - Facturas transportadoras:
                       - Componente: frontend/views/controller/facturas-trans/facturas-trans.md
@@ -404,6 +421,9 @@ nav:
                   - Novedades (distancia a la dirección): frontend/views/logistica/novedades/novedades-distancia.md
                   - Directiva ayuda flotante: frontend/views/gestion-datos/export-data/directives/ayuda-flotante-directive.md
               - Tienda:
+                  - Mi perfil:
+                      - Componente: frontend/views/tienda/perfil/perfil.md
+                      - Estado de las cuentas bancarias: frontend/views/tienda/perfil/cuentas-estado.md
                   - Portafolio:
                       - Componente: frontend/views/tienda/Portafolio/portafolio.md
                       - Arquitectura: frontend/views/tienda/Portafolio/portafolio-ADR.md
@@ -517,3 +537,6 @@ nav:
       - Liberacion de Metricas de entrega (oct 2026): changelog/metricas-2026-10.md
       - Novedades Inter, distancia y reportes (nov 2026): changelog/novedades-2026-11.md
       - Comercial, Panel y Accesos en LOGI (nov 2026): changelog/comercial-2026-11.md
+      - Logi, asistente y seguridad por rol (nov 2026): changelog/logi-2026-11.md
+      - Costos transporte tienda (nov 2026): changelog/costos-transporte-tienda-2026-11.md
+      - Mi perfil y cuentas bancarias (nov 2026): changelog/perfil-2026-11.md

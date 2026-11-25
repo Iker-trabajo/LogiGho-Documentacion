@@ -372,6 +372,13 @@ nav:
                       - Modelos: frontend/views/director-de-operaciones/costos-transportadora/modelos/liquidacion-transportadora-models.md
                       - Servicio de Estado: frontend/views/director-de-operaciones/costos-transportadora/servicios/transportadora-activa-service.md
                       - Arquitectura (ADR-001): frontend/views/director-de-operaciones/costos-transportadora/adr/ADR-001-simulador-sin-calculo-propio.md
+                  - Costos Transporte Tienda:
+                      - Componente: frontend/views/director-de-operaciones/costostransportetienda/costostransportetienda.md
+                      - Cobertura por tienda: frontend/views/director-de-operaciones/costostransportetienda/components/cobertura-costos.md
+                      - Reglas del modal de crear: frontend/views/director-de-operaciones/costostransportetienda/helpers/crear-costo-rules.md
+                      - Calculo de cobertura: frontend/views/director-de-operaciones/costostransportetienda/helpers/cobertura-helper.md
+                      - Formatos: frontend/views/director-de-operaciones/costostransportetienda/helpers/formato-helper.md
+                      - Modelos: frontend/views/director-de-operaciones/costostransportetienda/modelos/costos-transporte-models.md
               - Controller:
                   - Facturas transportadoras:
                       - Componente: frontend/views/controller/facturas-trans/facturas-trans.md
@@ -525,3 +532,4 @@ nav:
       - Novedades Inter, distancia y reportes (nov 2026): changelog/novedades-2026-11.md
       - Comercial, Panel y Accesos en LOGI (nov 2026): changelog/comercial-2026-11.md
       - Logi, asistente y seguridad por rol (nov 2026): changelog/logi-2026-11.md
+      - Costos transporte tienda (nov 2026): changelog/costos-transporte-tienda-2026-11.md

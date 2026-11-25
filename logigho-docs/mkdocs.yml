@@ -269,6 +269,11 @@ nav:
           - Catálogo en BD y Native AOT (ADR-002): backend/core/preferencias-usuario/ADR-002-catalogo-en-base-de-datos-y-aot.md
           - Cambios de nov 2026: changelog/preferencias-2026-11.md
 
+      - Core (exportacion de colecciones a S3):
+          - Ficha de la Lambda y operacion: backend/core/exportacion-s3/index.md
+          - Arquitectura (ADR-001 lectura por rango de _id): backend/core/exportacion-s3/ADR-001-lectura-por-rango-de-id.md
+          - Cambios de nov 2026: changelog/exportacion-s3-2026-11.md
+
   - Frontend:
       - Overview: frontend/overview.md
       - Estructura de modulos: frontend/estructura-modulos.md

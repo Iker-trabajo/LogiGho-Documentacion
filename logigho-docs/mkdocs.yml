@@ -297,6 +297,7 @@ nav:
           - Barra superior (Default Header): frontend/layout/default-header.md
       - Sistema de Experiencias (propuesta):
           - Que es: frontend/experiencias/index.md
+          - Motor y experiencia Aurora (implementado): frontend/experiencias/experiencia-aurora.md
           - Arquitectura (ADR-001): frontend/experiencias/adr/ADR-001-sistema-experiencias.md
           - Estructura del proyecto: frontend/experiencias/estructura-proyecto.md
           - Crear una vista: frontend/experiencias/crear-vista.md

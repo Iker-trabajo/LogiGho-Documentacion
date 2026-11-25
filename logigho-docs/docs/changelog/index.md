@@ -550,6 +550,20 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
   **Importación Facturas Envía**, con las validaciones y las columnas obligatorias.
 - Actualizadas **Importación Facturas Genérico** (validaciones y `columnasOpcionales`),
   **Facturas Transportadoras** (X-Cargo fuera de servicio y cómo reactivarlo) y su ADR.
+
+## [2026-11-24] — Motor de experiencias y experiencia «Aurora» (front)
+
+### Nuevas funcionalidades
+- **Motor de experiencias** en el front: selector de experiencia, preferencia guardada en el servidor (`GET/PUT preferencias/mia`), shells y versiones de vista por experiencia.
+- **Experiencia Aurora** (estado `borrador`): paleta lima, negro y blanco, riel de 7 iconos con panel, Billetera con saldo disponible, pedidos con etapas y tabla de filas altas, versiones propias de Productos y Proveedores.
+
+### Cambios
+- La experiencia `clasica` (plataforma actual) no cambia para el usuario. El layout pasa a carga diferida.
+
+### Documentación
+- [Motor de experiencias y experiencia Aurora](../frontend/experiencias/experiencia-aurora.md): cómo funciona, dónde está cada cosa, reglas y cómo agregar una vista o una experiencia.
+
+---
 ## [2026-10-17] — Propuesta: Sistema de Experiencias y seguridad de accesos
 
 ### Documentación

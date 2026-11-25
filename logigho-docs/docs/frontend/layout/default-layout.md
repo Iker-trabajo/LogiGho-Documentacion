@@ -1,7 +1,7 @@
 ---
 autor: Yadilton Torres
 fecha_creacion: 2026-10-15
-ultima_actualizacion: 2026-10-15
+ultima_actualizacion: 2026-11-24
 fecha_creacion: 2026-10-09
 ultima_actualizacion: 2026-10-09
 estado: desarrollo
@@ -41,6 +41,7 @@ El menú lateral se arma según los roles del usuario (colección `module`) y ti
 |---|---|
 | Autenticado | Requiere login. Es el layout de todas las rutas bajo `/app` con `AuthGuard` |
 | Opciones del menú | Solo los módulos de la colección `module` que corresponden a los roles del usuario (ver [Rutas y navegación](../rutas.md)) |
+| Pantallas | `validateModuleAccess()` deja abrir una ruta solo si el módulo **más específico** que la contiene es del usuario; un módulo padre ya no abre hijas con roles propios. Ver [Acceso a módulos](../core/acceso-modulos.md) |
 
 ---
 
@@ -204,7 +205,8 @@ Usuario entra a una ruta bajo /app
          (si /users no trae al usuario o falla → metodoGenerico?coleccion=Users)
     → revisarAccesos()     → formulario Accesos en LOGI y luego la guía de Red social
     → consulta module      → buildNavItems() según roles → navItems / visibleNavItems
-    → validateModuleAccess() → si no tiene acceso a la ruta, va a login
+    → registra los módulos en AccesoModulosService (los usa Logi)
+    → validateModuleAccess() → rutaPermitida(); si no tiene acceso, va a login
     → cierra la barra (directiva)
 
 Escritorio
@@ -264,6 +266,8 @@ Ver [Accesos en LOGI](../components/accesos-logi.md).
 - Escape cierra, limpia y devuelve el foco.
 - Celular: el toque no abre la barra ni Ctrl + B hace nada; deslizar a la izquierda cierra el cajón; scroll o toque corto no lo cierran.
 
+`default-layout.component.spec.ts` agrega **permisos por módulo**: deja pasar a una pantalla propia, saca de una hija de Mi Tienda con roles propios (va a `/login` y marca `accesoDenegado`), deja abierto el Muro y entrega los módulos a Logi.
+
 ```bash
 npx ng test --include=src/app/layout/default-layout/sidebar-interaccion.directive.spec.ts --watch=false --browsers=ChromeHeadless
 ```
@@ -274,6 +278,7 @@ npx ng test --include=src/app/layout/default-layout/sidebar-interaccion.directiv
 
 | Fecha | Autor | Cambio |
 |---|---|---|
+| 2026-11-24 | Yadilton Torres | Seguridad de rutas con `acceso-modulos` (módulo más específico); módulos entregados a [Logi](../components/logi/logi.md), que reemplaza el botón de WhatsApp |
 | 2026-11-11 | Yadilton Torres | Formulario Accesos en LOGI antes de la guía de Red social; respaldo de la carga del usuario por `metodoGenerico`; Panel comercial en el menú |
 | 2026-10-09 | Yadilton Torres | Rediseño del menú lateral: apertura sin parpadeo con la clase `abierta`, clic que no se pierde, barrita azul y subgrupos, buscador del menú con Ctrl + B y resultados agrupados, cajón completo en celular. El comportamiento pasó a la directiva `SidebarInteraccionDirective` y los estilos a la carpeta `estilos/` (7 archivos por tema). |
 

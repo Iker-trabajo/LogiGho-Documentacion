@@ -81,6 +81,7 @@ nav:
           - ADR-AUT-001 Plantillas de correo dentro de la lambda: arquitectura/adr/autenticacion/ADR-AUT-001-plantillas-de-correo-dentro-de-la-lambda.md
           - ADR-AUT-002 Nombre, fecha, imagenes y boton de copiar: arquitectura/adr/autenticacion/ADR-AUT-002-nombre-fecha-imagenes-y-boton-copiar.md
           - ADR-AUT-003 Correo sin Collation en DocumentDB: arquitectura/adr/autenticacion/ADR-AUT-003-correo-sin-collation-en-documentdb.md
+          - ADR-AUT-004 Registro como persona natural o empresa: arquitectura/adr/autenticacion/ADR-AUT-004-registro-persona-natural-o-empresa.md
       - Decisiones de Inventario (ADR):
           - Indice: arquitectura/adr/inventario/index.md
           - ADR-INV-001 Clave unica e indice sparse: arquitectura/adr/inventario/ADR-INV-001-clave-unica-e-indice-sparse.md
@@ -513,6 +514,7 @@ nav:
 
   - Changelog:
       - Historial: changelog/index.md
+      - Registro como persona natural o empresa (nov 2026): changelog/registro-empresa-2026-11.md
       - Liberacion de Inventario (oct 2026): changelog/inventario-2026-10.md
       - Liberacion de Metricas de entrega (oct 2026): changelog/metricas-2026-10.md
       - Novedades Inter, distancia y reportes (nov 2026): changelog/novedades-2026-11.md

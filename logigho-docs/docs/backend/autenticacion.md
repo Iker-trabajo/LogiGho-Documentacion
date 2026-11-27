@@ -69,10 +69,32 @@ Un solo motor en `Autenticacion.Nucleo`, usado por el registro, la recuperación
 | Colección | Uso |
 |---|---|
 | `RegistroSolicitudes` (**nueva**) | Una fila por código emitido (`tipo` `REGISTRO`, `CAMBIO_PASSWORD` o `RECUPERACION`): hash del identificador, correo, firma, estado, intentos, envíos. **Se borra sola 24 h después** (índice TTL en `borrarEn`). Índices: `solicitudHash` único, `email`+`creadoEn` y el TTL (script en la spec 008) |
-| `Users` | El correo duplicado se busca con regex anclada insensible a mayúsculas, **nunca con `Collation`** (DocumentDB la rechaza, ADR-AUT-003). Se inserta con rol `Red social` y sin tiendas al confirmar el registro; la asignación de acceso actualiza `roles` y `tiendas` |
-| `RegisterContact` | Se actualiza por correo a `Registrado en plataforma` con el `userId` (cognitoId), o se crea si no existía. **Nunca se borra**: es la lista de trabajo de Comercial |
+| `Users` | El correo duplicado se busca con regex anclada insensible a mayúsculas, **nunca con `Collation`** (DocumentDB la rechaza, ADR-AUT-003). Se inserta con rol `Red social` y sin tiendas al confirmar el registro; la asignación de acceso actualiza `roles` y `tiendas`. Desde la spec 039 lleva `tipoPersona` (`Natural` o `Juridica`; ausente = `Natural`) y, en empresa, `tipoDocumento: NIT`, `documento` y el subdocumento `empresa` (ver [Registro como persona natural o empresa](#registro-como-persona-natural-o-empresa-spec-039)) |
+| `RegisterContact` | Se actualiza por correo a `Registrado en plataforma` con el `userId` (cognitoId), o se crea si no existía. En empresa se le suman `tipoPersona`, `razonSocial`, `nit` y `representanteLegal`. **Nunca se borra**: es la lista de trabajo de Comercial |
 | `Roles` | Solo lectura: los roles activos que se pueden asignar |
 | `LogAuditoria` | La asignación de acceso deja quién, a quién y roles antes y después (sin datos personales) |
+
+## Registro como persona natural o empresa (spec 039)
+
+El registro público acepta `tipoPersona` (`Natural` | `Juridica`) y, para empresa, `razonSocial`, `nit` y `representanteLegal`. Todos los campos son opcionales: sin `tipoPersona` el registro es el de siempre. Contrato en [API de autenticación](../api/autenticacion.md#persona-natural-o-empresa-spec-039); decisión en [ADR-AUT-004](../arquitectura/adr/autenticacion/ADR-AUT-004-registro-persona-natural-o-empresa.md).
+
+**Dónde está el código** (`LambdasLogiGho.Aplicacion/AWS/Autenticacion`, todo net10):
+
+| Pieza | Qué hace |
+|---|---|
+| `Autenticacion.Nucleo/Dominio/Nit.cs` | `Nit.Normalizar` devuelve `NNNNNNNNN-D` o `null`; `Nit.DigitoVerificacion` aplica los pesos de la DIAN. Sin dependencias |
+| `Autenticacion.Nucleo/Aplicacion/SolicitarRegistro.cs` | `SolicitudRegistro` gana `TipoPersona`, `RazonSocial`, `Nit` y `RepresentanteLegal` (con valor por defecto). `TiposPersona` y `ValidadorRegistro.Limpiar`: empresa exige los tres campos y un NIT válido; natural descarta los de empresa; tipo desconocido devuelve `null` (datos inválidos) |
+| `Autenticacion.Nucleo/Aplicacion/ConfirmarRegistro.cs` y `CrearUsuarioCuenta.cs` | `NuevoUsuario` gana `TipoPersona` y `Empresa` (`EmpresaUsuario`). `ConfirmarRegistro` arma `tipoDocumento: NIT` y `documento` en empresa |
+| `Autenticacion.Infraestructura` | `UsuariosMongo.DocumentoUsuario`, `RepositorioSolicitudesMongo.DatosABson`/`BsonADatos` y `RepositorioContactosMongo.DocumentoNuevo`/`CamposAdicionales` guardan y leen los campos (BSON simple: strings y un subdocumento, sin operadores que DocumentDB rechace). Una solicitud guardada antes de la spec se lee como `Natural` |
+| `ApiLambdaRegistro/Http/ManejadorRegistro.cs` | `LeerFormulario` lee y tipa los cuatro campos; un campo con tipo equivocado devuelve `400` |
+
+**Qué no cambia.** Las rutas, el API Gateway, Terraform y las variables de entorno. No hay migración de datos. `ApiLambdaCrudRegistroClienteAOT` (`/registerContact`) **no se tocó**: es net8 con Native AOT (ver [API](../api/autenticacion.md#post-registercontact-formulario-de-contacto-publico), M-421).
+
+**Logs.** Siguen siendo eventos de nombre fijo sin datos personales: **nunca** el NIT, la razón social ni el representante (hay pruebas que lo comprueban, también en `ToString()` de la solicitud).
+
+**Pruebas** (xUnit, Debug y Release): `Autenticacion.Nucleo.Tests` 357 (36 nuevas: NIT, reglas de empresa, alta en `Users`), `Autenticacion.Infraestructura.Tests` 41 (11 nuevas: mapeo BSON de solicitud, `Users` y `RegisterContact`) y `ApiLambdaRegistro.Tests` 32 (9 nuevas: contrato HTTP). `dotnet publish -c Release -r linux-x64` de `ApiLambdaRegistro` compila. No hay pruebas contra Cognito ni Mongo reales: eso es el [E2E de PreProd](../guias/pruebas-autenticacion-e2e.md#8-registro-como-persona-natural-o-empresa-spec-039).
+
+**Despliegue.** Solo `ApiLambdaRegistro` necesita redesplegarse (lleva Núcleo e Infraestructura en el zip). **El backend va primero**: un backend anterior descartaría en silencio los campos de empresa que envíe el front nuevo. Reversión: volver al zip anterior; los documentos ya creados quedan con campos extra inertes y no hay nada que deshacer en la base.
 
 ## Infraestructura (Terraform, `environments/preprod/autenticacion`)
 

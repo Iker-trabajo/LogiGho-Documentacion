@@ -24,6 +24,19 @@ Historial de cambios, nuevas funcionalidades y correcciones del sistema LogiGho.
 
 ---
 
+## [2026-11-27] — Registro como persona natural o empresa (backend en PreProd; front en PR; pendiente de producción)
+
+### Nuevas funcionalidades
+- `/app/registro` permite registrarse como **persona natural** (igual que antes) o como **empresa** (razón social, NIT con dígito de verificación, representante legal y nombre comercial opcional). `Users` gana `tipoPersona` y, en empresa, `tipoDocumento: NIT`, `documento` y el subdocumento `empresa`.
+
+### Cambios
+- Los campos nuevos del API son opcionales: sin ellos, el registro es el de siempre. Limitación: `/registerContact` aún descarta los campos de empresa (M-421).
+
+### Documentación
+- Detalle completo en [Registro como persona natural o empresa](registro-empresa-2026-11.md) y [ADR-AUT-004](../arquitectura/adr/autenticacion/ADR-AUT-004-registro-persona-natural-o-empresa.md).
+
+---
+
 ## [2026-11-23] — Rediseño «La Red» de toda la plataforma (construido y verificado en local; pendiente de PreProd)
 
 > **Estado:** verificado en local sobre el commit `45dbf949` de `feature/rediseno-integral-la-red`. **Aún no está en PreProd ni en producción.** La rama tiene dos commits posteriores (`9b7c5adb`, `0c88ca39`) y puede cambiar: otra sesión aplica detalles pedidos por Iker.

@@ -83,12 +83,36 @@ El backend nuevo vive en la cuenta de **PreProd** de AWS. Para probar el flujo c
 3. **Reenvío.** Botón "Reenviar código" deshabilitado 60 segundos; `POST .../solicitudes/reenvio` con el `solicitudId`.
 4. **Resultado.** `201` con `estado: "ACTIVO"`: ya puede iniciar sesión con su correo y su contraseña. Entra con el rol **`Red social`** (solo la red social) hasta que Comercial le asigne el acceso real. El menú que ve debe salir de sus roles como hoy.
 
+### Persona natural o empresa (spec 039)
+
+`/app/registro` pregunta primero **«¿Cómo te registras?»** con dos tarjetas: **Persona natural** y **Empresa**. Persona natural sigue con las 6 preguntas de siempre; empresa agrega las suyas. Sin elegir, «Continuar» muestra «Elige cómo te registras» y no avanza.
+
+| Orden | Persona natural | Empresa |
+|---|---|---|
+| 1 | ¿Cómo te registras? | ¿Cómo te registras? |
+| 2 | ¿Cómo te llamas? | Razón social (2 a 100 caracteres) |
+| 3 | Ciudad | NIT con dígito de verificación |
+| 4 | Email | Representante legal (2 a 60 caracteres) |
+| 5 | Cómo te enteraste | Nombre comercial (**opcional**, se puede saltar) |
+| 6 | Teléfono | Ciudad |
+| 7 | Cuándo empezarías | Email, cómo te enteraste, teléfono y cuándo empezarías |
+| Final | Revisión y consentimiento | Revisión y consentimiento («…de la empresa y de su representante») |
+
+- El progreso y «Pregunta n de N» se recalculan al elegir (7 preguntas en persona natural, 10 en empresa). Al volver y cambiar de tipo se conservan correo, teléfono, ciudad y demás datos comunes.
+- **NIT:** el campo solo acepta dígitos, puntos, espacios y guion. Se valida en el front con el mismo algoritmo de la DIAN que el servidor (`validators.ts`): mensajes distintos para «escribe el NIT», «formato» y «el dígito de verificación no coincide». Se envía normalizado (`900123456-8`).
+- La pantalla de revisión muestra el tipo y los datos de empresa; el nombre comercial vacío se ve como «—». El paquete 3D y el mapa muestran la **razón social** en empresa.
+- **Payload.** `armarContacto` (`models/registro.models.ts`) arma el contacto y lo manda igual a `/registerContact` y a `/autenticacion/registro/solicitudes`: `tipoPersona` (`Natural` | `Juridica`), y en empresa `razonSocial`, `nit`, `representanteLegal` y `NombreComercio` (nombre comercial o razón social). `userName` es el representante en empresa. `/registerContact` descarta hoy los campos de empresa (M-421) y conserva `NombreComercio`.
+- **Responsive.** Revisado en 360×640, 390×844, 768×1024, 1024×768, 1440×900 y celular horizontal 844×390, en oscuro y claro: sin desbordes horizontales. Las tarjetas van en una columna bajo 480 px y en dos desde ahí. En pantallas muy bajas la pregunta de tipo queda bajo el pliegue y se alcanza con scroll de la página, igual que la primera pregunta del diseño original.
+- **Archivos** (`src/app/views/pages/registro`): `la-red/form/StepController.ts` (opción `preguntarTipo`, orden por tipo, preguntas opcionales), `la-red/form/validators.ts`, `la-red/form/FormView.ts`, `la-red/form/copy.es.ts`, `la-red/host/PackageView.ts` y `choreography.ts` (nombre visible), `models/registro.models.ts` y `registro.component.ts`.
+- **Pruebas:** 80 de `views/pages/registro` en verde (validadores del NIT, controlador por tipo, `armarContacto`, `FormView`), build de producción OK, y recorrido E2E con Playwright contra localhost con el API simulado.
+- **Despliegue:** requiere el backend de la spec 039 ya desplegado. PreProd: PR de `feature/2026-11-26-registro-empresa` a `preprod` (Squash); el CD publica en Vercel Preview.
+
 ### Respuestas a manejar
 
 | Estado | `Codigo` | Qué mostrar |
 |---|---|---|
 | 202 | `OK` | "Si el correo puede registrarse, recibirás un código" |
-| 400 | `DATOS_INVALIDOS` | Resaltar campos; `autorizaDatos` debe ser `true` |
+| 400 | `DATOS_INVALIDOS` | Resaltar campos; `autorizaDatos` debe ser `true`; en empresa, NIT inválido o faltan razón social o representante |
 | 400 | `POLITICA_CONTRASENA` | Requisitos que fallan; **no gasta intento** |
 | 400 | `CODIGO_INVALIDO` | "Código incorrecto" (máximo 5 intentos) |
 | 410 | `SOLICITUD_VENCIDA` | "El código venció" y ofrecer volver a solicitar |

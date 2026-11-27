@@ -169,3 +169,51 @@ Se hacen en este orden, con alias nuevos y verificados para no agotar el límite
 - [ ] Rol `Red social` verificado en producción (ya existe), `ROLES_ASIGNABLES_COMERCIAL` y demás variables en la Library de producción.
 - [ ] Índices de `RegistroSolicitudes` creados en DocumentDB (comprobar TTL y único, criterio CA21 de la spec).
 - [ ] Iker da la instrucción explícita de producción; en producción cada paso lleva su visto bueno.
+
+## 8. Registro como persona natural o empresa (spec 039)
+
+Pruebas del backend de la historia 039 en **PreProd** (`https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/PreProd`). El backend está desplegado en PreProd desde el 2026-11-27 (PR 802 de Lambdas, `Lambdas-Autenticacion-CD-PreProd` en verde, `ApiLambdaRegistro` en `dotnet10`). Usa un correo de prueba verificado en SES (ver la nota de SES de la sección 7) y un alias nuevo en cada intento: cada correo admite 3 solicitudes por hora. El front de PreProd apunta a un pool de Cognito que vive en producción (M-160/M-231): estas pruebas llaman al API directo.
+
+### 8.1 Qué se verificó antes de PreProd
+
+| Qué | Cómo | Resultado |
+|---|---|---|
+| Reglas de empresa, NIT, alta en `Users`, logs sin datos | xUnit del núcleo (357), infraestructura (41) y handler (32), en Debug y Release | Verde |
+| Formulario `/registro` de punta a punta (natural y empresa) y payloads | Playwright contra localhost con el API simulado, sin enviar nada real | Verde |
+| Responsive y modo claro | Playwright en 6 tamaños | Sin desbordes |
+| Build de producción del front | `ng build --configuration production` | OK |
+
+### 8.2 Pruebas en PreProd (las ejecuta Iker tras el CD)
+
+`$api = "https://8u5isw5u30.execute-api.us-east-1.amazonaws.com/PreProd/"`
+
+| # | Prueba | Cómo | Esperado | Estado |
+|---|---|---|---|---|
+| 48 | Empresa válida | `POST autenticacion/registro/solicitudes` con `tipoPersona: "Juridica"`, `razonSocial`, `nit: "900.123.456-8"`, `representanteLegal` y los datos de siempre | 202 `OK`; llega el correo con código y enlace | Pendiente |
+| 49 | Confirmar la empresa | `POST .../confirmaciones` con `solicitudId`, `codigo` y `contrasena` | 201 `estado: "ACTIVO"` | Pendiente |
+| 50 | Datos guardados | `consulta_lectura.py --entorno preprod --coleccion Users` filtrando `tipoPersona: "Juridica"`, con proyección sin datos personales | `tipoPersona: Juridica`, `tipoDocumento: NIT`, `roles: ["Red social"]`, `tiendas: []` y `empresa.razonSocial` | Pendiente |
+| 51 | Contacto de Comercial | Lo mismo sobre `RegisterContact` | `estado: "Registrado en plataforma"` y `tipoPersona`, `razonSocial`, `nit`, `representanteLegal` | Pendiente |
+| 52 | NIT con dígito equivocado | Repetir la 48 con `nit: "900123456-7"` | 400 `DATOS_INVALIDOS`; no llega correo | Pendiente |
+| 53 | Empresa sin razón social, sin NIT o sin representante | Repetir la 48 quitando cada campo | 400 `DATOS_INVALIDOS` | Pendiente |
+| 54 | Tipo desconocido | `tipoPersona: "Otro"` | 400 `DATOS_INVALIDOS` | Pendiente |
+| 55 | Campo con tipo equivocado | `nit` como número | 400 `DATOS_INVALIDOS` | Pendiente |
+| 56 | Regresión de persona natural | Solicitud **sin** `tipoPersona`, `razonSocial`, `nit` ni `representanteLegal`; confirmar | 202 y 201; `Users` con `tipoPersona: "Natural"` y `documento` vacío | Pendiente |
+| 57 | Natural con campos de empresa | `tipoPersona: "Natural"` más `razonSocial` y `nit` | 202; en `Users` no aparecen `empresa` ni el NIT | Pendiente |
+| 58 | Mismo mensaje exista o no el correo | Repetir la 48 con un correo que ya tiene cuenta | 202 con el mismo cuerpo; llega el aviso de cuenta existente | Pendiente |
+
+Los usuarios y contactos de prueba los borra Iker (la IA no escribe en AWS ni en la base).
+
+### 8.3 Prueba manual con el front (cuando esté en el Vercel de PreProd)
+
+1. `/app/registro` muestra las dos tarjetas.
+2. Persona natural: 6 preguntas, correo con código, cuenta creada; `Users` con `tipoPersona: "Natural"`.
+3. Empresa con NIT `900123456-8`: razón social, NIT, representante y nombre comercial; llega el correo; al confirmar, `Users` queda como en la prueba 50.
+4. NIT `900123456-7`: no deja avanzar y muestra «El dígito de verificación no coincide».
+5. En celular y en modo claro.
+
+### 8.4 Antes de producción
+
+- [ ] Pruebas 48 a 58 en verde y registradas aquí.
+- [ ] **Backend primero** en producción (la `release/2026-11-26-autenticacion` a `main`, con aprobación manual en CD-Prod) y después el front (`preprod` a `main`, merge sin fast-forward).
+- [ ] Decidir qué hacer con `/registerContact` (M-421) y con el NIT repetido (M-422).
+- [ ] Iker da la instrucción explícita de producción.

@@ -149,6 +149,7 @@ Es el formulario de la landing y no exige sesión. Solo acepta `POST` (los demá
 - Cuerpo: un arreglo con 1 a 3 contactos, o un contacto suelto.
 - Campos aceptados: `userName`, `email`, `phoneNumber`, `source`, `comienzo`, `city`, `NombreComercio`, `ventasPorMes`, `businessType` (texto de hasta 200 caracteres) e `isColombian` (booleano). Cualquier otro campo se descarta.
 - Obligatorios: `userName`, `email` válido y `phoneNumber`.
+- **No acepta aún los campos de empresa** (`tipoPersona`, `razonSocial`, `nit`, `representanteLegal`): se descartan en silencio. La lambda es net8 con Native AOT y subirla a net10 es una tarea aparte (M-421). Una empresa que no termina el registro llega a Comercial solo con `NombreComercio`; si lo termina, la fila se completa al confirmar.
 - `fechaRegistro` y `estado` (`No Contactado`) los pone el servidor; lo que mande el front se ignora.
 - Responde `200 OK`, `400 DATOS_INVALIDOS` o `500 ERROR_INTERNO`.
 
@@ -203,7 +204,43 @@ Usa **los mismos nombres de campo del formulario público de contacto** (`/regis
 | Código HTTP | `Codigo` | Cuándo |
 |---|---|---|
 | 202 | `OK` | "Si el correo puede registrarse, recibirás un código." |
-| 400 | `DATOS_INVALIDOS` | Falta un obligatorio, `autorizaDatos` no es `true`, tipo equivocado o cuerpo demasiado grande |
+| 400 | `DATOS_INVALIDOS` | Falta un obligatorio, `autorizaDatos` no es `true`, tipo equivocado, cuerpo demasiado grande, `tipoPersona` desconocido o empresa incompleta o con NIT inválido |
+
+#### Persona natural o empresa (spec 039)
+
+El mismo cuerpo acepta cuatro campos **opcionales** para registrarse como empresa. Sin `tipoPersona` la solicitud se trata como **persona natural**, exactamente como antes: los clientes que no los envían no cambian.
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `tipoPersona` | texto | `Natural` o `Juridica` (sin distinguir mayúsculas). Vacío o ausente = `Natural`. Otro valor: `400 DATOS_INVALIDOS` |
+| `razonSocial` | texto | **Obligatoria si es `Juridica`**. Hasta 200 caracteres |
+| `nit` | texto | **Obligatorio si es `Juridica`**, con dígito de verificación (ver abajo) |
+| `representanteLegal` | texto | **Obligatorio si es `Juridica`**. Hasta 200 caracteres |
+
+```json
+{
+  "tipoPersona": "Juridica",
+  "razonSocial": "Mi Empresa SAS",
+  "nit": "900.123.456-8",
+  "representanteLegal": "Ana Pérez",
+  "NombreComercio": "Mi Tienda",
+  "userName": "Ana Pérez",
+  "email": "ana@empresa.com",
+  "phoneNumber": "3001234567",
+  "city": "Bogotá",
+  "source": "facebook",
+  "comienzo": "3 meses",
+  "isColombian": true,
+  "autorizaDatos": true
+}
+```
+
+- **`userName` es la persona de contacto**: en empresa, el representante legal. `NombreComercio` es el nombre comercial (opcional; si no se envía, Comercial ve la razón social).
+- **NIT.** Se aceptan puntos, espacios y guion (`900.123.456-8`, `900123456 - 8`); sin guion, el último dígito se toma como dígito de verificación (`9001234568`). La base debe tener de 6 a 10 dígitos y el dígito se calcula con el algoritmo de la DIAN (pesos `3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71` de derecha a izquierda; `resto = suma % 11`; dígito = `resto > 1 ? 11 - resto : resto`). El servidor lo guarda **normalizado** como `NNNNNNNNN-D`. Un NIT con dígito equivocado o formato inválido es `400 DATOS_INVALIDOS`. Ejemplos válidos: `800197268-4` (el de la DIAN) y `900123456-8`.
+- **Persona natural** ignora y descarta `razonSocial`, `nit` y `representanteLegal` aunque se envíen.
+- El campo con tipo equivocado (por ejemplo `nit` como número) es `400 DATOS_INVALIDOS`.
+- La respuesta sigue siendo **202 igual** exista o no el correo: validar el NIT no revela si hay una cuenta.
+- **No hay verificación contra la DIAN ni el RUES** y **no se bloquea un NIT repetido** (mejora M-422): el dígito solo descarta errores de digitación.
 
 **El correo** trae el código, su vigencia (15 minutos), el enlace `{URL_REGISTRO}?solicitud=<solicitudId>` y el aviso "si no fuiste tú, ignora este correo". El enlace **no lleva el código ni el correo**. `URL_REGISTRO` hoy es `https://www.logigho.com/app/registro` en PreProd; las pantallas del front viven bajo `/app`; si la ruta cambia, se cambia con una variable de la lambda, sin redesplegar código.
 
@@ -231,6 +268,18 @@ Envía un código nuevo; **el anterior deja de servir** y los intentos vuelven a
 ```
 
 Crea la cuenta (Cognito y `Users` con rol `Red social`) y actualiza o crea la fila de `RegisterContact` (`estado: "Registrado en plataforma"`, `userId`), **sin duplicar** el contacto que el formulario de la landing ya haya guardado. Si algo falla al crear, la cuenta de Cognito se borra para no dejar huérfanos.
+
+**Cómo queda el usuario en `Users`** (spec 039). Todo registro nuevo lleva `tipoPersona`; la empresa agrega el NIT y el subdocumento `empresa`. Los usuarios anteriores no tienen `tipoPersona`: **los lectores deben tratar su ausencia como `Natural`**.
+
+| Campo | Persona natural | Empresa (`Juridica`) |
+|---|---|---|
+| `tipoPersona` | `"Natural"` | `"Juridica"` |
+| `tipoDocumento` | `""` | `"NIT"` |
+| `documento` | `""` | NIT normalizado, p. ej. `"900123456-8"` |
+| `empresa` | no existe | `{ razonSocial, nombreComercial?, representanteLegal: { nombre } }` |
+| `roles` / `tiendas` | `["Red social"]` / `[]` | `["Red social"]` / `[]` |
+
+`empresa.nombreComercial` solo existe si la persona lo dio. La empresa **no recibe tiendas ni acceso real** al registrarse: Comercial se lo asigna después, igual que a una persona natural. En `RegisterContact` la fila de la empresa lleva además `tipoPersona`, `razonSocial`, `nit`, `representanteLegal` y `NombreComercio` (el nombre comercial o, si no lo dio, la razón social).
 
 | Código HTTP | `Codigo` | Cuándo |
 |---|---|---|
